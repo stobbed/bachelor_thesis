@@ -4,8 +4,9 @@ from collections import defaultdict
 import sqlite3
 import os.path
 import pickle
+
 from database_operations import establish_db_connection, query_db, close_db_connection
-import database_operations
+from processing import create_drtvehicleids_list
 
 # track time
 q_start=timer()
@@ -16,28 +17,7 @@ dbfile_path = "/Users/dstobbe/Desktop/Uni/Bachelorarbeit/MATSIM Output/DBFiles/b
 # # establish database connection
 sqliteConnection, cursor = establish_db_connection(dbfile_path)
 
-# extracting the vehicle ids that executed traffic events from the DB 
-vehicleid_query= '''  SELECT vehicle FROM vehicle_traffic_events'''
-vehicleiddata = query_db(vehicleid_query, cursor)
-
-# creating empty lists
-var = []
-drtvehicleids = []
-
-# creating a list from the list with tuples inside that come from SQLITE
-for item in vehicleiddata:
-    for x in item:
-        var.append(x)
-
-# writing the used drt vehicles into the variable drtvehicles
-for aussortieren in var:
-    if str(aussortieren).startswith("drt") == True:
-        drtvehicleids.append(aussortieren)
-
-# deleting duplicates
-drtvehicleids=list(dict.fromkeys(drtvehicleids))
-
-print("Vehicle IDS sucessfully stored")
+drtvehicleids = create_drtvehicleids_list(cursor)
 
 # ---------------------------------------------------------
 
