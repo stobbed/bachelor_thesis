@@ -4,46 +4,21 @@ from collections import defaultdict
 import sqlite3
 import os.path
 import pickle
+from database_operations import establish_db_connection, query_db, close_db_connection
+import database_operations
 
-# second chance
-
+# track time
 q_start=timer()
-
-#this is a comment
-hallo=timer()
 
 # currently path needs to be adjusted here
 dbfile_path = "/Users/dstobbe/Desktop/Uni/Bachelorarbeit/MATSIM Output/DBFiles/b-drt-mpm-1pct.db"
 
-# establish database connection
-# check if dbfile actually already exists, avoiding empty database creation
-if os.path.exists(dbfile_path):
-    try:
-        # connects to sqlite database file - if path is faulty, creates a new and empty database
-        sqliteConnection = sqlite3.connect(dbfile_path)
-        cursor = sqliteConnection.cursor()
-        print('Connection to SQLite-File',dbfile_path,'>> SUCCESS!')
-    except sqlite3.Error as error:
-        print('SQLite error: ', error)
-    finally:
-        pass
-else:
-    raise FileNotFoundError('Invalid path (dbfile): '+dbfile_path+' - *.db file doesn\'t exist.')
-
-def query_db(sql_query, var = None):
-    record = None
-    if var == None:
-        cursor.execute(sql_query)
-    else:
-        cursor.execute(sql_query, (var,))
-    # save queried table locally in record
-    record = cursor.fetchall()
-    return record
-
+# # establish database connection
+sqliteConnection, cursor = establish_db_connection(dbfile_path)
 
 # extracting the vehicle ids that executed traffic events from the DB 
 vehicleid_query= '''  SELECT vehicle FROM vehicle_traffic_events'''
-vehicleiddata = query_db(vehicleid_query)
+vehicleiddata = query_db(vehicleid_query, cursor)
 
 # creating empty lists
 var = []
@@ -70,7 +45,7 @@ print("Vehicle IDS sucessfully stored")
 
 # Variante 1
 # vehiclelinks_query = ''' SELECT vehicle, link FROM vehicle_link_events '''
-# vehiclelinksdb = query_db(vehiclelinks_query)
+# vehiclelinksdb = query_db(vehiclelinks_query, cursor)
 # dictofVIDandLinks = defaultdict(list)
 
 # for tuple in vehiclelinksdb:
@@ -87,7 +62,7 @@ def getDictWithLinksFromIds(drtvehicleids):
     dictofVIDandLinks = defaultdict(list)
     vehicledrivenlinks_query = '''SELECT link FROM vehicle_link_events WHERE vehicle = ?'''
     for id in drtvehicleids:
-        linksforvehicleIDS = query_db(vehicledrivenlinks_query, id)
+        linksforvehicleIDS = query_db(vehicledrivenlinks_query, cursor, id)
         for tuple in linksforvehicleIDS:
             x = tuple[0]
             dictofVIDandLinks[id].append(x)
@@ -112,8 +87,8 @@ else:
 #     dictofVIDandLinks[id] = []
 #     # list=[]
 #     vehicledrivenlinks_query = '''SELECT link FROM vehicle_link_events WHERE vehicle = ?'''
-#     linksforvehicleIDS = query_db(vehicledrivenlinks_query, id)
-#     #print(query_db_var(vehicledrivenlinks_query, ID))
+#     linksforvehicleIDS = query_db(vehicledrivenlinks_query, cursor,  id)
+#     #print(query_db_var(vehicledrivenlinks_query, cursor, ID))
 #     # print(linksforvehicleIDS)
 #     for tuple in linksforvehicleIDS:
 #         x = tuple[0]
@@ -122,7 +97,7 @@ else:
 
 # extract a dictionary
 getlinksandlength_query = ''' SELECT link_id, length, freespeed FROM network_links '''
-linkslist_fromdb = query_db(getlinksandlength_query)
+linkslist_fromdb = query_db(getlinksandlength_query, cursor)
 
 dictofLinks_Length = {}
 dictofLinks_Freespeed = {}
@@ -161,11 +136,9 @@ for id in drtvehicleids:
 #     for key in dictofVIDandLength.keys():
 #         f.write("%s, %s\n"% (key, dictofVIDandLength[key]))
 
-if (sqliteConnection):
-            cursor.close()
-            sqliteConnection.close()
-            print('The SQLite connection is closed')
+close_db_connection(sqliteConnection, cursor)
 
+# time tracking stuff
 q_end=timer()
 q_duration=q_end-q_start
 print('\n Total elapsed time: ', q_duration,'\n')
