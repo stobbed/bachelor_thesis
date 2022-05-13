@@ -1,5 +1,15 @@
 from database_operations import query_db
+from collections import defaultdict
 
+def getDictWithLinksFromIds(drtvehicleids, cursor):
+    dictofVIDandLinks = defaultdict(list)
+    vehicledrivenlinks_query = '''SELECT link FROM vehicle_link_events WHERE vehicle = ?'''
+    for id in drtvehicleids:
+        linksforvehicleIDS = query_db(vehicledrivenlinks_query, cursor, id)
+        for tuple in linksforvehicleIDS:
+            x = tuple[0]
+            dictofVIDandLinks[id].append(x)
+    return dictofVIDandLinks
 
 def create_drtvehicleids_list(cursor):
     """ creates a list containing the drtvehicleids that entered traffic 
