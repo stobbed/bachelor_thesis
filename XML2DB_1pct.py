@@ -389,7 +389,8 @@ def create_database():
                 person INTEGER,
                 mode TEXT,
                 request TEXT,
-                vehicle TEXT);'''
+                vehicle TEXT,
+                pickup_dropoff INTEGER);'''
     try:
         cursor.execute(query)
         print('created PassengerPickedUpDropOff_events table')
@@ -736,8 +737,12 @@ def create_database():
                 single_row.append(elem.attrib['mode'])
                 single_row.append(elem.attrib['request'])
                 single_row.append(elem.attrib['vehicle'])
-                query = '''INSERT INTO PassengerPickedUpDropOff_events(event_id, person, mode, request, vehicle)
-                            VALUES (?, ?, ?, ?, ?);'''
+                if elem.attrib['type'] == 'passenger picked up':
+                    single_row.append(0)
+                elif elem.attrib['type'] == 'passenger dropped off':
+                    single_row.append(1)
+                query = '''INSERT INTO PassengerPickedUpDropOff_events(event_id, person, mode, request, vehicle, pickup_dropoff)
+                            VALUES (?, ?, ?, ?, ?, ?);'''
                 try:
                     cursor.execute(query, single_row)
                 except sqlite3.Error as error:
