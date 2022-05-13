@@ -4,10 +4,11 @@ from collections import defaultdict
 import os.path
 import pickle
 from config import dbpath as dbfile_path
+from config import simulationdate
 
 from XML2DB_1pct import create_database
-from database_operations import establish_db_connection, query_db, close_db_connection
-from processing import create_drtvehicleids_list, getDictWithLinksFromIds
+from database_operations import establish_db_connection, close_db_connection
+from processing import create_drtvehicleids_list, create_dict_vid_and_links, create_dict_vid_distance_roadpct, create_dict_links_length_freespeed
 
 # track time
 q_start=timer()
@@ -25,55 +26,25 @@ drtvehicleids = create_drtvehicleids_list(cursor)
 
 # ---------------------------------------------------------
 
-# retrieve driven kilometers per vehicle
+# retrieve driven links for each VID
 
-if os.path.exists('dictofVIDandLinks.pickle'):
-    with open('dictofVIDandLinks.pickle', 'rb') as fp:
+picklefilename = 'dictofVIDandLinks-' + simulationdate + '.pickle'
+if os.path.exists(picklefilename):
+    with open(picklefilename, 'rb') as fp:
         dictofVIDandLinks = pickle.load(fp)
     print("List of vehicle IDS from .pickle file restored")
 else:
-    dictofVIDandLinks = getDictWithLinksFromIds(drtvehicleids, cursor)
-    with open('dictofVIDandLinks.pickle', 'wb') as fp:
+    print(".pickle file does not exist yet or is not up do date, creating list now and saving as .pickle")
+    dictofVIDandLinks = create_dict_vid_and_links(drtvehicleids, cursor)
+    with open(picklefilename, 'wb') as fp:
         pickle.dump(dictofVIDandLinks, fp)
     print("List of links for each VID created and stored into .pickle file")
-    
 
-# extract a dictionary
-getlinksandlength_query = ''' SELECT link_id, length, freespeed FROM network_links '''
-linkslist_fromdb = query_db(getlinksandlength_query, cursor)
+# create a dictionary with link ids, their length and freespeed
+dictofLinks_Length, dictofLinks_Freespeed = create_dict_links_length_freespeed(cursor)
 
-dictofLinks_Length = {}
-dictofLinks_Freespeed = {}
-for tuple in linkslist_fromdb:
-    key=tuple[0]
-    dictofLinks_Length[key] = tuple[1]
-    dictofLinks_Freespeed[key] = tuple[2]
-
-dictofVIDandDistance = {}
-dictofVIDandRoadPct = defaultdict(list)
-
-in_town_max = 51 / 3.6
-out_town_max = 101 / 3.6
-
-for id in drtvehicleids:
-    dictofVIDandDistance[id] = 0
-    roadpctlist = []
-    roadpctlist.append(0)
-    roadpctlist.append(0)
-    roadpctlist.append(0)
-    for links in dictofVIDandLinks[id]:
-        dictofVIDandDistance[id] += dictofLinks_Length[str(links)]
-        if dictofLinks_Freespeed[str(links)] <= in_town_max:
-            roadpctlist[0] += dictofLinks_Length[str(links)]
-        if dictofLinks_Freespeed[str(links)] <= out_town_max and dictofLinks_Freespeed[str(links)] >in_town_max:
-            roadpctlist[1] += dictofLinks_Length[str(links)]
-        if dictofLinks_Freespeed[str(links)] > out_town_max:
-            roadpctlist[2] += dictofLinks_Length[str(links)]
-    roadpctlist[0] = roadpctlist[0]/dictofVIDandDistance[id]
-    roadpctlist[1] = roadpctlist[1]/dictofVIDandDistance[id]
-    roadpctlist[2] = roadpctlist[2]/dictofVIDandDistance[id]
-    dictofVIDandRoadPct[id] = roadpctlist
-    # print(dictofVIDandRoadPct[id])
+# retrieve Distance and road pct for each VID
+dictofVIDandRoadPct, dictofVIDandDistance = create_dict_vid_distance_roadpct(dictofVIDandLinks, dictofLinks_Length, dictofLinks_Freespeed, drtvehicleids)
 
 # with open('dictofVIDandLength.csv', 'w') as f:
 #     for key in dictofVIDandLength.keys():

@@ -19,5 +19,5 @@ dbpath = ''
 for elements in text:
     dbpath = dbpath + '/' + elements
 m_time = os.path.getmtime(xmlpath_evts)
-dt_m = datetime.datetime.fromtimestamp(m_time).date()
-dbpath = dbpath + '/' + filename + '-' + str(dt_m) + '.db'
+simulationdate = str(datetime.datetime.fromtimestamp(m_time).date())
+dbpath = dbpath + '/' + filename + '-' + simulationdate + '.db'
