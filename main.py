@@ -7,7 +7,7 @@ from config import dbpath as dbfile_path
 
 from XML2DB_1pct import create_database
 from database_operations import establish_db_connection, query_db, close_db_connection
-from processing import create_drtvehicleids_list
+from processing import create_drtvehicleids_list, getDictWithLinksFromIds
 
 # track time
 q_start=timer()
@@ -18,10 +18,6 @@ else:
     create_database()
     
 
-
-# currently path needs to be adjusted here
-# dbfile_path = "/Users/dstobbe/Desktop/Uni/Bachelorarbeit/MATSIM Output/DBFiles/b-drt-mpm-1pct.db"
-
 # # establish database connection
 sqliteConnection, cursor = establish_db_connection(dbfile_path)
 
@@ -31,57 +27,16 @@ drtvehicleids = create_drtvehicleids_list(cursor)
 
 # retrieve driven kilometers per vehicle
 
-# Variante 1
-# vehiclelinks_query = ''' SELECT vehicle, link FROM vehicle_link_events '''
-# vehiclelinksdb = query_db(vehiclelinks_query, cursor)
-# dictofVIDandLinks = defaultdict(list)
-
-# for tuple in vehiclelinksdb:
-#     # print(tuple)
-#     for id in drtvehicleids:
-#         if tuple[0] == id:
-#             pass
-#             x = tuple[1]
-#             dictofVIDandLinks[id].append(x)
-
-#comment
-#Variante 2
-def getDictWithLinksFromIds(drtvehicleids):
-    dictofVIDandLinks = defaultdict(list)
-    vehicledrivenlinks_query = '''SELECT link FROM vehicle_link_events WHERE vehicle = ?'''
-    for id in drtvehicleids:
-        linksforvehicleIDS = query_db(vehicledrivenlinks_query, cursor, id)
-        for tuple in linksforvehicleIDS:
-            x = tuple[0]
-            dictofVIDandLinks[id].append(x)
-    return dictofVIDandLinks
-
-
 if os.path.exists('dictofVIDandLinks.pickle'):
     with open('dictofVIDandLinks.pickle', 'rb') as fp:
         dictofVIDandLinks = pickle.load(fp)
     print("List of vehicle IDS from .pickle file restored")
 else:
-    dictofVIDandLinks = getDictWithLinksFromIds(drtvehicleids)
+    dictofVIDandLinks = getDictWithLinksFromIds(drtvehicleids, cursor)
     with open('dictofVIDandLinks.pickle', 'wb') as fp:
         pickle.dump(dictofVIDandLinks, fp)
     print("List of links for each VID created and stored into .pickle file")
-
-# print("List of links for each VID sucessfully stored")
-
-# Variante 3
-# dictofVIDandLinks = {}
-# for id in drtvehicleids:
-#     dictofVIDandLinks[id] = []
-#     # list=[]
-#     vehicledrivenlinks_query = '''SELECT link FROM vehicle_link_events WHERE vehicle = ?'''
-#     linksforvehicleIDS = query_db(vehicledrivenlinks_query, cursor,  id)
-#     #print(query_db_var(vehicledrivenlinks_query, cursor, ID))
-#     # print(linksforvehicleIDS)
-#     for tuple in linksforvehicleIDS:
-#         x = tuple[0]
-#         dictofVIDandLinks[id].append(x)
-#     # dictofVIDandLinks[ID]=list
+    
 
 # extract a dictionary
 getlinksandlength_query = ''' SELECT link_id, length, freespeed FROM network_links '''
