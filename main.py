@@ -1,18 +1,26 @@
 from timeit import default_timer as timer
 # from get_data_from_db import query_db, query_db_var
 from collections import defaultdict
-import sqlite3
 import os.path
 import pickle
+from config import dbpath as dbfile_path
 
+from XML2DB_1pct import create_database
 from database_operations import establish_db_connection, query_db, close_db_connection
 from processing import create_drtvehicleids_list
 
 # track time
 q_start=timer()
+if os.path.exists(dbfile_path):
+    print("Up to Date Database already exists, establishing connection to existing database...")
+else:
+    print('Database does not exist yet, creating database file now...')
+    create_database()
+    
+
 
 # currently path needs to be adjusted here
-dbfile_path = "/Users/dstobbe/Desktop/Uni/Bachelorarbeit/MATSIM Output/DBFiles/b-drt-mpm-1pct.db"
+# dbfile_path = "/Users/dstobbe/Desktop/Uni/Bachelorarbeit/MATSIM Output/DBFiles/b-drt-mpm-1pct.db"
 
 # # establish database connection
 sqliteConnection, cursor = establish_db_connection(dbfile_path)
@@ -110,7 +118,7 @@ for id in drtvehicleids:
     roadpctlist[1] = roadpctlist[1]/dictofVIDandDistance[id]
     roadpctlist[2] = roadpctlist[2]/dictofVIDandDistance[id]
     dictofVIDandRoadPct[id] = roadpctlist
-    print(dictofVIDandRoadPct[id])
+    # print(dictofVIDandRoadPct[id])
 
 # with open('dictofVIDandLength.csv', 'w') as f:
 #     for key in dictofVIDandLength.keys():
