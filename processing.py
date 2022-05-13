@@ -1,7 +1,4 @@
 from collections import defaultdict
-import os.path
-import pickle
-from config import simulationdate
 from database_operations import query_db
 
 def create_drtvehicleids_list(cursor):
@@ -10,8 +7,8 @@ def create_drtvehicleids_list(cursor):
         output: drtvehicleids (list of ids) """
     # extracting the vehicle ids that executed traffic events from the DB 
     print("Retrieving Vehicle IDS from database file")
-    vehicleid_query= '''  SELECT vehicle FROM vehicle_traffic_events'''
-    vehicleiddata = query_db(vehicleid_query, cursor)
+    query= '''  SELECT vehicle FROM vehicle_traffic_events'''
+    vehicleiddata = query_db(query, cursor)
 
     # creating empty lists
     var = []
@@ -36,9 +33,9 @@ def create_drtvehicleids_list(cursor):
 def create_dict_vid_and_links(drtvehicleids, cursor):
     print("creating dictionary with driven links for each VID")
     dictofVIDandLinks = defaultdict(list)
-    vehicledrivenlinks_query = '''SELECT link FROM vehicle_link_events WHERE vehicle = ?'''
+    query = '''SELECT link FROM vehicle_link_events WHERE vehicle = ?'''
     for id in drtvehicleids:
-        linksforvehicleIDS = query_db(vehicledrivenlinks_query, cursor, id)
+        linksforvehicleIDS = query_db(query, cursor, id)
         for tuple in linksforvehicleIDS:
             x = tuple[0]
             dictofVIDandLinks[id].append(x)
@@ -47,8 +44,8 @@ def create_dict_vid_and_links(drtvehicleids, cursor):
 
 def create_dict_links_length_freespeed(cursor):
     print("creating dictionaries with link ids, length and freespeed...")
-    getlinksandlength_query = ''' SELECT link_id, length, freespeed FROM network_links '''
-    linkslist_fromdb = query_db(getlinksandlength_query, cursor)
+    query = ''' SELECT link_id, length, freespeed FROM network_links '''
+    linkslist_fromdb = query_db(query, cursor)
 
     dictofLinks_Length = {}
     dictofLinks_Freespeed = {}
@@ -86,3 +83,20 @@ def create_dict_vid_distance_roadpct(dictofVIDandLinks, dictofLinks_Length, dict
         roadpctlist[2] = roadpctlist[2]/dictofVIDandDistance[id]
         dictofVIDandRoadPct[id] = roadpctlist
     return dictofVIDandRoadPct, dictofVIDandDistance
+
+def get_passenger_occupancy(drtvehicleids, cursor):
+    occupancy_query = '''SELECT event_id, person, request, pickup_dropoff FROM PassengerPickedUpDropOff_events WHERE vehicle = ?'''
+    drivenlinks_query = '''SELECT link FROM enteredlink_events WHERE vehicle = ?'''
+    dictofPassengerOccupancy = defaultdict(list)
+    for id in drtvehicleids:
+        db_output = query_db(occupancy_query, cursor, id)
+        passengers = 0
+        for tuple in db_output:
+            if tuple[3] == 0:
+                passengers += 1
+            elif tuple [3] == 1:
+                passengers -= 1
+            occupancytuple = (tuple[0], passengers, tuple[2])
+            dictofPassengerOccupancy[id].append(occupancytuple)
+        # print(dictofPassengerOccupancy[id])
+            
