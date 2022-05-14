@@ -45,8 +45,9 @@ def create_drtvehicleids_list(cursor):
 
 def create_dict_entered_links(drtvehicleids, cursor, linkdict):
     print("creating dictionary with driven links for each VID")
-    query = '''     SELECT l.link, l.event_id, e.time 
-                    FROM enteredlink_events l INNER JOIN events e ON e.event_id == l.event_id 
+    query = '''     SELECT l.link, l.event_id, e.time, n.length, n.freespeed
+                    FROM (enteredlink_events l INNER JOIN events e ON e.event_id == l.event_id)
+                    INNER JOIN network_links n ON l.link == n.link_id
                     WHERE vehicle = ?'''
     for id in drtvehicleids:
         linkdict.add(id,get_links_for_VID(id, query, cursor))
@@ -54,8 +55,9 @@ def create_dict_entered_links(drtvehicleids, cursor, linkdict):
 
 def create_dict_left_links(drtvehicleids, cursor, linkdict):
     print("creating dictionary with driven links for each VID")
-    query = '''     SELECT l.link, l.event_id, e.time 
-                    FROM leftlink_events l INNER JOIN events e ON e.event_id == l.event_id 
+    query = '''     SELECT l.link, l.event_id, e.time, n.length, n.freespeed
+                    FROM (leftlink_events l INNER JOIN events e ON e.event_id == l.event_id)
+                    INNER JOIN network_links n ON l.link == n.link_id
                     WHERE vehicle = ?'''
     for id in drtvehicleids:
         linkdict.add(id,get_links_for_VID(id, query, cursor))
@@ -68,13 +70,17 @@ def get_links_for_VID(id, query, cursor) -> "list[Trip]":
         link = tuple[0]
         event_id = tuple[1]
         time = tuple[2]
-        res.append(Trip(link, event_id, time))
+        link_length = tuple[3]
+        link_freespeed = [4]
+        res.append(Trip(link, event_id, time, link_length, link_freespeed))
     return res
 
-def create_dict_links_length_freespeed(cursor):
+# aktuell unnecessary
+def create_dict_linkinformation(cursor):
     print("creating dictionaries with link ids, length and freespeed...")
     query = ''' SELECT link_id, length, freespeed FROM network_links '''
     linkslist_fromdb = query_db(query, cursor)
+
 
     dictofLinks_Length = {}
     dictofLinks_Freespeed = {}
