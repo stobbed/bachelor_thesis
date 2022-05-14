@@ -1,4 +1,6 @@
 from collections import defaultdict
+
+from regex import D
 from database_operations import query_db
 
 def create_drtvehicleids_list(cursor):
@@ -33,12 +35,13 @@ def create_drtvehicleids_list(cursor):
 def create_dict_vid_and_links(drtvehicleids, cursor):
     print("creating dictionary with driven links for each VID")
     dictofVIDandLinks = defaultdict(list)
-    query = '''SELECT link FROM vehicle_link_events WHERE vehicle = ?'''
+    query = '''SELECT link FROM enteredlink_events WHERE vehicle = ?'''
     for id in drtvehicleids:
         linksforvehicleIDS = query_db(query, cursor, id)
         for tuple in linksforvehicleIDS:
             x = tuple[0]
             dictofVIDandLinks[id].append(x)
+        dictofVIDandLinks[id] = list(dict.fromkeys(dictofVIDandLinks[id]))
     print("successfully created dictionary with VID and links")
     return dictofVIDandLinks
 
@@ -84,19 +87,24 @@ def create_dict_vid_distance_roadpct(dictofVIDandLinks, dictofLinks_Length, dict
         dictofVIDandRoadPct[id] = roadpctlist
     return dictofVIDandRoadPct, dictofVIDandDistance
 
-def get_passenger_occupancy(drtvehicleids, cursor):
+def get_passenger_occupancy(drtvehicleids, dictofVIDandLinks, cursor):
     occupancy_query = '''SELECT event_id, person, request, pickup_dropoff FROM PassengerPickedUpDropOff_events WHERE vehicle = ?'''
-    drivenlinks_query = '''SELECT link FROM enteredlink_events WHERE vehicle = ?'''
+    # drivenlinks_query = '''SELECT event_id FROM enteredlink_events WHERE vehicle = ? AND link = ?'''
+    drivenlinks_query = '''SELECT event_id, link, vehicle FROM enteredlink_events'''
+    db_output_links = query_db(drivenlinks_query, cursor)
     dictofPassengerOccupancy = defaultdict(list)
     for id in drtvehicleids:
-        db_output = query_db(occupancy_query, cursor, id)
+        db_output_occupancy = query_db(occupancy_query, cursor, id)
         passengers = 0
-        for tuple in db_output:
+        for tuple in db_output_occupancy:
             if tuple[3] == 0:
                 passengers += 1
             elif tuple [3] == 1:
                 passengers -= 1
             occupancytuple = (tuple[0], passengers, tuple[2])
             dictofPassengerOccupancy[id].append(occupancytuple)
-        # print(dictofPassengerOccupancy[id])
-            
+        
+        # for link in dictofVIDandLinks[id]:
+        #     db_output_links = query_db(drivenlinks_query, cursor, id, link)
+        #     print(id, link)
+        #     print(db_output_links)
