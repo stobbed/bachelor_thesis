@@ -5,14 +5,14 @@ import os.path
 from vtypes import *
 
 
-class GetLinksForEvent:
+class LinksForEvent:
     def __init__(self):
         self.d = {}
 
     def add(self,vehicle_id,link):
         self.d[vehicle_id] = link
 
-    def get(self,vehicle_id):
+    def gettrips(self,vehicle_id):
         return self.d[vehicle_id]
 
 from database_operations import *
@@ -31,8 +31,8 @@ class Db:
                 pass
         else:
             raise FileNotFoundError('Invalid path (dbfile): '+dbpath+' - *.db file doesn\'t exist.')
-        self.entered_dict = GetLinksForEvent()
-        self.left_dict = GetLinksForEvent()
+        self.entered_dict = LinksForEvent()
+        self.left_dict = LinksForEvent()
 
     def disconnect(self):
         self._cursor.close()
@@ -44,14 +44,15 @@ class Db:
         return create_drtvehicleids_list(self._cursor)
 
 
-    def get_vehicle_entered_links(self,ids) -> "GetLinksForEvent":
+    def get_vehicle_entered_links(self,ids) -> "LinksForEvent":
         create_dict_entered_links(ids, self._cursor,self.entered_dict)
         return self.entered_dict
 
-    def get_vehicle_left_links(self,ids) -> "GetLinksForEvent":
+    def get_vehicle_left_links(self,ids) -> "LinksForEvent":
         create_dict_left_links(ids, self._cursor,self.left_dict)
         return self.left_dict
 
+    # evtl. nicht benötigt
     def query(self,query,var=None,var2=None):
         test = query_db(query, self._cursor,var,var2)
         print(test)
@@ -62,7 +63,7 @@ class MockDb:
         return ["bmw","vw"]
 
     def get_vehicle_links(self,ids):
-        d = GetLinksForEvent()
+        d = LinksForEvent()
         d.add("bmw",[Trip("zittauer","1"),Trip("berliner","2")])
         # d.add("vw","456")
         return d
