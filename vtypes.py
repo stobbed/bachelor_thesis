@@ -9,4 +9,9 @@ class Trip:
 class Vehicle:
     id: str
     trips: list[Trip]
-    
+
+@dataclass
+class Links:
+    link: str
+    length: float
+    freespeed: float
