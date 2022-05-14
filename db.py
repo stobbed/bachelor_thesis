@@ -10,7 +10,6 @@ class GetLinksForEvent:
         self.d = {}
 
     def add(self,vehicle_id,link):
-
         self.d[vehicle_id] = link
 
     def get(self,vehicle_id):
@@ -19,12 +18,24 @@ class GetLinksForEvent:
 
 class Db:
     def __init__(self,dbpath):
-        self._sqliteConnection = sqlite3.connect(dbpath)
-        self._cursor = self._sqliteConnection.cursor()
+        if os.path.exists(dbpath):
+            try:
+                # connects to sqlite database file - if path is faulty, creates a new and empty database
+                self._sqliteConnection = sqlite3.connect(dbpath)
+                self._cursor = self._sqliteConnection.cursor()
+                print('Connection to SQLite-File',dbpath,'>> SUCCESS!')
+            except sqlite3.Error as error:
+                print('SQLite error: ', error)
+            finally:
+                pass
+        else:
+            raise FileNotFoundError('Invalid path (dbfile): '+dbpath+' - *.db file doesn\'t exist.')
         self.dict = GetLinksForEvent()
 
     def disconnect(self):
         self._cursor.close()
+        self._sqliteConnection.close()
+        print('The SQLite connection is closed')
     
 
     def get_vehicles(self) -> "list[str]":
