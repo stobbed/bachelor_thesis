@@ -14,7 +14,6 @@ from vtypes import *
 
 
 
-
 def create_drtvehicleids_list(cursor):
     """ creates a list containing the drtvehicleids that entered traffic 
         input: cursor
@@ -44,16 +43,23 @@ def create_drtvehicleids_list(cursor):
     print("Vehicle IDS sucessfully stored")
     return drtvehicleids
 
-def create_dict_vid_and_links(drtvehicleids, cursor,linkdict):
+def create_dict_entered_links(drtvehicleids, cursor, linkdict):
     print("creating dictionary with driven links for each VID")
-    dictofVIDandLinks = defaultdict(list)
-    query = '''SELECT link, event_id FROM enteredlink_events WHERE vehicle = ?'''
+    query = '''     SELECT l.link, l.event_id, e.time 
+                    FROM enteredlink_events l INNER JOIN events e ON e.event_id == l.event_id 
+                    WHERE vehicle = ?'''
     for id in drtvehicleids:
-        print(get_links_for_VID(id, query, cursor))
         linkdict.add(id,get_links_for_VID(id, query, cursor))
-        # dictofVIDandLinks[id] = list(dict.fromkeys(dictofVIDandLinks[id]))
     print("successfully created dictionary with VID and links")
-    # return dictofVIDandLinks
+
+def create_dict_left_links(drtvehicleids, cursor, linkdict):
+    print("creating dictionary with driven links for each VID")
+    query = '''     SELECT l.link, l.event_id, e.time 
+                    FROM leftlink_events l INNER JOIN events e ON e.event_id == l.event_id 
+                    WHERE vehicle = ?'''
+    for id in drtvehicleids:
+        linkdict.add(id,get_links_for_VID(id, query, cursor))
+    print("successfully created dictionary with VID and links")
 
 def get_links_for_VID(id, query, cursor) -> "list[Trip]":
     db_output = query_db(query, cursor, id)
@@ -61,7 +67,8 @@ def get_links_for_VID(id, query, cursor) -> "list[Trip]":
     for tuple in db_output:
         link = tuple[0]
         event_id = tuple[1]
-        res.append(Trip(link, event_id))
+        time = tuple[2]
+        res.append(Trip(link, event_id, time))
     return res
 
 def create_dict_links_length_freespeed(cursor):
