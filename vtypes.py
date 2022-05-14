@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 @dataclass
 class Trip:
-    street: str
+    link: str
     event_id: int
+    time: int
 
 @dataclass
 class Vehicle:
