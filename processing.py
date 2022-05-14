@@ -1,7 +1,19 @@
 from collections import defaultdict
 
-from regex import D
+# from regex import D
 from database_operations import query_db
+from vtypes import *
+
+# testtrip = Trip('Münzstraße', '123')
+# testtrip2 = Trip('Berliner Straße', '234')
+# print(testtrip.street)
+# event_id = '123'
+# globals()[f"evt_{event_id}"] = Trip('Münzstraße', '123')
+# print(evt_123)
+
+
+
+
 
 def create_drtvehicleids_list(cursor):
     """ creates a list containing the drtvehicleids that entered traffic 
@@ -32,18 +44,25 @@ def create_drtvehicleids_list(cursor):
     print("Vehicle IDS sucessfully stored")
     return drtvehicleids
 
-def create_dict_vid_and_links(drtvehicleids, cursor):
+def create_dict_vid_and_links(drtvehicleids, cursor,linkdict):
     print("creating dictionary with driven links for each VID")
     dictofVIDandLinks = defaultdict(list)
-    query = '''SELECT link FROM enteredlink_events WHERE vehicle = ?'''
+    query = '''SELECT link, event_id FROM enteredlink_events WHERE vehicle = ?'''
     for id in drtvehicleids:
-        linksforvehicleIDS = query_db(query, cursor, id)
-        for tuple in linksforvehicleIDS:
-            x = tuple[0]
-            dictofVIDandLinks[id].append(x)
-        dictofVIDandLinks[id] = list(dict.fromkeys(dictofVIDandLinks[id]))
+        print(get_links_for_VID(id, query, cursor))
+        linkdict.add(id,get_links_for_VID(id, query, cursor))
+        # dictofVIDandLinks[id] = list(dict.fromkeys(dictofVIDandLinks[id]))
     print("successfully created dictionary with VID and links")
-    return dictofVIDandLinks
+    # return dictofVIDandLinks
+
+def get_links_for_VID(id, query, cursor) -> "list[Trip]":
+    db_output = query_db(query, cursor, id)
+    res = []
+    for tuple in db_output:
+        link = tuple[0]
+        event_id = tuple[1]
+        res.append(Trip(link, event_id))
+    return res
 
 def create_dict_links_length_freespeed(cursor):
     print("creating dictionaries with link ids, length and freespeed...")

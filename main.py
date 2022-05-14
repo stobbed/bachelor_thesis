@@ -3,12 +3,17 @@ from timeit import default_timer as timer
 from collections import defaultdict
 import os.path
 import pickle
+
 from config import dbpath as dbfile_path
 from config import simulationdate
 
 from XML2DB_1pct import create_database
 from database_operations import establish_db_connection, close_db_connection
-from processing import create_drtvehicleids_list, create_dict_vid_and_links, create_dict_vid_distance_roadpct, create_dict_links_length_freespeed
+from processing import GetLinksForEvent, create_drtvehicleids_list, create_dict_vid_and_links, create_dict_vid_distance_roadpct, create_dict_links_length_freespeed, get_passenger_occupancy
+
+from types import Db
+
+
 
 # track time
 q_start=timer()
@@ -32,9 +37,14 @@ picklefilename = 'dictofVIDandLinks-' + simulationdate + '.pickle'
 if os.path.exists(picklefilename):
     with open(picklefilename, 'rb') as fp:
         dictofVIDandLinks = pickle.load(fp)
+    for id in drtvehicleids:
+        print(len(dictofVIDandLinks[id]))
+        dictofVIDandLinks[id] = list(dict.fromkeys(dictofVIDandLinks[id]))
+        print(len(dictofVIDandLinks[id]))
     print("List of vehicle IDS from .pickle file restored")
 else:
     print(".pickle file does not exist yet or is not up do date, creating list now and saving as .pickle")
+    dictLinks = GetLinksForEvent()
     dictofVIDandLinks = create_dict_vid_and_links(drtvehicleids, cursor)
     with open(picklefilename, 'wb') as fp:
         pickle.dump(dictofVIDandLinks, fp)
@@ -49,6 +59,8 @@ dictofVIDandRoadPct, dictofVIDandDistance = create_dict_vid_distance_roadpct(dic
 # with open('dictofVIDandLength.csv', 'w') as f:
 #     for key in dictofVIDandLength.keys():
 #         f.write("%s, %s\n"% (key, dictofVIDandLength[key]))
+
+get_passenger_occupancy(drtvehicleids, dictofVIDandLinks, cursor)
 
 close_db_connection(sqliteConnection, cursor)
 
