@@ -14,7 +14,9 @@ class LinksForEvent:
 
     def gettrips(self,vehicle_id):
         return self.d[vehicle_id]
+        
 
+#evtl nicht benötigt
 from database_operations import *
 
 class Db:
