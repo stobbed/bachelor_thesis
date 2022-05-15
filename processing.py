@@ -78,52 +78,6 @@ def get_links_for_VID(id, query, cursor) -> "list[Trip]":
                    link_length, link_freespeed))
     return res
 
-# aktuell unnecessary
-
-
-def create_dict_linkinformation(cursor):
-    print("creating dictionaries with link ids, length and freespeed...")
-    query = ''' SELECT link_id, length, freespeed FROM network_links '''
-    linkslist_fromdb = query_db(query, cursor)
-
-    dictofLinks_Length = {}
-    dictofLinks_Freespeed = {}
-    for tuple in linkslist_fromdb:
-        key = tuple[0]
-        dictofLinks_Length[key] = tuple[1]
-        dictofLinks_Freespeed[key] = tuple[2]
-    print("successfully created dictionaries with link ids, length and freespeed")
-    return dictofLinks_Length, dictofLinks_Freespeed
-
-
-def create_dict_vid_distance_roadpct(dictofVIDandLinks, dictofLinks_Length, dictofLinks_Freespeed, drtvehicleids):
-    print("creating dictionaries with VID and distance, as well as roadpct...")
-    dictofVIDandDistance = {}
-    dictofVIDandRoadPct = defaultdict(list)
-
-    in_town_max = 51 / 3.6
-    out_town_max = 101 / 3.6
-
-    for id in drtvehicleids:
-        dictofVIDandDistance[id] = 0
-        roadpctlist = []
-        roadpctlist.append(0)
-        roadpctlist.append(0)
-        roadpctlist.append(0)
-        for links in dictofVIDandLinks[id]:
-            dictofVIDandDistance[id] += dictofLinks_Length[str(links)]
-            if dictofLinks_Freespeed[str(links)] <= in_town_max:
-                roadpctlist[0] += dictofLinks_Length[str(links)]
-            if dictofLinks_Freespeed[str(links)] <= out_town_max and dictofLinks_Freespeed[str(links)] > in_town_max:
-                roadpctlist[1] += dictofLinks_Length[str(links)]
-            if dictofLinks_Freespeed[str(links)] > out_town_max:
-                roadpctlist[2] += dictofLinks_Length[str(links)]
-        roadpctlist[0] = roadpctlist[0]/dictofVIDandDistance[id]
-        roadpctlist[1] = roadpctlist[1]/dictofVIDandDistance[id]
-        roadpctlist[2] = roadpctlist[2]/dictofVIDandDistance[id]
-        dictofVIDandRoadPct[id] = roadpctlist
-    return dictofVIDandRoadPct, dictofVIDandDistance
-
 def create_vehicle_dict(vehicleids, enteredlinks):
     vehicledict = {}
     for id in vehicleids:
@@ -188,3 +142,49 @@ def picklefile_read(filename):
     with open(filename, 'rb') as fp:
         content = pickle.load(fp)
     return content
+
+
+# ------------------------------ not needed atm --------------------------------------------------
+
+def create_dict_vid_distance_roadpct(dictofVIDandLinks, dictofLinks_Length, dictofLinks_Freespeed, drtvehicleids):
+    print("creating dictionaries with VID and distance, as well as roadpct...")
+    dictofVIDandDistance = {}
+    dictofVIDandRoadPct = defaultdict(list)
+
+    in_town_max = 51 / 3.6
+    out_town_max = 101 / 3.6
+
+    for id in drtvehicleids:
+        dictofVIDandDistance[id] = 0
+        roadpctlist = []
+        roadpctlist.append(0)
+        roadpctlist.append(0)
+        roadpctlist.append(0)
+        for links in dictofVIDandLinks[id]:
+            dictofVIDandDistance[id] += dictofLinks_Length[str(links)]
+            if dictofLinks_Freespeed[str(links)] <= in_town_max:
+                roadpctlist[0] += dictofLinks_Length[str(links)]
+            if dictofLinks_Freespeed[str(links)] <= out_town_max and dictofLinks_Freespeed[str(links)] > in_town_max:
+                roadpctlist[1] += dictofLinks_Length[str(links)]
+            if dictofLinks_Freespeed[str(links)] > out_town_max:
+                roadpctlist[2] += dictofLinks_Length[str(links)]
+        roadpctlist[0] = roadpctlist[0]/dictofVIDandDistance[id]
+        roadpctlist[1] = roadpctlist[1]/dictofVIDandDistance[id]
+        roadpctlist[2] = roadpctlist[2]/dictofVIDandDistance[id]
+        dictofVIDandRoadPct[id] = roadpctlist
+    return dictofVIDandRoadPct, dictofVIDandDistance
+
+# aktuell unnecessary
+def create_dict_linkinformation(cursor):
+    print("creating dictionaries with link ids, length and freespeed...")
+    query = ''' SELECT link_id, length, freespeed FROM network_links '''
+    linkslist_fromdb = query_db(query, cursor)
+
+    dictofLinks_Length = {}
+    dictofLinks_Freespeed = {}
+    for tuple in linkslist_fromdb:
+        key = tuple[0]
+        dictofLinks_Length[key] = tuple[1]
+        dictofLinks_Freespeed[key] = tuple[2]
+    print("successfully created dictionaries with link ids, length and freespeed")
+    return dictofLinks_Length, dictofLinks_Freespeed
