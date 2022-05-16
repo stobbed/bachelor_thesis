@@ -1,6 +1,4 @@
 from timeit import default_timer as timer
-import pickle
-
 from config import dbpath
 from db import *
 
@@ -16,23 +14,22 @@ vehicleslist = db.get_vehicles()
 # with open('leftlinks.pickle', 'wb') as fp:
 #     pickle.dump(leftlinks, fp)
 
+enteredlinks_pickle = 'enteredlinks.pickle'
 if os.path.exists('enteredlinks.pickle'):
-    with open('enteredlinks.pickle', 'rb') as fp:
-        enteredlinks = pickle.load(fp)
+    enteredlinks= picklefile_read(enteredlinks_pickle)
 else:
     enteredlinks = db.get_vehicle_entered_links(vehicleslist)
-    with open('enteredlinks.pickle', 'wb') as fp:
-        pickle.dump(enteredlinks, fp)
+    picklefile_write(enteredlinks_pickle, enteredlinks)
 
-if os.path.exists('leftlinks.pickle'):
-    with open('leftlinks.pickle', 'rb') as fp:
-        leftlinks = pickle.load(fp)
+leftlinks_pickle = 'leftlinks.pickle'
+if os.path.exists(leftlinks_pickle):
+    leftlinks = picklefile_read(leftlinks_pickle)
 else:
     leftlinks = db.get_vehicle_left_links(vehicleslist)
-    with open('leftlinks.pickle', 'wb') as fp:
-        pickle.dump(leftlinks, fp)
+    picklefile_write(leftlinks_pickle, leftlinks)
 
 vehicledict = create_vehicle_dict(vehicleslist, enteredlinks)
+drt = create_fleet_information(vehicledict, vehicleslist)
 
 q_end=timer()
 q_duration=q_end-q_start
