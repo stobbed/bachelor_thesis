@@ -82,7 +82,6 @@ def create_vehicle_dict(vehicleids, enteredlinks):
     vehicledict = {}
     for id in vehicleids:
         vehicledict[id] = calculate_distance_roadpct(id, enteredlinks.gettrips(id))
-        print(vehicledict[id])
     return vehicledict
 
 def calculate_distance_roadpct(id, enteredlinks_for_id):
@@ -111,6 +110,18 @@ def calculate_distance_roadpct(id, enteredlinks_for_id):
     vehicleinfo = Vehicle(id, totaldistance, intownpct, countryroadpct, highwaypct)
     return vehicleinfo
 
+def create_fleet_information(vehicledict, vehicles):
+    fleetdistance = 0
+    maximum_distance = 0
+    for id in vehicles:
+        fleetdistance += vehicledict[id].traveleddistance
+        if vehicledict[id].traveleddistance > maximum_distance:
+            maximum_distance = vehicledict[id].traveleddistance
+            roadpct = []
+            roadpct.append(vehicledict[id].intown_pct)
+            roadpct.append(vehicledict[id].countryroad_pct)
+            roadpct.append(vehicledict[id].highway_pct)
+    return Fleet(vehicledict, fleetdistance, maximum_distance, roadpct)
 
 def get_passenger_occupancy(drtvehicleids, dictofVIDandLinks, cursor):
     occupancy_query = '''SELECT event_id, person, request, pickup_dropoff FROM PassengerPickedUpDropOff_events WHERE vehicle = ?'''
@@ -133,6 +144,7 @@ def get_passenger_occupancy(drtvehicleids, dictofVIDandLinks, cursor):
         #     db_output_links = query_db(drivenlinks_query, cursor, id, link)
         #     print(id, link)
         #     print(db_output_links)
+
 
 def picklefile_write(filename, content):
     with open(filename, 'wb') as fp:

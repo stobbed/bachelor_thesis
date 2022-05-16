@@ -9,6 +9,14 @@ class Trip:
     left_time: int = -1
 
 @dataclass
+class Fleet:
+    vehicles: dict
+    totaldistance: float
+    maximumdistance: float
+    maximumdistance_roadpct: list = -1
+    # distance
+
+@dataclass
 class Vehicle:
     id: str
     traveleddistance: float
