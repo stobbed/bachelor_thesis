@@ -3,6 +3,7 @@ import sqlite3
 from config import *
 import os.path
 from vtypes import *
+from XML2DB import *
 
 
 class LinksForEvent:
@@ -14,10 +15,7 @@ class LinksForEvent:
 
     def gettrips(self,vehicle_id):
         return self.d[vehicle_id]
-        
 
-#evtl nicht benötigt
-from database_operations import *
 
 class Db:
     def __init__(self,dbpath):
@@ -32,7 +30,11 @@ class Db:
             finally:
                 pass
         else:
-            raise FileNotFoundError('Invalid path (dbfile): '+dbpath+' - *.db file doesn\'t exist.')
+            create_database()
+            self._sqliteConnection = sqlite3.connect(dbpath)
+            self._cursor = self._sqliteConnection.cursor()
+            print('Connection to SQLite-File',dbpath,'>> SUCCESS!')
+            # raise FileNotFoundError('Invalid path (dbfile): '+dbpath+' - *.db file doesn\'t exist.')
         self.entered_dict = LinksForEvent()
         self.left_dict = LinksForEvent()
 
@@ -53,11 +55,6 @@ class Db:
     def get_vehicle_left_links(self,ids) -> "LinksForEvent":
         create_dict_left_links(ids, self._cursor,self.left_dict)
         return self.left_dict
-
-    # evtl. nicht benötigt
-    def query(self,query,var=None,var2=None):
-        test = query_db(query, self._cursor,var,var2)
-        print(test)
 
 
 class MockDb:  
