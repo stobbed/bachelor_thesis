@@ -78,6 +78,18 @@ def get_links_for_VID(id, query, cursor) -> "list[Trip]":
                    link_length, link_freespeed))
     return res
 
+def get_speed_for_link(enteredlinks, leftlinks, vehicleslist):
+    for id in vehicleslist:
+        i = 0
+        triplist = enteredlinks.d[id]
+        for trip in triplist:
+            link = trip.link
+            lefttripslist = leftlinks.d[id]
+            for lefttrip in lefttripslist:
+                if lefttrip.link == link:
+                    enteredlinks.d[id][i].left_time = lefttrip.entered_time
+            i += 1
+
 def create_vehicle_dict(vehicleids, enteredlinks):
     vehicledict = {}
     for id in vehicleids:
@@ -112,16 +124,22 @@ def calculate_distance_roadpct(id, enteredlinks_for_id):
 
 def create_fleet_information(vehicledict, vehicles):
     fleetdistance = 0
+    distance_intown = 0
+    distance_countryroad = 0
+    distance_highway = 0
     maximum_distance = 0
     for id in vehicles:
         fleetdistance += vehicledict[id].traveleddistance
+        distance_intown += vehicledict[id].traveleddistance * vehicledict[id].intown_pct
+        distance_countryroad += vehicledict[id].traveleddistance * vehicledict[id].countryroad_pct
+        distance_highway += vehicledict[id].traveleddistance * vehicledict[id].highway_pct
         if vehicledict[id].traveleddistance > maximum_distance:
             maximum_distance = vehicledict[id].traveleddistance
             roadpct = []
             roadpct.append(vehicledict[id].intown_pct)
             roadpct.append(vehicledict[id].countryroad_pct)
             roadpct.append(vehicledict[id].highway_pct)
-    return Fleet(vehicledict, fleetdistance, maximum_distance, roadpct)
+    return Fleet(vehicledict, fleetdistance, distance_intown, distance_countryroad, distance_highway, maximum_distance, roadpct)
 
 def get_passenger_occupancy(drtvehicleids, dictofVIDandLinks, cursor):
     occupancy_query = '''SELECT event_id, person, request, pickup_dropoff FROM PassengerPickedUpDropOff_events WHERE vehicle = ?'''
