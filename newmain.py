@@ -31,6 +31,8 @@ else:
 vehicledict = create_vehicle_dict(vehicleslist, enteredlinks)
 drt = create_fleet_information(vehicledict, vehicleslist)
 
+get_speed_for_link(enteredlinks, leftlinks, vehicleslist)
+
 q_end=timer()
 q_duration=q_end-q_start
 print('\n Total elapsed time: ', q_duration,'\n')
