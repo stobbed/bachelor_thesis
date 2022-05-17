@@ -78,6 +78,20 @@ def get_links_for_VID(id, query, cursor) -> "list[Trip]":
                    link_length, link_freespeed))
     return res
 
+def get_speed_for_link(enteredlinks, leftlinks, vehicleslist):
+    for id in vehicleslist:
+        i = 0
+        triplist = enteredlinks.d[id]
+        for trip in triplist:
+            link = trip.link
+            lefttripslist = leftlinks.d[id]
+            for lefttrip in lefttripslist:
+                if lefttrip.link == link:
+                    enteredlinks.d[id][i].left_time = lefttrip.entered_time
+            i += 1
+            print(enteredlinks.d[id][i].entered_time)
+            print(enteredlinks.d[id][i].left_time)
+
 def create_vehicle_dict(vehicleids, enteredlinks):
     vehicledict = {}
     for id in vehicleids:
