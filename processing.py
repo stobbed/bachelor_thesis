@@ -78,19 +78,137 @@ def get_links_for_VID(id, query, cursor) -> "list[Trip]":
                    link_length, link_freespeed))
     return res
 
-def get_speed_for_link(enteredlinks, leftlinks, vehicleslist):
+# def get_speeds_for_link_and_id(enteredlinks, leftlinks, vehicleslist, cursor):
+#     for id in vehicleslist:
+#         i = 0
+#         triplist = enteredlinks.d[id]
+#         for trip in triplist:
+#             link = trip.link
+#             lefttripslist = leftlinks.d[id]
+#             z = 0
+#             for lefttrip in lefttripslist:
+#                 if lefttrip.link == link and z >= i-5 and z <= i+5:
+#                     enteredlinks.d[id][i].left_time = lefttrip.entered_time
+#                     print(enteredlinks.d[id][i].entered_time)
+#                     print(enteredlinks.d[id][i].left_time)
+#                     print(link)
+#                     print(lefttrip.link)
+#                 z += 1
+#             if enteredlinks.d[id][i].left_time > enteredlinks.d[id][i].entered_time:
+#                 enteredlinks.d[id][i].actual_speed = enteredlinks.d[id][i].link_length / (enteredlinks.d[id][i].left_time - enteredlinks.d[id][i].entered_time)
+#                 enteredlinks.d[id][i].speed_pct = enteredlinks.d[id][i].actual_speed / enteredlinks.d[id][i].link_freespeed
+#                 if enteredlinks.d[id][i].speed_pct < .2:
+#                     times = get_time_for_dvrpTask(id, link, cursor)
+#                     if times != None:
+#                         for time in times:
+#                             if time >= enteredlinks.d[id][i].entered_time and time <= enteredlinks.d[id][i].left_time:
+#                                 print('vehicle: ' + str(id) + ' time match entered: ' + str(enteredlinks.d[id][i].entered_time) + ' left: ' + str(enteredlinks.d[id][i].left_time) + ' and stopped at: ' + str(time) + ' on link: ' + str(link))
+#                                 print(i)
+#                                 print(z)
+#                     # print('speed pct: ' + str(enteredlinks.d[id][i].speed_pct) + ' on link: ' + str(enteredlinks.d[id][i].link) + ' for vehicle: ' + str(id))
+#                     # print('actual speed: ' + str(enteredlinks.d[id][i].actual_speed))
+#                     # print('link speed: ' + str(enteredlinks.d[id][i].link_freespeed))
+#             else:
+#                 pass
+#                 # print('no left time, or does not make sense on: ' + str(enteredlinks.d[id][i].link))
+#             i += 1
+
+def get_speeds_for_link_and_id(enteredlinks, leftlinks, vehicleslist, cursor):
     for id in vehicleslist:
         i = 0
         triplist = enteredlinks.d[id]
         for trip in triplist:
             link = trip.link
             lefttripslist = leftlinks.d[id]
-            for lefttrip in lefttripslist:
-                if lefttrip.link == link:
-                    enteredlinks.d[id][i].left_time = lefttrip.entered_time
+            z = 0
+            for index in range(i, len(lefttripslist)):
+                if index >= i:
+                    lefttrip = lefttripslist[index]
+                    if lefttrip.link == link and enteredlinks.d[id][i].left_time == -1:
+                        enteredlinks.d[id][i].left_time = lefttrip.entered_time
+                        # print(index)
+                        # print(i)
+                        # print(enteredlinks.d[id][i].entered_time)
+                        # print(enteredlinks.d[id][i].left_time)
+                        # print(link)
+                        # print(lefttrip.link)
+            if enteredlinks.d[id][i].left_time > enteredlinks.d[id][i].entered_time:
+                enteredlinks.d[id][i].actual_speed = enteredlinks.d[id][i].link_length / (enteredlinks.d[id][i].left_time - enteredlinks.d[id][i].entered_time)
+                enteredlinks.d[id][i].speed_pct = enteredlinks.d[id][i].actual_speed / enteredlinks.d[id][i].link_freespeed
+                if enteredlinks.d[id][i].speed_pct < .2:
+                    times = get_time_for_dvrpTask(id, link, cursor)
+                    if times != None:
+                        for time in times:
+                            if time >= enteredlinks.d[id][i].entered_time and time <= enteredlinks.d[id][i].left_time:
+                                print('vehicle: ' + str(id) + ' time match entered: ' + str(enteredlinks.d[id][i].entered_time) + ' left: ' + str(enteredlinks.d[id][i].left_time) + ' and stopped at: ' + str(time) + ' on link: ' + str(link))
+                                print(i)
+                    # print('speed pct: ' + str(enteredlinks.d[id][i].speed_pct) + ' on link: ' + str(enteredlinks.d[id][i].link) + ' for vehicle: ' + str(id))
+                    # print('actual speed: ' + str(enteredlinks.d[id][i].actual_speed))
+                    # print('link speed: ' + str(enteredlinks.d[id][i].link_freespeed))
+            else:
+                pass
+                # print('no left time, or does not make sense on: ' + str(enteredlinks.d[id][i].link))
             i += 1
-            print(enteredlinks.d[id][i].entered_time)
-            print(enteredlinks.d[id][i].left_time)
+
+def get_speed(vehicleslist, cursor):
+    for id in vehicleslist:
+        get_links_entered_and_left_for_VID(id, cursor)
+
+def get_links_entered_and_left_for_VID(id, cursor):
+    # query = ''' SELECT e.event_id, e.time, type_id, v.link
+    #             FROM events e INNER JOIN vehicle_link_events v on v.event_id == e.event_id
+    #             WHERE e.vehicle = ? '''
+    query = ''' SELECT event_id, time, type_id
+                FROM events
+                WHERE vehicle = ? '''
+    db_output = query_db(query, cursor, id)
+    print(id)
+    for index in range(0, len(db_output)):
+        event_id = db_output[index][0]
+        time = db_output[index][1]
+        type_id = db_output[index][2]
+        # link = db_output[index][3]
+        if type_id == 7 or type_id == 8:
+            pass
+        else:
+            print(event_id, time, type_id)
+
+def get_links_for_event_id(cursor, event_id_link_dict):
+    query = ''' SELECT v.event_id, v.link, v.left_entered, n.length, n.freespeed
+                FROM vehicle_link_events v INNER JOIN network_links n ON v.link == n.link_id'''
+    db_output = query_db(query, cursor)
+    for tuple in db_output:
+        event_id = tuple [0]
+        link = tuple [1]
+        left_entered = tuple [2]
+        length = tuple [3]
+        freespeed = tuple [4]
+        event_id_link_dict[event_id] = Links(link, length, freespeed)
+    return event_id_link_dict
+
+def get_time_for_event_id (event_id, cursor):
+    query = ''' SELECT time FROM events WHERE event_id = ?'''
+    return query_db(query, cursor, event_id)
+
+# def get_speed2(vehicleslist, cursor):
+#     for id in vehicleslist:
+#         i = 0
+#         query = ''' SELECT e.time, v.link
+#                     FROM vehiclelink_events v INNER JOIN events e on e.event_id == v.event_id
+#                     WHERE v.vehicle = ? '''
+
+def get_time_for_dvrpTask(vehicleid, link, cursor):
+    query = '''     SELECT e.time
+                    FROM dvrpTask_events d INNER JOIN events e ON e.event_id == d.event_id
+                    WHERE d.dvrpVehicle = ? AND d.link = ? AND d.taskType = ?'''
+    taskType = 'STAY'
+    db_output = query_db(query, cursor, vehicleid, link, taskType)
+    time = []
+    for tuple in db_output:
+        for entry in tuple:
+            time.append(entry)
+    if time != []:
+        return time
 
 def create_vehicle_dict(vehicleids, enteredlinks):
     vehicledict = {}
@@ -99,7 +217,7 @@ def create_vehicle_dict(vehicleids, enteredlinks):
     return vehicledict
 
 def calculate_distance_roadpct(id, enteredlinks_for_id):
-    print("calculating distance and roadpct...")
+    # print("calculating distance and roadpct...")
 
     # evtl. speeds anpassen
     in_town_max = 51 / 3.6
@@ -126,16 +244,22 @@ def calculate_distance_roadpct(id, enteredlinks_for_id):
 
 def create_fleet_information(vehicledict, vehicles):
     fleetdistance = 0
+    distance_intown = 0
+    distance_countryroad = 0
+    distance_highway = 0
     maximum_distance = 0
     for id in vehicles:
         fleetdistance += vehicledict[id].traveleddistance
+        distance_intown += vehicledict[id].traveleddistance * vehicledict[id].intown_pct
+        distance_countryroad += vehicledict[id].traveleddistance * vehicledict[id].countryroad_pct
+        distance_highway += vehicledict[id].traveleddistance * vehicledict[id].highway_pct
         if vehicledict[id].traveleddistance > maximum_distance:
             maximum_distance = vehicledict[id].traveleddistance
             roadpct = []
             roadpct.append(vehicledict[id].intown_pct)
             roadpct.append(vehicledict[id].countryroad_pct)
             roadpct.append(vehicledict[id].highway_pct)
-    return Fleet(vehicledict, fleetdistance, maximum_distance, roadpct)
+    return Fleet(vehicledict, fleetdistance, distance_intown, distance_countryroad, distance_highway, maximum_distance, roadpct)
 
 def get_passenger_occupancy(drtvehicleids, dictofVIDandLinks, cursor):
     occupancy_query = '''SELECT event_id, person, request, pickup_dropoff FROM PassengerPickedUpDropOff_events WHERE vehicle = ?'''

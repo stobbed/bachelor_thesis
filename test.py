@@ -1,4 +1,5 @@
 import pytest
+import pickle
 
 def test_trip():
     testtrip = Trip('Münzstraße', '123')
@@ -7,7 +8,7 @@ def test_trip():
     d = {event_id: testtrip }
 
 
+with open('leftlinks.pickle', 'rb') as fp:
+    test = pickle.load(fp)
 
-globals()[f"evt_{event_id}"] = Trip('Münzstraße', '123')
-print(evt_123)
-
+print("hello")

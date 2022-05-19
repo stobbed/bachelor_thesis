@@ -7,11 +7,16 @@ class Trip:
     link_length: float
     link_freespeed: float
     left_time: int = -1
+    actual_speed: float = -1
+    speed_pct: float = -1
 
 @dataclass
 class Fleet:
     vehicles: dict
     totaldistance: float
+    distance_intown: float
+    distance_countryroad: float
+    distance_highway: float
     maximumdistance: float
     maximumdistance_roadpct: list = -1
     # distance

@@ -37,6 +37,7 @@ class Db:
             # raise FileNotFoundError('Invalid path (dbfile): '+dbpath+' - *.db file doesn\'t exist.')
         self.entered_dict = LinksForEvent()
         self.left_dict = LinksForEvent()
+        self.event_id_link_dict = {}
 
     def disconnect(self):
         self._cursor.close()
@@ -55,6 +56,18 @@ class Db:
     def get_vehicle_left_links(self,ids) -> "LinksForEvent":
         create_dict_left_links(ids, self._cursor,self.left_dict)
         return self.left_dict
+
+    def get_speed_for_link(self, vehicleslist):
+        return get_speed(vehicleslist, self._cursor)
+
+    def create_dict_event_id_links(self):
+        return get_links_for_event_id(self._cursor, self.event_id_link_dict)
+
+    def get_link(self, event_id):
+        return self.event_id_link_dict[event_id]
+
+    def get_time(self, event_id):
+        return get_time_for_event_id(event_id, self._cursor)
 
 
 class MockDb:  

@@ -4,10 +4,11 @@ import os.path
 import datetime
 
 # -------------------------------------------------------------------------------- #
-# adjust the paths in here
+# adjust paths and paramters in here
 
 xmlpath_nw = '/Users/dstobbe/Desktop/Uni/Bachelorarbeit/MATSIM Output/output-b-drt-mpm-1pct/berlin-drt-v5.5-1pct.output_network.xml.gz'
 xmlpath_evts = '/Users/dstobbe/Desktop/Uni/Bachelorarbeit/MATSIM Output/output-b-drt-mpm-1pct/berlin-drt-v5.5-1pct.output_events.xml.gz'
+publictransport_ignore = True
 
 # -------------------------------------------------------------------------------- #
 

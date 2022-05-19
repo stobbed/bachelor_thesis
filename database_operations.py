@@ -23,7 +23,7 @@ def establish_db_connection(dbfile_path):
         raise FileNotFoundError('Invalid path (dbfile): '+dbfile_path+' - *.db file doesn\'t exist.')
     return sqliteConnection, cursor
 
-def query_db(sql_query, cursor, var = None, var2 = None):
+def query_db(sql_query, cursor, var = None, var2 = None, var3 = None):
     """ executes queries on the opened sqlite database, therefore requires the prior execution of establish_db_connection
         inputs: sql_query (query that should be executed)
                 cursor (output of establish_db_connection, needed for executing queries)
@@ -34,8 +34,10 @@ def query_db(sql_query, cursor, var = None, var2 = None):
             cursor.execute(sql_query)
         elif var2 == None:
             cursor.execute(sql_query, (var,))
-        elif var2 != None:
+        elif var2 != None and var3 == None:
             cursor.execute(sql_query, (var, var2))
+        elif var3 != None:
+            cursor.execute(sql_query, (var, var2, var3))
         # save queried table locally in record
         record = cursor.fetchall()
         return record

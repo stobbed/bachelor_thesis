@@ -518,12 +518,24 @@ def create_database():
                 print('could not insert due to unknown type:',elem.attrib)
             if elem.attrib['type'] == 'left link' or elem.attrib['type'] == 'entered link':
                 single_row.append(elem.attrib['vehicle'])
+            elif elem.attrib['type'] == 'dvrpTaskStarted' or elem.attrib['type'] == 'dvrpTaskEnded':
+                single_row.append(elem.attrib['dvrpVehicle'])
+            elif elem.attrib['type'] == 'actstart' or elem.attrib['type'] == 'actend':
+                if elem.attrib['actType'] == 'DrtStay' or elem.attrib['actType'] == 'DrtBusStop':
+                    single_row.append(elem.attrib['person'])
+                else:
+                    single_row.append('None')
+            elif elem.attrib['type'] == 'vehicle enters traffic' or elem.attrib['type'] == 'vehicle leaves traffic':
+                single_row.append(elem.attrib['vehicle'])
             else:
                 single_row.append('None')
             query = '''INSERT INTO events(event_id, time, type_id, vehicle)
                         VALUES (?, ?, ?, ?);'''
             try:
-                cursor.execute(query, single_row)
+                if publictransport_ignore == True and str(single_row[3]).startswith('pt') or str(single_row[3]).startswith('freigth') or single_row[2] == 14 or single_row[2] == 15 or single_row[2] == 16 or single_row[2] == 17:
+                    pass
+                else:
+                    cursor.execute(query, single_row)
             except sqlite3.Error as error:
                 print('Error when inserting row into events table: ', error)
             finally:
