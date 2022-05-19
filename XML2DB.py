@@ -2,7 +2,7 @@ import gzip
 import xml.etree.cElementTree as ET
 import sqlite3
 import sys
-from config import xmlpath_nw, xmlpath_evts, dbpath
+from config import *
 from timeit import default_timer as timer
 import os.path
 
@@ -84,40 +84,44 @@ def create_database():
     i = 1;
     for event, elem in parser:
         if (event == 'end' and elem.tag == 'node'):
+            if str(elem.attrib['id']).startswith("pt") and publictransport_ignore == True:
+                pass
+            else:
+                node_record.append(elem.attrib['id'])
+                node_record.append(elem.attrib['x'])
+                node_record.append(elem.attrib['y'])
+                query = '''INSERT INTO network_nodes
+                            VALUES (?, ?, ?)'''
+                try:
+                    cursor.execute(query, node_record)
+                except sqlite3.Error as error:
+                    print('Error when inserting node record into network_nodes table: ', error)
 
-            node_record.append(elem.attrib['id'])
-            node_record.append(elem.attrib['x'])
-            node_record.append(elem.attrib['y'])
-            query = '''INSERT INTO network_nodes
-                        VALUES (?, ?, ?)'''
-            try:
-                cursor.execute(query, node_record)
-            except sqlite3.Error as error:
-                print('Error when inserting node record into network_nodes table: ', error)
-
-            finally:
-                node_record = []
+                finally:
+                    node_record = []
             elem.clear()
             root.clear()
         elif (event == 'end' and elem.tag == 'link'):
-
-            link_record.append(elem.attrib['id'])
-            link_record.append(elem.attrib['from'])
-            link_record.append(elem.attrib['to'])
-            link_record.append(elem.attrib['length'])
-            link_record.append(elem.attrib['capacity'])
-            link_record.append(elem.attrib['freespeed'])
-            link_record.append(elem.attrib['permlanes'])
-            link_record.append(elem.attrib['oneway'])
-            link_record.append(elem.attrib['modes'])
-            query = '''INSERT INTO network_links
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'''
-            try:
-                cursor.execute(query, link_record)
-            except sqlite3.Error as error:
-                print('Error when inserting link record into network_links table: ', error)
-            finally:
-                link_record = []
+            if str(elem.attrib['id']).startswith("pt") and publictransport_ignore == True:
+                pass
+            else:
+                link_record.append(elem.attrib['id'])
+                link_record.append(elem.attrib['from'])
+                link_record.append(elem.attrib['to'])
+                link_record.append(elem.attrib['length'])
+                link_record.append(elem.attrib['capacity'])
+                link_record.append(elem.attrib['freespeed'])
+                link_record.append(elem.attrib['permlanes'])
+                link_record.append(elem.attrib['oneway'])
+                link_record.append(elem.attrib['modes'])
+                query = '''INSERT INTO network_links
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+                try:
+                    cursor.execute(query, link_record)
+                except sqlite3.Error as error:
+                    print('Error when inserting link record into network_links table: ', error)
+                finally:
+                    link_record = []
             elem.clear()
             root.clear()
     print('network data fetched and in database!')
@@ -145,7 +149,8 @@ def create_database():
     query = '''CREATE TABLE events (
                 event_id INTEGER NOT NULL PRIMARY KEY,
                 time REAL NOT NULL,
-                type_id INTEGER NOT NULL);'''
+                type_id INTEGER NOT NULL,
+                vehicle TEXT);'''
     try:
         cursor.execute(query)
         print('created event table')
@@ -197,33 +202,47 @@ def create_database():
     except sqlite3.Error as error:
         print('Error when inserting types table: ', error)
 
-    print('creating transitdriverstarts_events table...')
-    query = '''CREATE TABLE transitdriverstarts_events (
-                transitdriverstarts_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                event_id INTEGER NOT NULL,
-                driverId TEXT,
-                vehicleId TEXT,
-                transitLineId TEXT,
-                transitRouteId TEXT,
-                departureId INTEGER);'''
-    try:
-        cursor.execute(query)
-        print('created transitdriverstarts_event table')
-    except sqlite3.Error as error:
-        print('Error when creating transitdriverstarts_event table: ', error)
+    if publictransport_ignore == False:
+        print('creating transitdriverstarts_events table...')
+        query = '''CREATE TABLE transitdriverstarts_events (
+                    transitdriverstarts_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    event_id INTEGER NOT NULL,
+                    driverId TEXT,
+                    vehicleId TEXT,
+                    transitLineId TEXT,
+                    transitRouteId TEXT,
+                    departureId INTEGER);'''
+        try:
+            cursor.execute(query)
+            print('created transitdriverstarts_event table')
+        except sqlite3.Error as error:
+            print('Error when creating transitdriverstarts_event table: ', error)
 
-    print('creating waitingforpt_events table...')
-    query = '''CREATE TABLE waitingforpt_events (
-                waitingforpt_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                event_id INTEGER NOT NULL,
-                agent INTEGER,
-                atStop TEXT,
-                destinationStop TEXT);'''
-    try:
-        cursor.execute(query)
-        print('created waitingforpt_events table')
-    except sqlite3.Error as error:
-        print('Error when creating waitingforpt_events table: ', error)
+        print('creating waitingforpt_events table...')
+        query = '''CREATE TABLE waitingforpt_events (
+                    waitingforpt_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    event_id INTEGER NOT NULL,
+                    agent INTEGER,
+                    atStop TEXT,
+                    destinationStop TEXT);'''
+        try:
+            cursor.execute(query)
+            print('created waitingforpt_events table')
+        except sqlite3.Error as error:
+            print('Error when creating waitingforpt_events table: ', error)
+
+        print('creating vehicle_facility_events table...')
+        query = '''CREATE TABLE vehicle_facility_events (
+                    vehicle_facility_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    event_id INTEGER NOT NULL,
+                    vehicle INTEGER,
+                    facility INTEGER,
+                    delay REAL);'''
+        try:
+            cursor.execute(query)
+            print('created vehicle_facility_events table')
+        except sqlite3.Error as error:
+            print('Error when creating vehicle_facility_events table: ', error)
 
     print('creating stuckandabort_events table...')
     query = '''CREATE TABLE stuckandabort_events (
@@ -295,7 +314,8 @@ def create_database():
                 vehicle_link_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                 event_id INTEGER NOT NULL,
                 link INTEGER,
-                vehicle INTEGER);'''
+                vehicle INTEGER,
+                left_entered TEXT);'''
     try:
         cursor.execute(query)
         print('created vehicle_link_events table')
@@ -313,19 +333,6 @@ def create_database():
         print('created person_vehicle_events table')
     except sqlite3.Error as error:
         print('Error when creating person_vehicle_events table: ', error)
-
-    print('creating vehicle_facility_events table...')
-    query = '''CREATE TABLE vehicle_facility_events (
-                vehicle_facility_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                event_id INTEGER NOT NULL,
-                vehicle INTEGER,
-                facility INTEGER,
-                delay REAL);'''
-    try:
-        cursor.execute(query)
-        print('created vehicle_facility_events table')
-    except sqlite3.Error as error:
-        print('Error when creating vehicle_facility_events table: ', error)
 
     print('creating vehicle_traffic_events table...')
     query = '''CREATE TABLE vehicle_traffic_events (
@@ -509,8 +516,12 @@ def create_database():
             else:
                 single_row.append(-1)
                 print('could not insert due to unknown type:',elem.attrib)
-            query = '''INSERT INTO events(event_id, time, type_id)
-                        VALUES (?, ?, ?);'''
+            if elem.attrib['type'] == 'left link' or elem.attrib['type'] == 'entered link':
+                single_row.append(elem.attrib['vehicle'])
+            else:
+                single_row.append('None')
+            query = '''INSERT INTO events(event_id, time, type_id, vehicle)
+                        VALUES (?, ?, ?, ?);'''
             try:
                 cursor.execute(query, single_row)
             except sqlite3.Error as error:
@@ -518,33 +529,41 @@ def create_database():
             finally:
                 single_row = []
 
+
             # actstart and actend type table
+            publictransport_event = False
             if elem.attrib['type'] == 'actstart' or elem.attrib['type'] == 'actend':
-                single_row.append(i)
-                single_row.append(elem.attrib['person'])
-                single_row.append(elem.attrib['link'])
-                single_row.append(elem.attrib['actType'])
-                query = '''INSERT INTO act_events(event_id, person, link, actType)
-                            VALUES (?, ?, ?, ?);'''
-                try:
-                    cursor.execute(query, single_row)
-                except sqlite3.Error as error:
-                    print('Error when inserting row into act_events table: ', error)
-                finally:
-                    single_row = []
+                if elem.attrib['actType'] == 'pt interaction' and publictransport_ignore == True:
+                    publictransport_event = True
+                else:
+                    single_row.append(i)
+                    single_row.append(elem.attrib['person'])
+                    single_row.append(elem.attrib['link'])
+                    single_row.append(elem.attrib['actType'])
+                    query = '''INSERT INTO act_events(event_id, person, link, actType)
+                                VALUES (?, ?, ?, ?);'''
+                    try:
+                        cursor.execute(query, single_row)
+                    except sqlite3.Error as error:
+                        print('Error when inserting row into act_events table: ', error)
+                    finally:
+                        single_row = []
             elif elem.attrib['type'] == 'departure' or elem.attrib['type'] == 'arrival':
-                single_row.append(i)
-                single_row.append(elem.attrib['person'])
-                single_row.append(elem.attrib['link'])
-                single_row.append(elem.attrib['legMode'])
-                query = '''INSERT INTO dep_arr_events(event_id, person, link, legMode)
-                            VALUES (?, ?, ?, ?);'''
-                try:
-                    cursor.execute(query, single_row)
-                except sqlite3.Error as error:
-                    print('Error when inserting row into dep_arr_events table: ', error)
-                finally:
-                    single_row = []
+                if str(elem.attrib['link']).startswith("pt") and publictransport_ignore == True:
+                    publictransport_event = True
+                else:
+                    single_row.append(i)
+                    single_row.append(elem.attrib['person'])
+                    single_row.append(elem.attrib['link'])
+                    single_row.append(elem.attrib['legMode'])
+                    query = '''INSERT INTO dep_arr_events(event_id, person, link, legMode)
+                                VALUES (?, ?, ?, ?);'''
+                    try:
+                        cursor.execute(query, single_row)
+                    except sqlite3.Error as error:
+                        print('Error when inserting row into dep_arr_events table: ', error)
+                    finally:
+                        single_row = []
             elif elem.attrib['type'] == 'travelled':
                 single_row.append(i)
                 single_row.append(elem.attrib['person'])
@@ -558,114 +577,123 @@ def create_database():
                 finally:
                     single_row = []
             elif elem.attrib['type'] == 'PersonEntersVehicle' or elem.attrib['type'] == 'PersonLeavesVehicle':
-                single_row.append(i)
-                single_row.append(elem.attrib['person'])
-                single_row.append(elem.attrib['vehicle'])
-                query = '''INSERT INTO person_vehicle_events(event_id, person, vehicle)
-                            VALUES (?, ?, ?);'''
-                try:
-                    cursor.execute(query, single_row)
-                except sqlite3.Error as error:
-                    print('Error when inserting row into person_vehicle_events table: ', error)
-                finally:
-                    single_row = []
-            # there seems to be a doubling of code, probably can be removed here
-            #elif elem.attrib['type'] == 'departure' or elem.attrib['type'] == 'arrival':
-            #    single_row.append(i)
-            #    single_row.append(elem.attrib['person'])
-            #    single_row.append(elem.attrib['link'])
-            #    single_row.append(elem.attrib['legMode'])
-            #    query = '''INSERT INTO dep_arr_events(event_id, person, link, legMode)
-            #                VALUES (?, ?, ?, ?);'''
-            #    try:
-            #        cursor.execute(query, single_row)
-            #    except sqlite3.Error as error:
-            #        print('Error when inserting row into dep_arr_events table: ', error)
-            #    finally:
-            #        single_row = []
+                if str(elem.attrib['vehicle']).startswith("pt") and publictransport_ignore == True:
+                    publictransport_event = True
+                else:
+                    single_row.append(i)
+                    single_row.append(elem.attrib['person'])
+                    single_row.append(elem.attrib['vehicle'])
+                    query = '''INSERT INTO person_vehicle_events(event_id, person, vehicle)
+                                VALUES (?, ?, ?);'''
+                    try:
+                        cursor.execute(query, single_row)
+                    except sqlite3.Error as error:
+                        print('Error when inserting row into person_vehicle_events table: ', error)
+                    finally:
+                        single_row = []
             elif elem.attrib['type'] == 'vehicle enters traffic' or elem.attrib['type'] == 'vehicle leaves traffic':
-                single_row.append(i)
-                single_row.append(elem.attrib['person'])
-                single_row.append(elem.attrib['link'])
-                single_row.append(elem.attrib['vehicle'])
-                single_row.append(elem.attrib['networkMode'])
-                single_row.append(elem.attrib['relativePosition'])
-                query = '''INSERT INTO vehicle_traffic_events(event_id, person, link, vehicle, networkMode, relativePosition)
-                            VALUES (?, ?, ?, ?, ?, ?);'''
-                try:
-                    cursor.execute(query, single_row)
-                except sqlite3.Error as error:
-                    print('Error when inserting row into vehicle_traffic_events table: ', error)
-                finally:
-                    single_row = []
+                if str(elem.attrib['link']).startswith("pt") and publictransport_ignore == True:
+                    publictransport_event = True
+                else:
+                    single_row.append(i)
+                    single_row.append(elem.attrib['person'])
+                    single_row.append(elem.attrib['link'])
+                    single_row.append(elem.attrib['vehicle'])
+                    single_row.append(elem.attrib['networkMode'])
+                    single_row.append(elem.attrib['relativePosition'])
+                    query = '''INSERT INTO vehicle_traffic_events(event_id, person, link, vehicle, networkMode, relativePosition)
+                                VALUES (?, ?, ?, ?, ?, ?);'''
+                    try:
+                        cursor.execute(query, single_row)
+                    except sqlite3.Error as error:
+                        print('Error when inserting row into vehicle_traffic_events table: ', error)
+                    finally:
+                        single_row = []
             elif elem.attrib['type'] == 'left link' or elem.attrib['type'] == 'entered link':
-                single_row.append(i)
-                single_row.append(elem.attrib['link'])
-                single_row.append(elem.attrib['vehicle'])
-                query = '''INSERT INTO vehicle_link_events(event_id, link, vehicle)
-                            VALUES (?, ?, ?);'''
-                try:
-                    cursor.execute(query, single_row)
-                except sqlite3.Error as error:
-                    print('Error when inserting row into vehicle_link_events table: ', error)
-                finally:
-                    if elem.attrib['type'] == 'entered link':
-                        query = '''INSERT INTO enteredlink_events(event_id, link, vehicle)
-                            VALUES (?, ?, ?);'''
-                        try:
-                            cursor.execute(query, single_row)
-                        except sqlite3.Error as error:
-                            print('Error when inserting row into enteredlink_events table: ', error)
+                if str(elem.attrib['link']).startswith("pt") and publictransport_ignore == True:
+                    publictransport_event = True
+                else:
+                    single_row.append(i)
+                    single_row.append(elem.attrib['link'])
+                    single_row.append(elem.attrib['vehicle'])
                     if elem.attrib['type'] == 'left link':
-                        query = '''INSERT INTO leftlink_events(event_id, link, vehicle)
-                            VALUES (?, ?, ?);'''
-                        try:
-                            cursor.execute(query, single_row)
-                        except sqlite3.Error as error:
-                            print('Error when inserting row into leftlink_events table: ', error)
-                    single_row = []
+                        single_row.append('left')
+                    elif elem.attrib['type'] == 'entered link':
+                        single_row.append('entered')
+                    query = '''INSERT INTO vehicle_link_events(event_id, link, vehicle, left_entered)
+                                VALUES (?, ?, ?, ?);'''
+                    try:
+                        cursor.execute(query, single_row)
+                    except sqlite3.Error as error:
+                        print('Error when inserting row into vehicle_link_events table: ', error)
+                    finally:
+                        single_row.pop()
+                        if elem.attrib['type'] == 'entered link':
+                            query = '''INSERT INTO enteredlink_events(event_id, link, vehicle)
+                                VALUES (?, ?, ?);'''
+                            try:
+                                cursor.execute(query, single_row)
+                            except sqlite3.Error as error:
+                                print('Error when inserting row into enteredlink_events table: ', error)
+                        if elem.attrib['type'] == 'left link':
+                            query = '''INSERT INTO leftlink_events(event_id, link, vehicle)
+                                VALUES (?, ?, ?);'''
+                            try:
+                                cursor.execute(query, single_row)
+                            except sqlite3.Error as error:
+                                print('Error when inserting row into leftlink_events table: ', error)
+                        single_row = []
             elif elem.attrib['type'] == 'VehicleArrivesAtFacility' or elem.attrib['type'] == 'VehicleDepartsAtFacility':
-                single_row.append(i)
-                single_row.append(elem.attrib['vehicle'])
-                single_row.append(elem.attrib['facility'])
-                single_row.append(elem.attrib['delay'])
-                query = '''INSERT INTO vehicle_facility_events(event_id, vehicle, facility, delay)
-                            VALUES (?, ?, ?, ?);'''
-                try:
-                    cursor.execute(query, single_row)
-                except sqlite3.Error as error:
-                    print('Error when inserting row into vehicle_facility_events table: ', error)
-                finally:
-                    single_row = []
+                if str(elem.attrib['vehicle']).startswith("pt") and publictransport_ignore == True:
+                    publictransport_event = True
+                else:
+                    single_row.append(i)
+                    single_row.append(elem.attrib['vehicle'])
+                    single_row.append(elem.attrib['facility'])
+                    single_row.append(elem.attrib['delay'])
+                    query = '''INSERT INTO vehicle_facility_events(event_id, vehicle, facility, delay)
+                                VALUES (?, ?, ?, ?);'''
+                    try:
+                        cursor.execute(query, single_row)
+                    except sqlite3.Error as error:
+                        print('Error when inserting row into vehicle_facility_events table: ', error)
+                    finally:
+                        single_row = []
             elif elem.attrib['type'] == 'TransitDriverStarts':
-                single_row.append(i)
-                single_row.append(elem.attrib['driverId'])
-                single_row.append(elem.attrib['vehicleId'])
-                single_row.append(elem.attrib['transitLineId'])
-                single_row.append(elem.attrib['transitRouteId'])
-                single_row.append(elem.attrib['departureId'])
-                query = '''INSERT INTO transitdriverstarts_events(event_id, driverId, vehicleId, transitLineId, transitRouteId, departureId)
-                            VALUES (?, ?, ?, ?, ?, ?);'''
-                try:
-                    cursor.execute(query, single_row)
-                except sqlite3.Error as error:
-                    print('Error when inserting row into transitdriverstarts_events table: ', error)
-                finally:
-                    single_row = []
+                if str(elem.attrib['driverId']).startswith("pt") and publictransport_ignore == True:
+                    publictransport_event = True
+                else:
+                    single_row.append(i)
+                    single_row.append(elem.attrib['driverId'])
+                    single_row.append(elem.attrib['vehicleId'])
+                    single_row.append(elem.attrib['transitLineId'])
+                    single_row.append(elem.attrib['transitRouteId'])
+                    single_row.append(elem.attrib['departureId'])
+                    query = '''INSERT INTO transitdriverstarts_events(event_id, driverId, vehicleId, transitLineId, transitRouteId, departureId)
+                                VALUES (?, ?, ?, ?, ?, ?);'''
+                    try:
+                        cursor.execute(query, single_row)
+                    except sqlite3.Error as error:
+                        print('Error when inserting row into transitdriverstarts_events table: ', error)
+                    finally:
+                        single_row = []
             elif elem.attrib['type'] == 'waitingForPt':
-                single_row.append(i)
-                # could also implement writing down the person here
-                single_row.append(elem.attrib['agent'])
-                single_row.append(elem.attrib['atStop'])
-                single_row.append(elem.attrib['destinationStop'])
-                query = '''INSERT INTO waitingforpt_events(event_id, agent, atStop, destinationStop)
-                            VALUES (?, ?, ?, ?);'''
-                try:
-                    cursor.execute(query, single_row)
-                except sqlite3.Error as error:
-                    print('Error when inserting row into waitingforpt_events table: ', error)
-                finally:
-                    single_row = []
+                if publictransport_ignore == True:
+                    publictransport_event = True
+                else:
+                    single_row.append(i)
+                    # could also implement writing down the person here
+                    single_row.append(elem.attrib['agent'])
+                    single_row.append(elem.attrib['atStop'])
+                    single_row.append(elem.attrib['destinationStop'])
+                    query = '''INSERT INTO waitingforpt_events(event_id, agent, atStop, destinationStop)
+                                VALUES (?, ?, ?, ?);'''
+                    try:
+                        cursor.execute(query, single_row)
+                    except sqlite3.Error as error:
+                        print('Error when inserting row into waitingforpt_events table: ', error)
+                    finally:
+                        single_row = []
             elif elem.attrib['type'] == 'vehicle aborts':
                 single_row.append(i)
                 single_row.append(elem.attrib['link'])
