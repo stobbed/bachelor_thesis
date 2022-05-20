@@ -1,3 +1,4 @@
+from audioop import add
 from collections import defaultdict
 import pickle
 
@@ -42,27 +43,88 @@ def create_drtvehicleids_list(cursor):
     print("Vehicle IDS sucessfully stored")
     return drtvehicleids
 
+def create_link_information_dict(cursor, link_information_dict):
+    query = ''' SELECT link_id, length, freespeed
+                FROM network_links'''
+    db_output = query_db(query, cursor)
+    for tuple in db_output:
+        link_information_dict[tuple[0]] = Links(tuple[0], tuple[1], tuple[2])
 
-def create_dict_entered_links(drtvehicleids, cursor, linkdict):
-    print("creating dictionary with driven links for each VID")
-    query = '''     SELECT l.link, l.event_id, e.time, n.length, n.freespeed
-                    FROM (enteredlink_events l INNER JOIN events e ON e.event_id == l.event_id)
-                    INNER JOIN network_links n ON l.link == n.link_id
-                    WHERE vehicle = ?'''
-    for id in drtvehicleids:
-        linkdict.add(id, get_links_for_VID(id, query, cursor))
-    print("successfully created dictionary with VID and links")
+def get_links_for_event_id(cursor, event_id_link_dict, link_information_dict):
+    # query = ''' SELECT v.event_id, v.link, v.left_entered, n.length, n.freespeed
+    #             FROM vehicle_link_events v INNER JOIN network_links n ON v.link == n.link_id'''
+    query = ''' SELECT event_id, link, left_entered
+                FROM vehicle_link_events '''
+    db_output = query_db(query, cursor)
+    for tuple in db_output:
+        event_id = tuple [0]
+        link = tuple [1]
+        left_entered = tuple [2]
+        length = link_information_dict[str(link)].length
+        freespeed = link_information_dict[str(link)].freespeed
+        event_id_link_dict[event_id] = Links(link, length, freespeed, left_entered)
+    return event_id_link_dict
+
+def create_entered_link_dict(vehicleslist, event_id_link_dict, vehicledict, cursor):
+    for id in vehicleslist:
+        query = ''' SELECT event_id, time, type_id, vehicle
+                FROM events 
+                WHERE vehicle = ?'''
+        db_output = query_db(query, cursor, id)
+        vehicledict.d[id] = []
+        tripindex = 0
+        for index in range(0, len(db_output)):
+            event_id = db_output[index][0]
+            time = db_output[index][1]
+            type_id = db_output[index][2]
+            vehicle = db_output[index][3]
+            if type_id == 8:
+                trip = event_id_link_dict[event_id]
+                link = trip.link
+                length = trip.length
+                freespeed = trip.freespeed
+                vehicledict.d[vehicle].append(Trip(link, event_id, time, length, freespeed))
+                tripindex += 1
+            elif type_id == 7:
+                if tripindex != 0:
+                    if db_output[index-1][2] == 8 and vehicledict.d[vehicle][tripindex-1].link == event_id_link_dict[event_id].link:
+                        # print(vehicledict.d[vehicle][tripindex-1].time, time)
+                        add_left_time_to_link(vehicle, tripindex, time, vehicledict)
+                        # print(vehicledict.d[vehicle][tripindex-1].entered_time, vehicledict.d[vehicle][tripindex-1].left_time, vehicledict.d[vehicle][tripindex-1].actual_speed)
 
 
-def create_dict_left_links(drtvehicleids, cursor, linkdict):
-    print("creating dictionary with driven links for each VID")
-    query = '''     SELECT l.link, l.event_id, e.time, n.length, n.freespeed
-                    FROM (leftlink_events l INNER JOIN events e ON e.event_id == l.event_id)
-                    INNER JOIN network_links n ON l.link == n.link_id
-                    WHERE vehicle = ?'''
-    for id in drtvehicleids:
-        linkdict.add(id, get_links_for_VID(id, query, cursor))
-    print("successfully created dictionary with VID and links")
+def add_left_time_to_link(vehicle, tripindex, left_time, vehicledict):
+    trip = vehicledict.d[vehicle][tripindex-1]
+    link = trip.link
+    event_id = trip.event_id
+    entered_time = trip.entered_time
+    link_length = trip.link_length
+    link_freespeed = trip.link_freespeed
+    actual_speed = link_length/(left_time - entered_time)
+    speed_pct = actual_speed/link_freespeed
+    vehicledict.d[vehicle][tripindex-1] = Trip(link, event_id, entered_time, link_length, link_freespeed, left_time, actual_speed, speed_pct)
+
+
+# def create_dict_entered_links(drtvehicleids, cursor, linkdict):
+#     print("creating dictionary with driven links for each VID")
+#     query = '''     SELECT l.link, l.event_id, e.time, n.length, n.freespeed
+#                     FROM (enteredlink_events l INNER JOIN events e ON e.event_id == l.event_id)
+#                     INNER JOIN network_links n ON l.link == n.link_id
+#                     WHERE vehicle = ?'''
+#     for id in drtvehicleids:
+#         linkdict.add(id, get_links_for_VID(id, query, cursor))
+#     print("successfully created dictionary with VID and links")
+
+
+# def create_dict_left_links(drtvehicleids, cursor, linkdict):
+#     print("creating dictionary with driven links for each VID")
+#     query = '''     SELECT l.link, l.event_id, e.time, n.length, n.freespeed
+#                     FROM (leftlink_events l INNER JOIN events e ON e.event_id == l.event_id)
+#                     INNER JOIN network_links n ON l.link == n.link_id
+#                     WHERE vehicle = ?'''
+#     for id in drtvehicleids:
+#         linkdict.add(id, get_links_for_VID(id, query, cursor))
+#     print("successfully created dictionary with VID and links")
     
 
 def get_links_for_VID(id, query, cursor) -> "list[Trip]":
@@ -172,19 +234,6 @@ def get_links_entered_and_left_for_VID(id, cursor):
             pass
         else:
             print(event_id, time, type_id)
-
-def get_links_for_event_id(cursor, event_id_link_dict):
-    query = ''' SELECT v.event_id, v.link, v.left_entered, n.length, n.freespeed
-                FROM vehicle_link_events v INNER JOIN network_links n ON v.link == n.link_id'''
-    db_output = query_db(query, cursor)
-    for tuple in db_output:
-        event_id = tuple [0]
-        link = tuple [1]
-        left_entered = tuple [2]
-        length = tuple [3]
-        freespeed = tuple [4]
-        event_id_link_dict[event_id] = Links(link, length, freespeed)
-    return event_id_link_dict
 
 def get_time_for_event_id (event_id, cursor):
     query = ''' SELECT time FROM events WHERE event_id = ?'''

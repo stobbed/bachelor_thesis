@@ -37,3 +37,4 @@ class Links:
     link: str
     length: float
     freespeed: float
+    entered_left : str = None

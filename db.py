@@ -4,14 +4,15 @@ from config import *
 import os.path
 from vtypes import *
 from XML2DB import *
+from collections import defaultdict
 
 
 class LinksForEvent:
     def __init__(self):
         self.d = {}
 
-    def add(self,vehicle_id,link):
-        self.d[vehicle_id] = link
+    def add(self,event_id,trip):
+        self.d[event_id] = trip
 
     def gettrips(self,vehicle_id):
         return self.d[vehicle_id]
@@ -35,9 +36,11 @@ class Db:
             self._cursor = self._sqliteConnection.cursor()
             print('Connection to SQLite-File',dbpath,'>> SUCCESS!')
             # raise FileNotFoundError('Invalid path (dbfile): '+dbpath+' - *.db file doesn\'t exist.')
-        self.entered_dict = LinksForEvent()
-        self.left_dict = LinksForEvent()
+        # self.entered_dict = LinksForEvent()
+        # self.left_dict = LinksForEvent()
         self.event_id_link_dict = {}
+        self.vehicle = LinksForEvent()
+        self.link_information_dict = {}
 
     def disconnect(self):
         self._cursor.close()
@@ -48,20 +51,27 @@ class Db:
     def get_vehicles(self) -> "list[str]":
         return create_drtvehicleids_list(self._cursor)
 
+    def create_dict_link_info(self):
+        create_link_information_dict(self._cursor, self.link_information_dict)
+        return self.link_information_dict
 
-    def get_vehicle_entered_links(self,ids) -> "LinksForEvent":
-        create_dict_entered_links(ids, self._cursor,self.entered_dict)
-        return self.entered_dict
+    def create_dict_event_id_links(self):
+        return get_links_for_event_id(self._cursor, self.event_id_link_dict, self.link_information_dict)
 
-    def get_vehicle_left_links(self,ids) -> "LinksForEvent":
-        create_dict_left_links(ids, self._cursor,self.left_dict)
-        return self.left_dict
+    def create_driven_links_dict(self, vehicleslist):
+        create_entered_link_dict(vehicleslist, self.event_id_link_dict, self.vehicle, self._cursor)
+        return self.vehicle
+
+    # def get_vehicle_entered_links(self,ids) -> "LinksForEvent":
+    #     create_dict_entered_links(ids, self._cursor,self.entered_dict)
+    #     return self.entered_dict
+
+    # def get_vehicle_left_links(self,ids) -> "LinksForEvent":
+    #     create_dict_left_links(ids, self._cursor,self.left_dict)
+    #     return self.left_dict
 
     def get_speed_for_link(self, vehicleslist):
         return get_speed(vehicleslist, self._cursor)
-
-    def create_dict_event_id_links(self):
-        return get_links_for_event_id(self._cursor, self.event_id_link_dict)
 
     def get_link(self, event_id):
         return self.event_id_link_dict[event_id]
