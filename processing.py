@@ -1,6 +1,7 @@
 from audioop import add
 from collections import defaultdict
 import pickle
+from re import I
 
 # from regex import D
 from database_operations import query_db
@@ -89,12 +90,49 @@ def create_entered_link_dict(vehicleslist, event_id_link_dict, vehicledict, curs
                 if tripindex != 0:
                     if db_output[index-1][2] == 8 and vehicledict.d[vehicle][tripindex-1].link == event_id_link_dict[event_id].link:
                         # print(vehicledict.d[vehicle][tripindex-1].time, time)
-                        add_left_time_to_link(vehicle, tripindex, time, vehicledict)
-                        # print(vehicledict.d[vehicle][tripindex-1].entered_time, vehicledict.d[vehicle][tripindex-1].left_time, vehicledict.d[vehicle][tripindex-1].actual_speed)
+                        entered_index = tripindex -1
+                        add_left_time_to_link(vehicle, entered_index, time, vehicledict)
+            elif type_id == 4 and db_output[index+1][2] == 7:
+                stop1 = False
+                stop2 = False
+                index_entered_link = index
+                index_left_link = index + 1
+                index_entered_traffic = index
+                index_left_traffic = index
+                while db_output[index_entered_link][2] != 8 and stop1 == False:
+                    if index_entered_link == 1:
+                        stop1 = True
+                    index_entered_link -= 1
+                while db_output[index_left_traffic][2] != 9 and stop2 == False:
+                    if index_left_traffic== 1:
+                        stop2 = True
+                    index_left_traffic -= 1
+                query = ''' SELECT link FROM vehicle_traffic_events WHERE event_id = ?'''
+                if index_left_traffic != 0:
+                    link_entered_traffic = query_db(query, cursor, db_output[index_entered_traffic][0])[0]
+                    link_left_traffic = query_db(query, cursor, db_output[index_left_traffic][0])[0]
+                    if event_id_link_dict[db_output[index_entered_link][0]].link == link_entered_traffic[0] and link_left_traffic[0] == link_entered_traffic[0] and event_id_link_dict[db_output[index_entered_link][0]].link == event_id_link_dict[db_output[index_left_link][0]].link:
+                        time_spent_outside_traffic = db_output[index_entered_traffic][1] - db_output[index_left_traffic][1]
+                        time_difference = db_output[index_left_traffic][1] - db_output[index_entered_link][1] + db_output[index_left_link][1] - db_output[index_entered_traffic][1]
+                        left_time_corrected = db_output[index_left_link][1] - time_spent_outside_traffic
+                        i = 0
+                        for trip in vehicledict.d[id]:
+                            if trip.event_id == db_output[index_entered_link][0]:
+                                index_entered_link_corrected = i
+                            i += 1
+                        corrected = True
+                        add_left_time_to_link(vehicle, index_entered_link_corrected, left_time_corrected, vehicledict, corrected)
+                        # print(vehicledict.d[vehicle][index_entered_link_corrected])
+                
+                
+
+            # wenn Fahrzeug Traffic leaved, trz volle Link Länge mit einrechnen und Freespeed annehmen
+            # für Passenger Pickup Events, Zeit des Pickups rausrechnen
+            # Idee: Zeit bei Vehicle Leaves Traffic stoppen (left trafffic time - entered link time + left link time - entered traffic time)                     
 
 
-def add_left_time_to_link(vehicle, tripindex, left_time, vehicledict):
-    trip = vehicledict.d[vehicle][tripindex-1]
+def add_left_time_to_link(vehicle, tripindex, left_time, vehicledict, corrected = False):
+    trip = vehicledict.d[vehicle][tripindex]
     link = trip.link
     event_id = trip.event_id
     entered_time = trip.entered_time
@@ -102,7 +140,7 @@ def add_left_time_to_link(vehicle, tripindex, left_time, vehicledict):
     link_freespeed = trip.link_freespeed
     actual_speed = link_length/(left_time - entered_time)
     speed_pct = actual_speed/link_freespeed
-    vehicledict.d[vehicle][tripindex-1] = Trip(link, event_id, entered_time, link_length, link_freespeed, left_time, actual_speed, speed_pct)
+    vehicledict.d[vehicle][tripindex] = Trip(link, event_id, entered_time, link_length, link_freespeed, left_time, actual_speed, speed_pct, corrected)
 
 
 # def create_dict_entered_links(drtvehicleids, cursor, linkdict):
@@ -127,18 +165,18 @@ def add_left_time_to_link(vehicle, tripindex, left_time, vehicledict):
 #     print("successfully created dictionary with VID and links")
     
 
-def get_links_for_VID(id, query, cursor) -> "list[Trip]":
-    db_output = query_db(query, cursor, id)
-    res = []
-    for tuple in db_output:
-        link = tuple[0]
-        event_id = tuple[1]
-        entered_time = tuple[2]
-        link_length = tuple[3]
-        link_freespeed = tuple[4]
-        res.append(Trip(link, event_id, entered_time,
-                   link_length, link_freespeed))
-    return res
+# def get_links_for_VID(id, query, cursor) -> "list[Trip]":
+#     db_output = query_db(query, cursor, id)
+#     res = []
+#     for tuple in db_output:
+#         link = tuple[0]
+#         event_id = tuple[1]
+#         entered_time = tuple[2]
+#         link_length = tuple[3]
+#         link_freespeed = tuple[4]
+#         res.append(Trip(link, event_id, entered_time,
+#                    link_length, link_freespeed))
+#     return res
 
 # def get_speeds_for_link_and_id(enteredlinks, leftlinks, vehicleslist, cursor):
 #     for id in vehicleslist:
@@ -216,24 +254,24 @@ def get_speed(vehicleslist, cursor):
     for id in vehicleslist:
         get_links_entered_and_left_for_VID(id, cursor)
 
-def get_links_entered_and_left_for_VID(id, cursor):
-    # query = ''' SELECT e.event_id, e.time, type_id, v.link
-    #             FROM events e INNER JOIN vehicle_link_events v on v.event_id == e.event_id
-    #             WHERE e.vehicle = ? '''
-    query = ''' SELECT event_id, time, type_id
-                FROM events
-                WHERE vehicle = ? '''
-    db_output = query_db(query, cursor, id)
-    print(id)
-    for index in range(0, len(db_output)):
-        event_id = db_output[index][0]
-        time = db_output[index][1]
-        type_id = db_output[index][2]
-        # link = db_output[index][3]
-        if type_id == 7 or type_id == 8:
-            pass
-        else:
-            print(event_id, time, type_id)
+# def get_links_entered_and_left_for_VID(id, cursor):
+#     # query = ''' SELECT e.event_id, e.time, type_id, v.link
+#     #             FROM events e INNER JOIN vehicle_link_events v on v.event_id == e.event_id
+#     #             WHERE e.vehicle = ? '''
+#     query = ''' SELECT event_id, time, type_id
+#                 FROM events
+#                 WHERE vehicle = ? '''
+#     db_output = query_db(query, cursor, id)
+#     print(id)
+#     for index in range(0, len(db_output)):
+#         event_id = db_output[index][0]
+#         time = db_output[index][1]
+#         type_id = db_output[index][2]
+#         # link = db_output[index][3]
+#         if type_id == 7 or type_id == 8:
+#             pass
+#         else:
+#             print(event_id, time, type_id)
 
 def get_time_for_event_id (event_id, cursor):
     query = ''' SELECT time FROM events WHERE event_id = ?'''

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from xmlrpc.client import Boolean, boolean
 @dataclass
 class Trip:
     link: str
@@ -9,6 +10,7 @@ class Trip:
     left_time: int = -1
     actual_speed: float = -1
     speed_pct: float = -1
+    corrected: bool = False
 
 @dataclass
 class Fleet:
