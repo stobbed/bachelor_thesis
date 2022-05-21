@@ -13,45 +13,9 @@ link_event_id_dict = db.create_dict_event_id_links()
 # driven_links_dict = db.create_driven_links_dict(vehicleslist)
 # picklefile_write('driven_links_dict.pickle', driven_links_dict)
 driven_links_dict = picklefile_read('driven_links_dict.pickle')
+calculate_potential_error_rate(vehicleslist, driven_links_dict)
 
-error = {}
-sumtrips = 0
-sumerror = 0
-for id in vehicleslist:
-    counter = 0
-    for trip in driven_links_dict.d[id]:
-        if trip.corrected == False and trip.actual_speed == -1:
-            counter += 1
-            # print(id, trip)
-    error[id] = [len(driven_links_dict.d[id]), counter]
-    sumtrips += len(driven_links_dict.d[id])
-    sumerror += counter
-
-print(sumtrips, sumerror)
-
-# enteredlinks = db.get_vehicle_entered_links(vehicles)
-# leftlinks = db.get_vehicle_left_links(vehicles)
-
-# with open('enteredlinks.pickle', 'wb') as fp:
-#     pickle.dump(enteredlinks, fp)
-# with open('leftlinks.pickle', 'wb') as fp:
-#     pickle.dump(leftlinks, fp)
-
-# enteredlinks_pickle = 'enteredlinks.pickle'
-# if os.path.exists(enteredlinks_pickle):
-#     enteredlinks= picklefile_read(enteredlinks_pickle)
-# else:
-#     enteredlinks = db.get_vehicle_entered_links(vehicleslist)
-#     picklefile_write(enteredlinks_pickle, enteredlinks)
-
-# leftlinks_pickle = 'leftlinks.pickle'
-# if os.path.exists(leftlinks_pickle):
-#     leftlinks = picklefile_read(leftlinks_pickle)
-# else:
-#     leftlinks = db.get_vehicle_left_links(vehicleslist)
-#     picklefile_write(leftlinks_pickle, leftlinks)
-
-# vehicledict = create_vehicle_dict(vehicleslist, enteredlinks)
+vehicledict = create_vehicle_dict(vehicleslist, driven_links_dict)
 # drt = create_fleet_information(vehicledict, vehicleslist)
 
 # db.get_links_with_id()
