@@ -265,18 +265,30 @@ def get_passenger_occupancy(drtvehicleids, cursor):
         #     print(db_output_links)
 
 def get_passengers_for_link(drtvehicleids, dictofPassengerOccupancy, driven_links_dict, cursor):
-    query = ''' SELECT d.link FROM dvrpTask_events d INNER JOIN events e ON e.event_id == d.event_id WHERE d.dvrpVehicle = ? AND e.time = ?'''
     for id in drtvehicleids:
-        for passenger_event in dictofPassengerOccupancy[id]:
-            time = get_time_for_event_id(passenger_event[0], cursor)
-            passengers = passenger_event[1]
-            drt_request = passenger_event[2]
-            db_output = query_db(query, cursor, id, time[0][0])
-            if db_output == []:
-                db_output = query_db(query, cursor, id, time[0][0]+1)
+        for index in range(0, len(dictofPassengerOccupancy[id])):
+            passenger_event = dictofPassengerOccupancy[id][index]
+            link_for_task = get_link_for_dvrpTask_event(passenger_event, id, cursor)
+            # if db_output == []:
+            #     db_output = query_db(query, cursor, id, time[0][0]+1)
+            start = False
             for trip in driven_links_dict.d[id]:
-                if trip.link == db_output[0][0]:
-                    print(id, db_output[0][0])
+                if trip.link == link_for_task:
+                    # print(id, db_output[0][0])
+                    start = True
+                    print('hell yeah')
+                if start == True:
+                    pass
+                # if trip.link == 
+
+def get_link_for_dvrpTask_event(passenger_event, id, cursor):
+    query = ''' SELECT d.link FROM dvrpTask_events d INNER JOIN events e ON e.event_id == d.event_id WHERE d.dvrpVehicle = ? AND e.time = ?'''
+    time = get_time_for_event_id(passenger_event[0], cursor)
+    passengers = passenger_event[1]
+    drt_request = passenger_event[2]
+    db_output = query_db(query, cursor, id, time[0][0])
+    return db_output[0][0]
+
 
 def picklefile_write(filename, content):
     with open(filename, 'wb') as fp:
