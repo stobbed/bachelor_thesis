@@ -7,13 +7,6 @@ from re import I
 from database_operations import query_db
 from vtypes import *
 
-# testtrip = Trip('Münzstraße', '123')
-# testtrip2 = Trip('Berliner Straße', '234')
-# print(testtrip.street)
-# event_id = '123'
-# globals()[f"evt_{event_id}"] = Trip('Münzstraße', '123')
-# print(evt_123)
-
 
 def create_drtvehicleids_list(cursor):
     """ creates a list containing the drtvehicleids that entered traffic
@@ -91,7 +84,9 @@ def create_entered_link_dict(vehicleslist, event_id_link_dict, driven_links_dict
                     if db_output[index-1][2] == 8 and driven_links_dict.d[vehicle][tripindex-1].link == event_id_link_dict[event_id].link:
                         # print(vehicledict.d[vehicle][tripindex-1].time, time)
                         entered_index = tripindex -1
-                        add_left_time_to_link(vehicle, entered_index, time, driven_links_dict)
+                        driven_links_dict.d[vehicle][entered_index].actual_speed = driven_links_dict.d[vehicle][entered_index].link_length/(time - driven_links_dict.d[vehicle][entered_index].entered_time)
+                        driven_links_dict.d[vehicle][entered_index].speed_pct = driven_links_dict.d[vehicle][entered_index].actual_speed/driven_links_dict.d[vehicle][entered_index].link_freespeed
+                        # add_left_time_to_link(vehicle, entered_index, time, driven_links_dict)
             elif type_id == 4 and db_output[index+1][2] == 7:
                 stop1 = False
                 stop2 = False
@@ -120,8 +115,10 @@ def create_entered_link_dict(vehicleslist, event_id_link_dict, driven_links_dict
                             if trip.event_id == db_output[index_entered_link][0]:
                                 index_entered_link_corrected = i
                             i += 1
-                        corrected = True
-                        add_left_time_to_link(vehicle, index_entered_link_corrected, left_time_corrected, driven_links_dict, corrected)
+                        driven_links_dict.d[vehicle][index_entered_link_corrected].actual_speed = driven_links_dict.d[vehicle][index_entered_link_corrected].link_length/(left_time_corrected - driven_links_dict.d[vehicle][index_entered_link_corrected].entered_time)
+                        driven_links_dict.d[vehicle][index_entered_link_corrected].speed_pct = driven_links_dict.d[vehicle][index_entered_link_corrected].actual_speed/driven_links_dict.d[vehicle][index_entered_link_corrected].link_freespeed
+                        driven_links_dict.d[vehicle][index_entered_link_corrected].corrected = True
+                        # add_left_time_to_link(vehicle, index_entered_link_corrected, left_time_corrected, driven_links_dict, corrected)
 
             # wenn Fahrzeug Traffic leaved, trz volle Link Länge mit einrechnen und Freespeed annehmen
             # für Passenger Pickup Events, Zeit des Pickups rausrechnen
@@ -155,19 +152,10 @@ def vehicle_enters_traffic_event(event_id_link_dict, driven_links_dict, db_outpu
                     if trip.event_id == db_output[index_entered_link][0]:
                         index_entered_link_corrected = i
                     i += 1
-                corrected = True
-                add_left_time_to_link(vehicle, index_entered_link_corrected, left_time_corrected, driven_links_dict, corrected)
-
-def add_left_time_to_link(vehicle, tripindex, left_time, vehicledict, corrected = False):
-    trip = vehicledict.d[vehicle][tripindex]
-    link = trip.link
-    event_id = trip.event_id
-    entered_time = trip.entered_time
-    link_length = trip.link_length
-    link_freespeed = trip.link_freespeed
-    actual_speed = link_length/(left_time - entered_time)
-    speed_pct = actual_speed/link_freespeed
-    vehicledict.d[vehicle][tripindex] = Trip(link, event_id, entered_time, link_length, link_freespeed, left_time, actual_speed, speed_pct, corrected)
+                driven_links_dict.d[vehicle][index_entered_link_corrected].actual_speed = driven_links_dict.d[vehicle][index_entered_link_corrected].link_length/(left_time_corrected - driven_links_dict.d[vehicle][index_entered_link_corrected].entered_time)
+                driven_links_dict.d[vehicle][index_entered_link_corrected].speed_pct = driven_links_dict.d[vehicle][index_entered_link_corrected].actual_speed/driven_links_dict.d[vehicle][index_entered_link_corrected].link_freespeed
+                driven_links_dict.d[vehicle][index_entered_link_corrected].corrected = True
+                # add_left_time_to_link(vehicle, index_entered_link_corrected, left_time_corrected, driven_links_dict, corrected)
 
 def calculate_potential_error_rate(vehicleslist, driven_links_dict):
     error = {}
@@ -266,20 +254,27 @@ def get_passenger_occupancy(drtvehicleids, cursor):
 
 def get_passengers_for_link(drtvehicleids, dictofPassengerOccupancy, driven_links_dict, cursor):
     for id in drtvehicleids:
+        print('writing passengers into trip information for ' + str(id))
         for index in range(0, len(dictofPassengerOccupancy[id])):
-            passenger_event = dictofPassengerOccupancy[id][index]
-            link_for_task = get_link_for_dvrpTask_event(passenger_event, id, cursor)
+            link_for_task = get_link_for_dvrpTask_event(dictofPassengerOccupancy[id][index], id, cursor)
+            if index != len(dictofPassengerOccupancy[id])-1:
+                link_for_next_task = get_link_for_dvrpTask_event(dictofPassengerOccupancy[id][index+1], id, cursor)
+            else:
+                link_for_next_task = None
             # if db_output == []:
             #     db_output = query_db(query, cursor, id, time[0][0]+1)
             start = False
-            for trip in driven_links_dict.d[id]:
-                if trip.link == link_for_task:
+            stop = False
+            for tripindex in range(0, len(driven_links_dict.d[id])):
+                trip = driven_links_dict.d[id][tripindex]
+                if trip.link == link_for_task and start == False and stop == False:
                     # print(id, db_output[0][0])
                     start = True
-                    print('hell yeah')
-                if start == True:
-                    pass
-                # if trip.link == 
+                if link_for_next_task != None:
+                    if trip.link == link_for_next_task and stop == False:
+                        stop = True
+                if start == True and stop == False:
+                    driven_links_dict.d[id][tripindex].passengers = dictofPassengerOccupancy[id][index][1]
 
 def get_link_for_dvrpTask_event(passenger_event, id, cursor):
     query = ''' SELECT d.link FROM dvrpTask_events d INNER JOIN events e ON e.event_id == d.event_id WHERE d.dvrpVehicle = ? AND e.time = ?'''
