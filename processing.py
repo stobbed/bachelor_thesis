@@ -185,19 +185,6 @@ def calculate_potential_error_rate(vehicleslist, driven_links_dict):
     print('total of: ' + str(sumtrips) + ' trips, with ' + str(sumerror) + ' potential errors"')
 
 
-def get_time_for_dvrpTask(vehicleid, link, cursor):
-    query = '''     SELECT e.time
-                    FROM dvrpTask_events d INNER JOIN events e ON e.event_id == d.event_id
-                    WHERE d.dvrpVehicle = ? AND d.link = ? AND d.taskType = ?'''
-    taskType = 'STAY'
-    db_output = query_db(query, cursor, vehicleid, link, taskType)
-    time = []
-    for tuple in db_output:
-        for entry in tuple:
-            time.append(entry)
-    if time != []:
-        return time
-
 def create_vehicle_dict(vehicleids, driven_links_dict):
     print("Creating vehicle dictionary...")
     vehicledict = {}
@@ -270,12 +257,26 @@ def get_passenger_occupancy(drtvehicleids, cursor):
         print(' ')
         print(id)
         print(dictofPassengerOccupancy[id])
+    return dictofPassengerOccupancy
 
         # for link in dictofVIDandLinks[id]:
         #     db_output_links = query_db(drivenlinks_query, cursor, id, link)
         #     print(id, link)
         #     print(db_output_links)
 
+def get_passengers_for_link(drtvehicleids, dictofPassengerOccupancy, driven_links_dict, cursor):
+    query = ''' SELECT d.link FROM dvrpTask_events d INNER JOIN events e ON e.event_id == d.event_id WHERE d.dvrpVehicle = ? AND e.time = ?'''
+    for id in drtvehicleids:
+        for passenger_event in dictofPassengerOccupancy[id]:
+            time = get_time_for_event_id(passenger_event[0], cursor)
+            passengers = passenger_event[1]
+            drt_request = passenger_event[2]
+            db_output = query_db(query, cursor, id, time[0][0])
+            if db_output == []:
+                db_output = query_db(query, cursor, id, time[0][0]+1)
+            for trip in driven_links_dict.d[id]:
+                if trip.link == db_output[0][0]:
+                    print(id, db_output[0][0])
 
 def picklefile_write(filename, content):
     with open(filename, 'wb') as fp:
@@ -444,6 +445,19 @@ def get_speeds_for_link_and_id(enteredlinks, leftlinks, vehicleslist, cursor):
 def get_speed(vehicleslist, cursor):
     for id in vehicleslist:
         get_links_entered_and_left_for_VID(id, cursor)
+
+def get_time_for_dvrpTask(vehicleid, link, cursor):
+    query = '''     SELECT e.time
+                    FROM dvrpTask_events d INNER JOIN events e ON e.event_id == d.event_id
+                    WHERE d.dvrpVehicle = ? AND d.link = ? AND d.taskType = ?'''
+    taskType = 'STAY'
+    db_output = query_db(query, cursor, vehicleid, link, taskType)
+    time = []
+    for tuple in db_output:
+        for entry in tuple:
+            time.append(entry)
+    if time != []:
+        return time
 
 # def get_links_entered_and_left_for_VID(id, cursor):
 #     # query = ''' SELECT e.event_id, e.time, type_id, v.link

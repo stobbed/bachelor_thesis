@@ -11,6 +11,7 @@ class Trip:
     actual_speed: float = -1
     speed_pct: float = -1
     corrected: bool = False
+    passengers: int = 0
 
 @dataclass
 class Fleet:

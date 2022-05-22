@@ -65,6 +65,9 @@ class Db:
     def calculate_passenger_occupancy(self, drtvehicleids):
         return get_passenger_occupancy(drtvehicleids, self._cursor)
 
+    def calculate_passengers_for_link(self, drtvehicleids, dictofPassengerOccupancy, driven_links_dict):
+        return get_passengers_for_link(drtvehicleids, dictofPassengerOccupancy, driven_links_dict, self._cursor)
+
     # def get_vehicle_entered_links(self,ids) -> "LinksForEvent":
     #     create_dict_entered_links(ids, self._cursor,self.entered_dict)
     #     return self.entered_dict

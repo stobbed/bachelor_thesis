@@ -17,7 +17,8 @@ calculate_potential_error_rate(vehicleslist, driven_links_dict)
 
 vehicledict = create_vehicle_dict(vehicleslist, driven_links_dict)
 drt = create_fleet_information(vehicledict, vehicleslist)
-db.calculate_passenger_occupancy(vehicleslist)
+dictofPassengerOccupancy = db.calculate_passenger_occupancy(vehicleslist)
+db.calculate_passengers_for_link(vehicleslist, dictofPassengerOccupancy, driven_links_dict)
 
 # db.get_links_with_id()
 # db.get_speed_for_link(vehicleslist)
