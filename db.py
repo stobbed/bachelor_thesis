@@ -39,7 +39,7 @@ class Db:
         # self.entered_dict = LinksForEvent()
         # self.left_dict = LinksForEvent()
         self.event_id_link_dict = {}
-        self.vehicle = LinksForEvent()
+        self.driven_links_dict = LinksForEvent()
         self.link_information_dict = {}
 
     def disconnect(self):
@@ -59,8 +59,11 @@ class Db:
         return get_links_for_event_id(self._cursor, self.event_id_link_dict, self.link_information_dict)
 
     def create_driven_links_dict(self, vehicleslist):
-        create_entered_link_dict(vehicleslist, self.event_id_link_dict, self.vehicle, self._cursor)
-        return self.vehicle
+        create_entered_link_dict(vehicleslist, self.event_id_link_dict, self.driven_links_dict, self._cursor)
+        return self.driven_links_dict
+
+    def calculate_passenger_occupancy(self, drtvehicleids):
+        return get_passenger_occupancy(drtvehicleids, self._cursor)
 
     # def get_vehicle_entered_links(self,ids) -> "LinksForEvent":
     #     create_dict_entered_links(ids, self._cursor,self.entered_dict)

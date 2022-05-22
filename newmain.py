@@ -16,7 +16,8 @@ driven_links_dict = picklefile_read('driven_links_dict.pickle')
 calculate_potential_error_rate(vehicleslist, driven_links_dict)
 
 vehicledict = create_vehicle_dict(vehicleslist, driven_links_dict)
-# drt = create_fleet_information(vehicledict, vehicleslist)
+drt = create_fleet_information(vehicledict, vehicleslist)
+db.calculate_passenger_occupancy(vehicleslist)
 
 # db.get_links_with_id()
 # db.get_speed_for_link(vehicleslist)

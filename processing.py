@@ -122,13 +122,41 @@ def create_entered_link_dict(vehicleslist, event_id_link_dict, driven_links_dict
                             i += 1
                         corrected = True
                         add_left_time_to_link(vehicle, index_entered_link_corrected, left_time_corrected, driven_links_dict, corrected)
-                
-                
 
             # wenn Fahrzeug Traffic leaved, trz volle Link Länge mit einrechnen und Freespeed annehmen
             # für Passenger Pickup Events, Zeit des Pickups rausrechnen
             # Idee: Zeit bei Vehicle Leaves Traffic stoppen (left trafffic time - entered link time + left link time - entered traffic time)                     
 
+def vehicle_enters_traffic_event(event_id_link_dict, driven_links_dict, db_output, vehicle, index, cursor):
+    stop1 = False
+    stop2 = False
+    index_entered_link = index
+    index_left_link = index + 1
+    index_entered_traffic = index
+    index_left_traffic = index
+    while db_output[index_entered_link][2] != 8 and stop1 == False:
+        if index_entered_link == 1:
+            stop1 = True
+        index_entered_link -= 1
+    while db_output[index_left_traffic][2] != 9 and stop2 == False:
+        if index_left_traffic== 1:
+            stop2 = True
+        index_left_traffic -= 1
+        query = ''' SELECT link FROM vehicle_traffic_events WHERE event_id = ?'''
+        if index_left_traffic != 0:
+            link_entered_traffic = query_db(query, cursor, db_output[index_entered_traffic][0])[0]
+            link_left_traffic = query_db(query, cursor, db_output[index_left_traffic][0])[0]
+            if event_id_link_dict[db_output[index_entered_link][0]].link == link_entered_traffic[0] and link_left_traffic[0] == link_entered_traffic[0] and event_id_link_dict[db_output[index_entered_link][0]].link == event_id_link_dict[db_output[index_left_link][0]].link:
+                time_spent_outside_traffic = db_output[index_entered_traffic][1] - db_output[index_left_traffic][1]
+                time_difference = db_output[index_left_traffic][1] - db_output[index_entered_link][1] + db_output[index_left_link][1] - db_output[index_entered_traffic][1]
+                left_time_corrected = db_output[index_left_link][1] - time_spent_outside_traffic
+                i = 0
+                for trip in driven_links_dict.d[id]:
+                    if trip.event_id == db_output[index_entered_link][0]:
+                        index_entered_link_corrected = i
+                    i += 1
+                corrected = True
+                add_left_time_to_link(vehicle, index_entered_link_corrected, left_time_corrected, driven_links_dict, corrected)
 
 def add_left_time_to_link(vehicle, tripindex, left_time, vehicledict, corrected = False):
     trip = vehicledict.d[vehicle][tripindex]
@@ -223,7 +251,7 @@ def create_fleet_information(vehicledict, vehicles):
             roadpct.append(vehicledict[id].highway_pct)
     return Fleet(vehicledict, fleetdistance, distance_intown, distance_countryroad, distance_highway, maximum_distance, roadpct)
 
-def get_passenger_occupancy(drtvehicleids, dictofVIDandLinks, cursor):
+def get_passenger_occupancy(drtvehicleids, cursor):
     occupancy_query = '''SELECT event_id, person, request, pickup_dropoff FROM PassengerPickedUpDropOff_events WHERE vehicle = ?'''
     # drivenlinks_query = '''SELECT event_id FROM enteredlink_events WHERE vehicle = ? AND link = ?'''
     drivenlinks_query = '''SELECT event_id, link, vehicle FROM enteredlink_events'''
@@ -239,6 +267,9 @@ def get_passenger_occupancy(drtvehicleids, dictofVIDandLinks, cursor):
                 passengers -= 1
             occupancytuple = (tuple[0], passengers, tuple[2])
             dictofPassengerOccupancy[id].append(occupancytuple)
+        print(' ')
+        print(id)
+        print(dictofPassengerOccupancy[id])
 
         # for link in dictofVIDandLinks[id]:
         #     db_output_links = query_db(drivenlinks_query, cursor, id, link)
