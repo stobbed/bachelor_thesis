@@ -17,9 +17,13 @@ class Trip:
 class Fleet:
     vehicles: dict
     totaldistance: float
+    avg_distance_per_vehicle: float
     distance_intown: float
+    pkm_intown: float
     distance_countryroad: float
+    pkm_countryroad: float
     distance_highway: float
+    pkm_highway: float
     maximumdistance: float
     maximumdistance_roadpct: list = -1
     # distance
@@ -31,7 +35,11 @@ class Vehicle:
     intown_pct: float
     countryroad_pct: float
     highway_pct: float
-    avgpassenger_amount: float = -1
+    pkm_intown: float
+    pkm_countryroad: float
+    pkm_highway: float
+    avgpassenger_amount: float
+    capacity: int = -1
     # trips: list[Trip]
 
 # atm unnecessary

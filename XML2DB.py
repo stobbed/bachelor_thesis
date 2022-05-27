@@ -244,6 +244,17 @@ def create_database():
         except sqlite3.Error as error:
             print('Error when creating vehicle_facility_events table: ', error)
 
+    print('creating vehicles table...')
+    query = '''CREATE TABLE vehicles (
+                vehicle_id TEXT,
+                start_link INTEGER,
+                capacity INTEGER);'''
+    try:
+        cursor.execute(query)
+        print('created vehicles table')
+    except sqlite3.Error as error:
+        print('Error when creating vehicles table: ', error)
+
     print('creating stuckandabort_events table...')
     query = '''CREATE TABLE stuckandabort_events (
                 stuckandabort_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -818,6 +829,36 @@ def create_database():
             root.clear()
             #i+=1
         i = i + 1
+
+
+    xmlpath = xmlpath_vehicles
+    if os.path.exists(xmlpath):
+        print('opening xml.gz file...')
+        file = gzip.open(xmlpath, mode='rt', encoding='UTF-8')
+        print('file opened!')
+    else:
+        raise FileNotFoundError('Invalid path (xmlpath): '+xmlpath+' - *.xml.gz file doesn\'t exist.')
+
+    tree = ET.parse(file)
+    root = tree.getroot()
+    vehicle_record = []
+    query = '''INSERT INTO vehicles
+                VALUES (?, ?, ?)'''
+
+    for child in root:
+        vehicle_record.append(child.attrib['id'])
+        vehicle_record.append(child.attrib['start_link'])
+        vehicle_record.append(child.attrib['capacity'])
+        print(vehicle_record)
+        try:
+            cursor.execute(query, vehicle_record)
+        except sqlite3.Error as error:
+            print('Error when inserting node record into vehicles table: ', error)
+        finally:
+            vehicle_record = []
+
+            
+    print('vehicle information successfully stored in DB!')
 
     print('\nxml to db conversion finished!\n')
 

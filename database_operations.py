@@ -3,7 +3,7 @@ import os.path
 
 
 
-def establish_db_connection(dbfile_path):
+def establish_db_connection(dbfile_path: str):
     """ establishes connection to a sqlite database listed under the dbfile_path and returns cursor, for queries to be executed on
         inputs:     dbfile_path (path where the sqlite_database is)
         outputs:    sqliteConnection (connection that can be closed later)
@@ -23,7 +23,7 @@ def establish_db_connection(dbfile_path):
         raise FileNotFoundError('Invalid path (dbfile): '+dbfile_path+' - *.db file doesn\'t exist.')
     return sqliteConnection, cursor
 
-def query_db(sql_query, cursor, var = None, var2 = None, var3 = None):
+def query_db(sql_query: str, cursor, var = None, var2 = None, var3 = None) -> "tuple":
     """ executes queries on the opened sqlite database, therefore requires the prior execution of establish_db_connection
         inputs: sql_query (query that should be executed)
                 cursor (output of establish_db_connection, needed for executing queries)
