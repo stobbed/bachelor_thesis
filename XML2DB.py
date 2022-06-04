@@ -2,11 +2,11 @@ import gzip
 import xml.etree.cElementTree as ET
 import sqlite3
 import sys
-from config import *
 from timeit import default_timer as timer
 import os.path
+from config import *
 
-def create_database():
+def create_database(dbpath, xmlpath_nw, xmlpath_evts, xmlpath_vehicles):
 
     # set timer to get elapsed time in seconds
     start = timer()
@@ -849,7 +849,6 @@ def create_database():
         vehicle_record.append(child.attrib['id'])
         vehicle_record.append(child.attrib['start_link'])
         vehicle_record.append(child.attrib['capacity'])
-        print(vehicle_record)
         try:
             cursor.execute(query, vehicle_record)
         except sqlite3.Error as error:

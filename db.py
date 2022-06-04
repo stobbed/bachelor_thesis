@@ -20,7 +20,8 @@ class LinksForEvent:
 
 
 class Db:
-    def __init__(self,dbpath):
+    def __init__(self,path):
+        xmlpath_nw, xmlpath_evts, xmlpath_vehicles, dbpath  = setpaths(path)
         if os.path.exists(dbpath):
             try:
                 # connects to sqlite database file - if path is faulty, creates a new and empty database
@@ -32,7 +33,7 @@ class Db:
             finally:
                 pass
         else:
-            create_database()
+            create_database(dbpath, xmlpath_nw, xmlpath_evts, xmlpath_vehicles)
             self._sqliteConnection = sqlite3.connect(dbpath)
             self._cursor = self._sqliteConnection.cursor()
             print('Connection to SQLite-File',dbpath,'>> SUCCESS!')

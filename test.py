@@ -5,6 +5,10 @@ from config import *
 import gzip
 import xml.etree.cElementTree as ET
 
+with open('link_event_id_dict.pickle', 'rb') as fp:
+    content = pickle.load(fp)
+    print(content)
+
 def test_trip():
     testtrip = Trip('Münzstraße', '123')
     testtrip2 = Trip('Berliner Straße', '234')

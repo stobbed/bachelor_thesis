@@ -1,11 +1,11 @@
 from collections import defaultdict
 import pickle
 import os.path
+from datetime import datetime
 
 from config import *
 from database_operations import query_db
 from vtypes import *
-
 
 def create_drtvehicleids_list(cursor):
     """ creates a list containing the drtvehicleids that entered traffic
@@ -38,18 +38,18 @@ def create_drtvehicleids_list(cursor):
 
 def create_link_information_dict(cursor, link_information_dict: dict) -> "dict":
     """ creates a dictionary with every link id, length and freespeed """
-    print("creating link_information_dict...")
+    print("creating link_information_dict..." + str(gettime()))
     query = ''' SELECT link_id, length, freespeed
                 FROM network_links'''
     db_output = query_db(query, cursor)
     # iterate through db_output list of tuples and store information contained in tuple in dictionary in a Class called Links
     for tuple in db_output:
         link_information_dict[tuple[0]] = Links(tuple[0], tuple[1], tuple[2])
-    print("...succesfully created link_information_dict!")
+    print("...succesfully created link_information_dict!" + str(gettime()))
 
 def get_links_for_event_id(cursor, event_id_link_dict: dict, link_information_dict: dict) -> "dict":
     """ reads all vehicle_link_events from DB and stores this information with the event_id as key in a dictionary"""
-    print("creating event_id_link_dict...")
+    print("creating event_id_link_dict..." + str(gettime()))
     query = ''' SELECT event_id, link, left_entered
                 FROM vehicle_link_events '''
     db_output = query_db(query, cursor)
@@ -63,14 +63,14 @@ def get_links_for_event_id(cursor, event_id_link_dict: dict, link_information_di
         length = link_information_dict[str(link)].length
         freespeed = link_information_dict[str(link)].freespeed
         event_id_link_dict[event_id] = Links(link, length, freespeed, left_entered)
-    print("...succesfully created event_id_link_dict!")
+    print("...succesfully created event_id_link_dict!" + str(gettime()))
     return event_id_link_dict
 
 def create_entered_link_dict(vehicleslist: list, event_id_link_dict: dict, driven_links_dict: dict, cursor) -> dict:
     """ creates a dictionary with vehicle id as key for a list of trips as content. 
         each trip contains the necessary informtion, when the vehicle entered and left the link, the length and freespeed
         this script als calculates the actual speeed, as well as the percentual speed it therefore reached"""
-    print("creating entered_link_dict...")
+    print("creating entered_link_dict..." + str(gettime()))
     for id in vehicleslist:
         query = ''' SELECT event_id, time, type_id, vehicle
                 FROM events 
@@ -143,7 +143,7 @@ def create_entered_link_dict(vehicleslist: list, event_id_link_dict: dict, drive
                         driven_links_dict.d[vehicle][index_entered_link_corrected].actual_speed = driven_links_dict.d[vehicle][index_entered_link_corrected].link_length/(left_time_corrected - driven_links_dict.d[vehicle][index_entered_link_corrected].entered_time)
                         driven_links_dict.d[vehicle][index_entered_link_corrected].speed_pct = driven_links_dict.d[vehicle][index_entered_link_corrected].actual_speed/driven_links_dict.d[vehicle][index_entered_link_corrected].link_freespeed
                         driven_links_dict.d[vehicle][index_entered_link_corrected].corrected = True
-    print("...succesfully created entered_link_dict!")
+    print("...succesfully created entered_link_dict!" + str(gettime()))
            
 # def vehicle_enters_traffic_event(event_id_link_dict, driven_links_dict, db_output, vehicle, index, cursor):
 #     stop1 = False
@@ -354,19 +354,26 @@ def create_fleet_information(vehicledict: dict, vehiclelist: list) -> "Fleet":
 
 def picklefile_write(filename: str, content) -> "None":
     """ creates a pickle file with filename (complete path if not in the same directory as the script) and the contents, especially useful for debugging"""
-    file = os.path.join(path, filename)
+    #file = os.path.join(path_drt, 'pickle', filename)
+    file = os.path.join(path_drt, filename)
     with open(file, 'wb') as fp:
         pickle.dump(content, fp)
    
 def picklefile_read(filename: str):
     """ reads the pickle file under filename (complete path if not in the same directory as the script) and returns it contents"""
-    file = os.path.join(path, filename)
+    # file = os.path.join(path_drt, 'pickle', filename)
+    file = os.path.join(path_drt, filename)
     if os.path.exists(file):
         with open(file, 'rb') as fp:
             content = pickle.load(fp)
     else:
         print(str(filename) + ' does not exist, if the file is not in the same folder as the script make sure to enter the complete directory')
     return content
+
+def gettime():
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    return current_time
 
 # ------------------------------ not needed atm --------------------------------------------------
 
