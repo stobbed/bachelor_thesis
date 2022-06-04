@@ -18,6 +18,74 @@ class LinksForEvent:
     def gettrips(self,vehicle_id):
         return self.d[vehicle_id]
 
+class DataDb:
+    def __init__(self,path):
+        dbpath = setdatadbpath(path)
+        try:
+            # connects to sqlite database file - if path is faulty, creates a new and empty database
+            self._sqliteConnection = sqlite3.connect(dbpath)
+            self._cursor = self._sqliteConnection.cursor()
+            print('Connection to SQLite-File',dbpath,'>> SUCCESS!')
+        except sqlite3.Error as error:
+            print('SQLite error: ', error)
+        finally:
+            pass
+
+    def createtable(self, tablename, columns):
+        query = '''CREATE TABLE ''' + str(tablename) + ''' (\n'''
+        index=0
+        for item in columns:
+            if index<len(columns)-1:
+                query += item + ''',\n'''
+            elif index==len(columns)-1:
+                query += item + ''');'''
+            index+=1
+        try:
+            self._cursor.execute(query)
+            print('created ' + str(tablename) + ' table')
+        except sqlite3.Error as error:
+            print('Error when creating ' + str(tablename) + ' table')
+
+    def writeonerow(self, tablename:str, content:list):
+        query = '''INSERT INTO ''' + str(tablename) + '\n' + '''VALUES ('''
+        for index in range(0,len(content)):
+            if index<len(content)-1:
+                query += '''?,'''
+            else:
+                query += '''?)'''
+        try:
+            self._cursor.execute(query, content)
+        except sqlite3.Error as error:
+            print('Error when inserting row into ' + str(tablename) + 'table: ', error)
+
+    def writemultiplerows(self, tablename:str, content:list[tuple]):
+        query = '''INSERT INTO ''' + str(tablename) + '\n' + '''VALUES ('''
+        for index in range(0,len(content[-1])):
+            if index<len(content[-1])-1:
+                query += '''?,'''
+            else:
+                query += '''?)'''
+        try:
+            self._cursor.executemany(query, content)
+        except sqlite3.Error as error:
+            print('Error when inserting multiple rows into ' + str(tablename) + 'table: ', error)
+
+    def updatecell(self, tablename:str, column, newvalue, condition_column, condition_value):
+        query = '''UPDATE ''' + str(tablename) + '''SET '''
+        for index in range(0,len(newvalue)):
+            if index == 0:
+                query += str(column[index]) + ''' = ''' + str(newvalue[index])
+            elif index > 0:
+                query += ''', ''' + str(column[index]) + ''' = ''' + str(newvalue[index])
+        query += ''' WHERE ''' + str(condition_column) + ''' = ''' + str(condition_value) + ''';'''
+
+    def commit(self):
+        self._sqliteConnection.commit()
+
+    def disconnect(self):
+        self._cursor.close()
+        self._sqliteConnection.close()
+        print('The SQLite connection is closed')
 
 class Db:
     def __init__(self,path):

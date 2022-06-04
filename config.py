@@ -19,12 +19,12 @@ picklecreation = True
 
 def setpaths(path):
     # Betriebssystem dektieren und entscheiden wonach gesplitted wird
-    text = path_drt.split("/")
+    text = path.split("/")
     simulationname = text[-1]
 
-    xmlpath_nw = os.path.join(path_drt, simulationname + r'.output_network.xml.gz')
-    xmlpath_evts = os.path.join(path_drt, simulationname + r'.output_events.xml.gz')
-    xmlpath_vehicles = os.path.join(path_drt, simulationname + r'.drt_vehicles.xml.gz')
+    xmlpath_nw = os.path.join(path, simulationname + r'.output_network.xml.gz')
+    xmlpath_evts = os.path.join(path, simulationname + r'.output_events.xml.gz')
+    xmlpath_vehicles = os.path.join(path, simulationname + r'.drt_vehicles.xml.gz')
 
     # text = xmlpath_nw.split("/")
     # filename = text.pop()
@@ -40,3 +40,15 @@ def setpaths(path):
     dbpath = dbpath[1:]
 
     return xmlpath_nw, xmlpath_evts, xmlpath_vehicles, dbpath
+
+def setdatadbpath(path):
+    text = path.split("/")
+    simulationname = text[-1]
+
+    dbpath = ''
+    for elements in text:
+        dbpath = dbpath + '/' + elements
+    dbpath = dbpath + '/' + simulationname + '-' + 'data' + '.db'
+    dbpath = dbpath[1:]
+
+    return dbpath

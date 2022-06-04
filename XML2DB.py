@@ -852,7 +852,7 @@ def create_database(dbpath, xmlpath_nw, xmlpath_evts, xmlpath_vehicles):
         try:
             cursor.execute(query, vehicle_record)
         except sqlite3.Error as error:
-            print('Error when inserting node record into vehicles table: ', error)
+            print('Error when inserting vehicle information into vehicles table: ', error)
         finally:
             vehicle_record = []
 
