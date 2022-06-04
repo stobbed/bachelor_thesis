@@ -2,6 +2,7 @@ from collections import defaultdict
 import pickle
 import os.path
 
+from config import *
 from database_operations import query_db
 from vtypes import *
 
@@ -235,8 +236,9 @@ def calculate_distance_roadpct(id, enteredlinks_for_id: dict) -> "Vehicle":
         intownpct = intown/totaldistance
         countryroadpct = countryroad/totaldistance
         highwaypct = highway/totaldistance
+    totalpkm = pkm_intown + pkm_countryroad + pkm_highway
     avgpassenger_amount = totalpassengers/len(enteredlinks_for_id)
-    vehicleinfo = Vehicle(id, totaldistance, intownpct, countryroadpct, highwaypct, pkm_intown, pkm_countryroad, pkm_highway, avgpassenger_amount)
+    vehicleinfo = Vehicle(id, totaldistance, intownpct, countryroadpct, highwaypct, pkm_intown, pkm_countryroad, pkm_highway, totalpkm, avgpassenger_amount)
     return vehicleinfo
 
 def get_capacity(vehicleids: list, vehicledict: dict, cursor) -> "dict":
@@ -320,6 +322,7 @@ def create_fleet_information(vehicledict: dict, vehiclelist: list) -> "Fleet":
         calculates fleetdistance, distance and pkm for different road types, as well as the biggest distance with roadpcts"""
     print("creating fleet information...")
     fleetdistance = 0
+    total_pkm = 0
     distance_intown = 0
     pkm_intown = 0
     distance_countryroad = 0
@@ -343,20 +346,23 @@ def create_fleet_information(vehicledict: dict, vehiclelist: list) -> "Fleet":
             roadpct.append(vehicledict[id].intown_pct)
             roadpct.append(vehicledict[id].countryroad_pct)
             roadpct.append(vehicledict[id].highway_pct)
+    total_pkm = pkm_intown + pkm_countryroad + pkm_highway
     avg_distance = fleetdistance / len(vehiclelist)
     print("...created fleet information")
-    return Fleet(vehicledict, fleetdistance, avg_distance, distance_intown, pkm_intown, distance_countryroad, pkm_countryroad, distance_highway, pkm_highway, maximum_distance, roadpct)
+    return Fleet(vehicledict, fleetdistance, total_pkm, avg_distance, distance_intown, pkm_intown, distance_countryroad, pkm_countryroad, distance_highway, pkm_highway, maximum_distance, roadpct)
 
 
 def picklefile_write(filename: str, content) -> "None":
     """ creates a pickle file with filename (complete path if not in the same directory as the script) and the contents, especially useful for debugging"""
-    with open(filename, 'wb') as fp:
+    file = os.path.join(path, filename)
+    with open(file, 'wb') as fp:
         pickle.dump(content, fp)
    
 def picklefile_read(filename: str):
     """ reads the pickle file under filename (complete path if not in the same directory as the script) and returns it contents"""
-    if os.path.exists(filename):
-        with open(filename, 'rb') as fp:
+    file = os.path.join(path, filename)
+    if os.path.exists(file):
+        with open(file, 'rb') as fp:
             content = pickle.load(fp)
     else:
         print(str(filename) + ' does not exist, if the file is not in the same folder as the script make sure to enter the complete directory')
@@ -513,9 +519,9 @@ def get_speeds_for_link_and_id(enteredlinks, leftlinks, vehicleslist, cursor):
                 # print('no left time, or does not make sense on: ' + str(enteredlinks.d[id][i].link))
             i += 1
 
-def get_speed(vehicleslist, cursor):
-    for id in vehicleslist:
-        get_links_entered_and_left_for_VID(id, cursor)
+# def get_speed(vehicleslist, cursor):
+#     for id in vehicleslist:
+#         get_links_entered_and_left_for_VID(id, cursor)
 
 def get_time_for_dvrpTask(vehicleid, link, cursor):
     query = '''     SELECT e.time

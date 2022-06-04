@@ -1,10 +1,11 @@
-from processing import *
 import sqlite3
-from config import *
 import os.path
+from collections import defaultdict
+
+from config import *
 from vtypes import *
 from XML2DB import *
-from collections import defaultdict
+from processing import *
 
 
 class LinksForEvent:
@@ -48,28 +49,39 @@ class Db:
         print('The SQLite connection is closed')
     
 
-    def get_vehicles(self) -> "list[str]":
+    def get_drtvehicles(self) -> "list[str]":
+        """ creates a list containing the drtvehicleids that entered traffic """
         return create_drtvehicleids_list(self._cursor)
 
-    def create_dict_link_info(self):
+    def create_dict_link_info(self) -> "dict":
+        """ creates a dictionary with every link id, length and freespeed """
         create_link_information_dict(self._cursor, self.link_information_dict)
         return self.link_information_dict
 
-    def create_dict_event_id_links(self):
+    def create_dict_event_id_links(self) -> "dict":
+        """ reads all vehicle_link_events from DB and stores this information with the event_id as key in a dictionary """
         return get_links_for_event_id(self._cursor, self.event_id_link_dict, self.link_information_dict)
 
-    def create_driven_links_dict(self, vehicleslist):
+    def create_driven_links_dict(self, vehicleslist: list) -> "dict":
+        """ creates a dictionary with vehicle id as key for a list of trips as content. each trip contains the necessary informtion, when the vehicle entered and left the link, the length and freespeed """
         create_entered_link_dict(vehicleslist, self.event_id_link_dict, self.driven_links_dict, self._cursor)
         return self.driven_links_dict
 
-    def calculate_passenger_occupancy(self, drtvehicleids):
+    def calculate_passenger_occupancy(self, drtvehicleids: list) -> "dict":
+        """ retrieves information about pickup_dropoff events from DB and stores the passenger amount for each event_id where such an event happened in a dictionary """
         return get_passenger_occupancy(drtvehicleids, self._cursor)
 
-    def calculate_passengers_for_link(self, drtvehicleids, dictofPassengerOccupancy, driven_links_dict):
+    def calculate_passengers_for_link(self, drtvehicleids: list, dictofPassengerOccupancy: dict, driven_links_dict: dict) -> "dict":
+        """ uses the previously created dictionary dictofPassengerOccupancy to retrieve how many passengers where in the car and stores that information based on the links (connected by the event_id) in a dictionary """
         return get_passengers_for_link(drtvehicleids, dictofPassengerOccupancy, driven_links_dict, self._cursor)
 
-    def assign_capacity(self, drtvehicleids, vehicledict):
+    def assign_capacity(self, drtvehicleids: list, vehicledict: dict):
+        """ looks up capacity for each vehicle id in vehicleids in DB and returns capacity and adds it in the vehicledict """
         return get_capacity(drtvehicleids, vehicledict, self._cursor)
+
+
+    # unneccesary atm
+
     # def get_vehicle_entered_links(self,ids) -> "LinksForEvent":
     #     create_dict_entered_links(ids, self._cursor,self.entered_dict)
     #     return self.entered_dict
@@ -77,9 +89,6 @@ class Db:
     # def get_vehicle_left_links(self,ids) -> "LinksForEvent":
     #     create_dict_left_links(ids, self._cursor,self.left_dict)
     #     return self.left_dict
-
-    def get_speed_for_link(self, vehicleslist):
-        return get_speed(vehicleslist, self._cursor)
 
     def get_link(self, event_id):
         return self.event_id_link_dict[event_id]
@@ -111,18 +120,3 @@ class MockDb:
 #     assert city == .5
 #     assert land == .5
 #     assert autobahn == 0.
-
-
-
-# db = Db(dbpath)
-# ids = db.get_traffic_events()
-# links = db.get_vehicle_links(ids)
-
-
-# vehicle = data[d1]
-# for trip in vehicle.trips:
-#     trip.street
-#     trip.time
-#     # db.
-
-#

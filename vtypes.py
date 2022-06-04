@@ -17,6 +17,7 @@ class Trip:
 class Fleet:
     vehicles: dict
     totaldistance: float
+    tota_lpkm: float
     avg_distance_per_vehicle: float
     distance_intown: float
     pkm_intown: float
@@ -38,6 +39,7 @@ class Vehicle:
     pkm_intown: float
     pkm_countryroad: float
     pkm_highway: float
+    total_pkm: float
     avgpassenger_amount: float
     capacity: int = -1
     # trips: list[Trip]
