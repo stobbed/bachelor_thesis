@@ -8,8 +8,12 @@ q_start=timer()
 def xmltofleetinformation(path):
     db = Db(path)
 
+    datadb = DataDb(path)
+    datacursor = datadb.getcursor()
+
     vehicleslist = db.get_drtvehicles()
-    link_information_dict = db.create_dict_link_info()
+    # gleich aus Datenbank abfragen
+    # link_information_dict = db.create_dict_link_info()
 
     if debugging == True:
         link_event_id_dict = picklefile_read('link_event_id_dict.pickle')
@@ -17,8 +21,10 @@ def xmltofleetinformation(path):
         links_dict = picklefile_read('links_dict.pickle')
         vehicledict = picklefile_read('vehicledict.pickle')
     else:
-        link_event_id_dict = db.create_dict_event_id_links()
-        driven_links_dict = db.create_driven_links_dict(vehicleslist)
+        # direkte Datenbankabfrage
+        # link_event_id_dict = db.create_dict_event_id_links()
+        driven_links_dict = db.create_driven_links_dict(vehicleslist, datacursor)
+        datadb.commit()
         dictofPassengerOccupancy = db.calculate_passenger_occupancy(vehicleslist)
         links_dict = db.calculate_passengers_for_link(vehicleslist, dictofPassengerOccupancy, driven_links_dict)
         vehicledict = create_vehicle_dict(vehicleslist, driven_links_dict)

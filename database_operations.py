@@ -44,6 +44,61 @@ def query_db(sql_query: str, cursor, var = None, var2 = None, var3 = None) -> "t
     else:
         print("Database Connection not established, execute establish_db_connection prior to using this function")
 
+def createtable(cursor, tablename, columns):
+    query = '''CREATE TABLE ''' + str(tablename) + ''' (\n'''
+    index=0
+    for item in columns:
+        if index<len(columns)-1:
+            query += item + ''',\n'''
+        elif index==len(columns)-1:
+            query += item + ''');'''
+        index+=1
+    try:
+        cursor.execute(query)
+        print('created ' + str(tablename) + ' table')
+    except sqlite3.Error as error:
+        print('Error when creating ' + str(tablename) + ' table')
+
+def writeonerow(cursor, tablename:str, content:list):
+    query = '''INSERT INTO ''' + str(tablename) + '\n' + '''VALUES ('''
+    for index in range(0,len(content)):
+        if index<len(content)-1:
+            query += '''?,'''
+        else:
+            query += '''?)'''
+    try:
+        cursor.execute(query, content)
+    except sqlite3.Error as error:
+        print('Error when inserting row into ' + str(tablename) + 'table: ', error)
+
+def writemultiplerows(cursor, tablename:str, content:list[tuple]):
+    query = '''INSERT INTO ''' + str(tablename) + '\n' + '''VALUES ('''
+    for index in range(0,len(content[-1])):
+        if index<len(content[-1])-1:
+            query += '''?,'''
+        else:
+            query += '''?)'''
+    try:
+        cursor.executemany(query, content)
+    except sqlite3.Error as error:
+        print('Error when inserting multiple rows into ' + str(tablename) + 'table: ', error)
+
+def updatecell(cursor, tablename:str, column, newvalue, condition_column, condition_value):
+    query = '''UPDATE ''' + str(tablename) + '''SET '''
+    for index in range(0,len(newvalue)):
+        if index == 0:
+            query += str(column[index]) + ''' = ''' + str(newvalue[index])
+        elif index > 0:
+            query += ''', ''' + str(column[index]) + ''' = ''' + str(newvalue[index])
+    query += ''' WHERE ''' + str(condition_column) + ''' = ''' + str(condition_value) + ''';'''
+    try:
+        cursor.execute(query)
+    except sqlite3.Error as error:
+        print('Error when updating cell information in ' + str(tablename) + 'table: ', error)
+
+def commit(sqliteConnection):
+    sqliteConnection.commit()
+
 def close_db_connection(sqliteConnection, cursor):
     if (sqliteConnection):
             cursor.close()

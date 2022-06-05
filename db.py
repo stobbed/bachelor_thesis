@@ -31,53 +31,8 @@ class DataDb:
         finally:
             pass
 
-    def createtable(self, tablename, columns):
-        query = '''CREATE TABLE ''' + str(tablename) + ''' (\n'''
-        index=0
-        for item in columns:
-            if index<len(columns)-1:
-                query += item + ''',\n'''
-            elif index==len(columns)-1:
-                query += item + ''');'''
-            index+=1
-        try:
-            self._cursor.execute(query)
-            print('created ' + str(tablename) + ' table')
-        except sqlite3.Error as error:
-            print('Error when creating ' + str(tablename) + ' table')
-
-    def writeonerow(self, tablename:str, content:list):
-        query = '''INSERT INTO ''' + str(tablename) + '\n' + '''VALUES ('''
-        for index in range(0,len(content)):
-            if index<len(content)-1:
-                query += '''?,'''
-            else:
-                query += '''?)'''
-        try:
-            self._cursor.execute(query, content)
-        except sqlite3.Error as error:
-            print('Error when inserting row into ' + str(tablename) + 'table: ', error)
-
-    def writemultiplerows(self, tablename:str, content:list[tuple]):
-        query = '''INSERT INTO ''' + str(tablename) + '\n' + '''VALUES ('''
-        for index in range(0,len(content[-1])):
-            if index<len(content[-1])-1:
-                query += '''?,'''
-            else:
-                query += '''?)'''
-        try:
-            self._cursor.executemany(query, content)
-        except sqlite3.Error as error:
-            print('Error when inserting multiple rows into ' + str(tablename) + 'table: ', error)
-
-    def updatecell(self, tablename:str, column, newvalue, condition_column, condition_value):
-        query = '''UPDATE ''' + str(tablename) + '''SET '''
-        for index in range(0,len(newvalue)):
-            if index == 0:
-                query += str(column[index]) + ''' = ''' + str(newvalue[index])
-            elif index > 0:
-                query += ''', ''' + str(column[index]) + ''' = ''' + str(newvalue[index])
-        query += ''' WHERE ''' + str(condition_column) + ''' = ''' + str(condition_value) + ''';'''
+    def getcursor(self):
+        return self._cursor
 
     def commit(self):
         self._sqliteConnection.commit()
@@ -131,9 +86,9 @@ class Db:
         """ reads all vehicle_link_events from DB and stores this information with the event_id as key in a dictionary """
         return get_links_for_event_id(self._cursor, self.event_id_link_dict, self.link_information_dict)
 
-    def create_driven_links_dict(self, vehicleslist: list) -> "dict":
+    def create_driven_links_dict(self, vehicleslist: list, datacursor) -> "dict":
         """ creates a dictionary with vehicle id as key for a list of trips as content. each trip contains the necessary informtion, when the vehicle entered and left the link, the length and freespeed """
-        create_entered_link_dict(vehicleslist, self.event_id_link_dict, self.driven_links_dict, self._cursor)
+        create_entered_link_dict(vehicleslist, datacursor, self.event_id_link_dict, self.driven_links_dict, self._cursor)
         return self.driven_links_dict
 
     def calculate_passenger_occupancy(self, drtvehicleids: list) -> "dict":
