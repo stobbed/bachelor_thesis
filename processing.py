@@ -371,7 +371,7 @@ def picklefile_read(filename: str):
     return content
 
 def gettime():
-    now = datetime.now()
+    now = datetime.datetime.now()
     current_time = now.strftime("%H:%M:%S")
     return current_time
 
