@@ -27,7 +27,7 @@ class Db:
                 # connects to sqlite database file - if path is faulty, creates a new and empty database
                 self._sqliteConnection = sqlite3.connect(dbpath)
                 self._cursor = self._sqliteConnection.cursor()
-                print('Connection to SQLite-File',dbpath,'>> SUCCESS!')
+                # print('Connection to SQLite-File',dbpath,'>> SUCCESS!')
             except sqlite3.Error as error:
                 print('SQLite error: ', error)
             finally:
@@ -56,29 +56,32 @@ class Db:
 
     def create_dict_link_info(self) -> "dict":
         """ creates a dictionary with every link id, length and freespeed """
-        create_link_information_dict(self._cursor, self.link_information_dict)
-        return self.link_information_dict
+        return create_link_information_dict(self._cursor, self.link_information_dict)
+        # return self.link_information_dict
 
-    def create_dict_event_id_links(self) -> "dict":
-        """ reads all vehicle_link_events from DB and stores this information with the event_id as key in a dictionary """
-        return get_links_for_event_id(self._cursor, self.event_id_link_dict, self.link_information_dict)
+    def calculate_vehicle_information(self, vehicle, link_information_dict, simulationname):
+        return get_vehicle_information(self._cursor, vehicle, link_information_dict, simulationname)
 
-    def create_driven_links_dict(self, vehicleslist: list) -> "dict":
-        """ creates a dictionary with vehicle id as key for a list of trips as content. each trip contains the necessary informtion, when the vehicle entered and left the link, the length and freespeed """
-        create_entered_link_dict(vehicleslist, self.event_id_link_dict, self.driven_links_dict, self._cursor)
-        return self.driven_links_dict
+    # def create_dict_event_id_links(self) -> "dict":
+    #     """ reads all vehicle_link_events from DB and stores this information with the event_id as key in a dictionary """
+    #     return get_links_for_event_id(self._cursor, self.event_id_link_dict, self.link_information_dict)
 
-    def calculate_passenger_occupancy(self, drtvehicleids: list) -> "dict":
-        """ retrieves information about pickup_dropoff events from DB and stores the passenger amount for each event_id where such an event happened in a dictionary """
-        return get_passenger_occupancy(drtvehicleids, self._cursor)
+    # def create_driven_links_dict(self, vehicleslist: list) -> "dict":
+    #     """ creates a dictionary with vehicle id as key for a list of trips as content. each trip contains the necessary informtion, when the vehicle entered and left the link, the length and freespeed """
+    #     create_entered_link_dict(vehicleslist, self.event_id_link_dict, self.driven_links_dict, self._cursor)
+    #     return self.driven_links_dict
 
-    def calculate_passengers_for_link(self, drtvehicleids: list, dictofPassengerOccupancy: dict, driven_links_dict: dict) -> "dict":
-        """ uses the previously created dictionary dictofPassengerOccupancy to retrieve how many passengers where in the car and stores that information based on the links (connected by the event_id) in a dictionary """
-        return get_passengers_for_link(drtvehicleids, dictofPassengerOccupancy, driven_links_dict, self._cursor)
+    # def calculate_passenger_occupancy(self, drtvehicleids: list) -> "dict":
+    #     """ retrieves information about pickup_dropoff events from DB and stores the passenger amount for each event_id where such an event happened in a dictionary """
+    #     return get_passenger_occupancy(drtvehicleids, self._cursor)
 
-    def assign_capacity(self, drtvehicleids: list, vehicledict: dict):
-        """ looks up capacity for each vehicle id in vehicleids in DB and returns capacity and adds it in the vehicledict """
-        return get_capacity(drtvehicleids, vehicledict, self._cursor)
+    # def calculate_passengers_for_link(self, drtvehicleids: list, dictofPassengerOccupancy: dict, driven_links_dict: dict) -> "dict":
+    #     """ uses the previously created dictionary dictofPassengerOccupancy to retrieve how many passengers where in the car and stores that information based on the links (connected by the event_id) in a dictionary """
+    #     return get_passengers_for_link(drtvehicleids, dictofPassengerOccupancy, driven_links_dict, self._cursor)
+
+    # def assign_capacity(self, drtvehicleids: list, vehicledict: dict):
+    #     """ looks up capacity for each vehicle id in vehicleids in DB and returns capacity and adds it in the vehicledict """
+    #     return get_capacity(drtvehicleids, vehicledict, self._cursor)
 
 
     # unneccesary atm
