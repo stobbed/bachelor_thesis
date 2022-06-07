@@ -15,6 +15,7 @@ your_os = platform.system()
 # path_drt = r'/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats'
 manualdirectory = False
 
+region = 'berlin'
 path_drt = r'/Users/dstobbe/Downloads/MATSIM Output/berlin-drt-v5.5-1pct'
 # path_drt = r'G:\MATSIM Output\berlin-drt-v5.5-1pct'
 # path_drt = r'G:\MATSIM Output\hundekopf-rebalancing-1000vehicles-2seats'
@@ -64,6 +65,10 @@ def setpaths(path):
 
     return xmlpath_nw, xmlpath_evts, xmlpath_vehicles, dbpath
 
+def assigndirectorymanually():
+    path_drt = r'/Users/dstobbe/Downloads/MATSIM Output/berlin-drt-v5.5-1pct'
+    return path_drt
+
 def askfordirectory():
     if manualdirectory == False:
         try:
@@ -87,7 +92,3 @@ def askfordirectory():
             assigndirectorymanually()
     elif manualdirectory == True:
         assigndirectorymanually()
-
-def assigndirectorymanually():
-    path_drt = r'/Users/dstobbe/Downloads/MATSIM Output/berlin-drt-v5.5-1pct'
-    return path_drt
