@@ -59,8 +59,8 @@ class Db:
         return create_link_information_dict(self._cursor, self.link_information_dict)
         # return self.link_information_dict
 
-    def calculate_vehicle_information(self, vehicle, link_information_dict, simulationname):
-        return get_vehicle_information(self._cursor, vehicle, link_information_dict, simulationname)
+    def calculate_vehicle_information(self, vehicle, link_information_dict, simulationname, path, listofagents):
+        return get_vehicle_information(self._cursor, vehicle, link_information_dict, simulationname, path, listofagents)
 
     # def create_dict_event_id_links(self) -> "dict":
     #     """ reads all vehicle_link_events from DB and stores this information with the event_id as key in a dictionary """
@@ -110,8 +110,6 @@ class MockDb:
         d.add("bmw",[Trip("zittauer","1"),Trip("berliner","2")])
         # d.add("vw","456")
         return d
-
-
 
 # def test_get_occ():
 #     db = MockDb()

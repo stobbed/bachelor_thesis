@@ -538,6 +538,8 @@ def create_database(dbpath, xmlpath_nw, xmlpath_evts, xmlpath_vehicles):
                     single_row.append('None')
             elif elem.attrib['type'] == 'vehicle enters traffic' or elem.attrib['type'] == 'vehicle leaves traffic':
                 single_row.append(elem.attrib['vehicle'])
+            elif elem.attrib['type'] == 'PassengerRequest scheduled':
+                single_row.append(elem.attrib['vehicle'])
             else:
                 single_row.append('None')
             query = '''INSERT INTO events(event_id, time, type_id, vehicle)

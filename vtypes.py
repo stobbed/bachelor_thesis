@@ -7,6 +7,7 @@ class Trip:
     entered_time: int
     link_length: float
     link_freespeed: float
+    passengerfromregion: bool
     left_time: int = -1
     actual_speed: float = -1
     speed_pct: float = -1
@@ -41,6 +42,7 @@ class Vehicle:
     pkm_highway: float
     total_pkm: float
     avgpassenger_amount: float
+    distance_not_from_region: float = 0
     capacity: int = -1
     # trips: list[Trip]
 

@@ -61,9 +61,9 @@ def create_link_information_dict(cursor, link_information_dict: dict) -> "dict":
     # print("...succesfully created link_information_dict!" + str(gettime()))
     return link_information_dict
 
-def get_vehicle_information(cursor, vehicle, link_information_dict: dict, simulationname):
+def get_vehicle_information(cursor, vehicle, link_information_dict: dict, simulationname, path, listofagents):
     event_id_link_dict = get_links_for_vehicleid(cursor, vehicle, link_information_dict)
-    driven_links = create_entered_link_list(vehicle, event_id_link_dict, cursor)
+    driven_links = create_entered_link_list(vehicle, event_id_link_dict, cursor, listofagents)
     del event_id_link_dict
     passengeroccupancy = get_passenger_occupancy(vehicle, cursor)
     driven_links = get_passengers_for_link(vehicle, passengeroccupancy, driven_links, cursor)
@@ -74,7 +74,7 @@ def get_vehicle_information(cursor, vehicle, link_information_dict: dict, simula
     keys = []
     for nis in vehicleinfo.__dict__:
         vinfo.append(vehicleinfo.__dict__[nis])
-    filename = str(simulationname) + '_vehicleinfo.csv'
+    filename = os.path.join(path, simulationname + '_vehicleinfo.csv')
     with open(filename,'a') as file:
         writer_object = csv.writer(file)
         writer_object.writerow(vinfo)
@@ -101,7 +101,7 @@ def get_links_for_vehicleid(cursor, vehicle, link_information_dict: dict) -> "di
     # print("...succesfully created event_id_link_dict! ", str(gettime()))
     return event_id_link_dict
 
-def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor) -> dict:
+def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofagents) -> dict:
     """ creates a dictionary with vehicle id as key for a list of trips as content. 
         each trip contains the necessary informtion, when the vehicle entered and left the link, the length and freespeed
         this script als calculates the actual speeed, as well as the percentual speed it therefore reached"""
@@ -109,22 +109,36 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor) -> dict:
     query = ''' SELECT event_id, time, type_id, vehicle
             FROM events 
             WHERE vehicle = ?'''
+    query_passengerequest = ''' SELECT person
+                                FROM PassengerRequest_events
+                                WHERE event_id = ? '''
     db_output = query_db(query, cursor, vehicle)
     driven_links = []
     tripindex = 0
     # iterate through db_output with an index
+    passengerfromregion = False
+    if not str(vehicle).startswith("drt"):
+        if vehicle in listofagents:
+            passengerfromregion = True
     for index in range(0, len(db_output)):
         event_id = db_output[index][0]
         time = db_output[index][1]
         type_id = db_output[index][2]
         vehicle = db_output[index][3]
+        if type_id == 23:
+            db_output_request = query_db(query_passengerequest, cursor, event_id)
+            if str(db_output_request[0][0]) in listofagents:
+                passengerfromregion = True
+            else:
+                passengerfromregion = False
+                # print('passenger ', db_output_request[0][0], 'not from region')
         # type_id == 8 means entered link and therefore appends the dictionary with the Class trip and its information
         if type_id == 8:
             trip = event_id_link_dict[event_id]
             link = trip.link
             length = trip.length
             freespeed = trip.freespeed
-            driven_links.append(Trip(link, event_id, time, length, freespeed))
+            driven_links.append(Trip(link, event_id, time, length, freespeed, passengerfromregion))
             tripindex += 1
         # type_id == 7 means left link
         elif type_id == 7:
@@ -223,25 +237,30 @@ def calculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Vehi
     highway = 0
     pkm_highway = 0
     totalpassengers = 0
+    distance_not_from_region = 0
     # iterate through entered links
     for trips in enteredlinks_for_vehicle:
-        totaldistance += trips.link_length
-        if trips.link_freespeed <= in_town_max:
-            intown += trips.link_length
-            pkm_intown += trips.link_length * trips.passengers
-        if trips.link_freespeed < out_town_max and trips.link_freespeed > in_town_max:
-            countryroad += trips.link_length
-            pkm_countryroad += trips.link_length * trips.passengers
-        if trips.link_freespeed >= out_town_max:
-            highway += trips.link_length
-            pkm_highway += trips.link_length * trips.passengers
-        totalpassengers += trips.passengers
-        intownpct = intown/totaldistance
-        countryroadpct = countryroad/totaldistance
-        highwaypct = highway/totaldistance
+        if trips.passengerfromregion == True:
+            totaldistance += trips.link_length
+            if trips.link_freespeed <= in_town_max:
+                intown += trips.link_length
+                pkm_intown += trips.link_length * trips.passengers
+            if trips.link_freespeed < out_town_max and trips.link_freespeed > in_town_max:
+                countryroad += trips.link_length
+                pkm_countryroad += trips.link_length * trips.passengers
+            if trips.link_freespeed >= out_town_max:
+                highway += trips.link_length
+                pkm_highway += trips.link_length * trips.passengers
+            totalpassengers += trips.passengers
+            intownpct = intown/totaldistance
+            countryroadpct = countryroad/totaldistance
+            highwaypct = highway/totaldistance
+        elif trips.passengerfromregion == False:
+            # if passenger is not from region
+            distance_not_from_region += trips.link_length
     totalpkm = pkm_intown + pkm_countryroad + pkm_highway
     avgpassenger_amount = totalpassengers/len(enteredlinks_for_vehicle)
-    vehicleinfo = Vehicle(vehicle, totaldistance, intownpct, countryroadpct, highwaypct, pkm_intown, pkm_countryroad, pkm_highway, totalpkm, avgpassenger_amount)
+    vehicleinfo = Vehicle(vehicle, totaldistance, intownpct, countryroadpct, highwaypct, pkm_intown, pkm_countryroad, pkm_highway, totalpkm, avgpassenger_amount, distance_not_from_region)
     return vehicleinfo
 
 def get_capacity(vehicleids: list, vehicledict: dict, cursor) -> "dict":

@@ -3,9 +3,9 @@ from db import *
 import multiprocessing
 import time
 
-def vehicleinfo_batch(vehicle, link_information_dict, simulationname, path):
+def vehicleinfo_batch(vehicle, link_information_dict, simulationname, path, listofagents):
     db = Db(path)
-    db.calculate_vehicle_information(vehicle, link_information_dict, simulationname)
+    db.calculate_vehicle_information(vehicle, link_information_dict, simulationname, path, listofagents)
     print('finished with vehicle: ', str(vehicle))
 
 def batching(path):
@@ -16,7 +16,7 @@ def batching(path):
     listofagents = create_personlist(path, simulationname)
     # multiprocessing
     pool = multiprocessing.Pool()
-    processes = [pool.apply_async(vehicleinfo_batch, args = (vehicle, link_information_dict, simulationname, path)) for vehicle in vehicleslist]
+    processes = [pool.apply_async(vehicleinfo_batch, args = (vehicle, link_information_dict, simulationname, path, listofagents)) for vehicle in vehicleslist]
     result = [p.get() for p in processes]
 
 if __name__ == "__main__":
