@@ -3,10 +3,16 @@ from db import *
 import multiprocessing
 import time
 
+from tqdm import tqdm
+
 def vehicleinfo_batch(vehicle, link_information_dict, simulationname, path, listofagents):
     db = Db(path)
     db.calculate_vehicle_information(vehicle, link_information_dict, simulationname, path, listofagents)
-    print('finished with vehicle: ', str(vehicle))
+    # print('finished with vehicle: ', str(vehicle))
+
+# pbar = tqdm(total=len(vehicleslist))
+def update(*a):
+    pbar.update()
 
 def batching(path):
     db = Db(path)
@@ -15,12 +21,18 @@ def batching(path):
     vehicleslist = db.get_drtvehicles()
     listofagents = create_personlist(path, simulationname)
     # multiprocessing
+    global pbar 
+    pbar = tqdm(total=len(vehicleslist))
+
     pool = multiprocessing.Pool()
-    processes = [pool.apply_async(vehicleinfo_batch, args = (vehicle, link_information_dict, simulationname, path, listofagents)) for vehicle in vehicleslist]
+    processes = [pool.apply_async(vehicleinfo_batch, args = (vehicle, link_information_dict, simulationname, path, listofagents), callback = update) for vehicle in vehicleslist]
     result = [p.get() for p in processes]
+    pool.close()
+    pool.join()
 
 if __name__ == "__main__":
     tic = time.perf_counter()
+
 
     path = path_drt
     batching(path)
