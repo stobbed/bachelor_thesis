@@ -61,7 +61,7 @@ def create_link_information_dict(cursor, link_information_dict: dict) -> "dict":
     # print("...succesfully created link_information_dict!" + str(gettime()))
     return link_information_dict
 
-def get_vehicle_information(cursor, vehicle, link_information_dict: dict, simulationname, path, listofagents):
+def get_vehicle_information(cursor, vehicle, link_information_dict: dict, path, listofagents):
     event_id_link_dict = get_links_for_vehicleid(cursor, vehicle, link_information_dict)
     driven_links = create_entered_link_list(vehicle, event_id_link_dict, cursor, listofagents)
     del event_id_link_dict
@@ -74,7 +74,7 @@ def get_vehicle_information(cursor, vehicle, link_information_dict: dict, simula
     keys = []
     for nis in vehicleinfo.__dict__:
         vinfo.append(vehicleinfo.__dict__[nis])
-    filename = os.path.join(path, simulationname + '_vehicleinfo.csv')
+    filename = os.path.join(path, getsimulationname(path) + '_vehicleinfo.csv')
     with open(filename,'a') as file:
         writer_object = csv.writer(file)
         writer_object.writerow(vinfo)
@@ -263,16 +263,6 @@ def calculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Vehi
     vehicleinfo = Vehicle(vehicle, totaldistance, intownpct, countryroadpct, highwaypct, pkm_intown, pkm_countryroad, pkm_highway, totalpkm, avgpassenger_amount, distance_not_from_region)
     return vehicleinfo
 
-def get_capacity(vehicleids: list, vehicledict: dict, cursor) -> "dict":
-    """ looks up capacity for each vehicle id in vehicleids in DB and returns capacity and adds it in the vehicledict"""
-    # print("adding capacity to each vehicle in vehicledict...")
-    query = ''' SELECT capacity from vehicles WHERE vehicle_id = ?'''
-    for id in vehicleids:
-        db_output = query_db(query, cursor, id)
-        capacity = db_output[0][0]
-        vehicledict[id].capacity = capacity
-    # print("...succesfully added capacity to each vehicle!")
-    return vehicledict
 
 def get_passenger_occupancy(vehicle, cursor) -> "dict":
     """ retrieves information about pickup_dropoff events from DB and stores the passenger amount for each event_id where such an event happened in a dictionary"""
@@ -295,6 +285,17 @@ def get_passenger_occupancy(vehicle, cursor) -> "dict":
         passengeroccupancy.append(occupancytuple)
     # print("...created occupancy dictionary! ", str(gettime()))
     return passengeroccupancy
+
+def get_capacity(vehicleids: list, vehicledict: dict, cursor) -> "dict":
+    """ looks up capacity for each vehicle id in vehicleids in DB and returns capacity and adds it in the vehicledict"""
+    # print("adding capacity to each vehicle in vehicledict...")
+    query = ''' SELECT capacity from vehicles WHERE vehicle_id = ?'''
+    for id in vehicleids:
+        db_output = query_db(query, cursor, id)
+        capacity = db_output[0][0]
+        vehicledict[id].capacity = capacity
+    # print("...succesfully added capacity to each vehicle!")
+    return vehicledict
 
 def get_passengers_for_link(vehicle, passengeroccupancy: list, driven_links: list, cursor) -> "dict":
     """ uses the previously created dictionary dictofPassengerOccupancy to retrieve how many passengers where in the car and stores that information based on the links (connected by the event_id) in a dictionary"""
@@ -336,6 +337,34 @@ def get_time_for_event_id (event_id: int, cursor) -> "float":
     query = ''' SELECT time FROM events WHERE event_id = ?'''
     time = query_db(query, cursor, event_id)
     return time[0][0]
+
+def calculate_avg_vehicle(path):
+    totalkm_region = 0 ;totalkm_notregion = 0; totalpkm = 0
+    intown_pct = 0; countryroad_pct = 0; highway_pct = 0
+    pkm_intown = 0; pkm_countryroad = 0; pkm_highway = 0
+    avgpassenger_amount = 0
+    # data = pd.read_csv("/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats/hundekopf-rebalancing-1000vehicles-2seats_vehicleinfo.csv")
+    data = pd.read_csv(os.path.join(path, getsimulationname(path) + '_vehicleinfo.csv'))
+    vehicleamount = data._values.shape[0]
+    for line in data._values:
+        totalkm_region += line[1]; totalkm_notregion += line[10]; totalpkm += line[8]
+        intown_pct += line[2]; countryroad_pct += line[3]; highway_pct += line[4]
+        pkm_intown += line[5]; pkm_countryroad += line[6]; pkm_highway += line[7]
+        avgpassenger_amount += line[9]
+    info = {}
+    info['totalkm'] = totalkm_region + totalkm_notregion
+    info['avg_totalkm'] = (totalkm_region + totalkm_notregion) / vehicleamount
+    info['avg_totalkm_region'] = totalkm_region / vehicleamount
+    info['avg_totalkm_notregion'] = totalkm_notregion / vehicleamount
+    info['avg_totalpkm'] = totalpkm / vehicleamount
+    info['avg_intown_pct'] = intown_pct / vehicleamount
+    info['avg_countryroad_pct'] = countryroad_pct / vehicleamount
+    info['avg_highway_pct'] = highway_pct / vehicleamount
+    info['avg_pkm_intown'] = pkm_intown / vehicleamount
+    info['avg_pkm_countryroad'] = pkm_countryroad / vehicleamount
+    info['avg_pkm_highway'] = pkm_highway / vehicleamount
+    info['avg_passenger_amount'] = avgpassenger_amount / vehicleamount
+    return info
 
 def create_fleet_information(vehicledict: dict, vehiclelist: list) -> "Fleet":
     """ creates an item of the Class Fleet which contains all the information for the fleet consisting of the vehicles in vehicleslist.

@@ -47,7 +47,7 @@ class Db:
     def disconnect(self):
         self._cursor.close()
         self._sqliteConnection.close()
-        print('The SQLite connection is closed')
+        # print('The SQLite connection is closed')
     
 
     def get_drtvehicles(self) -> "list[str]":
@@ -59,8 +59,8 @@ class Db:
         return create_link_information_dict(self._cursor, self.link_information_dict)
         # return self.link_information_dict
 
-    def calculate_vehicle_information(self, vehicle, link_information_dict, simulationname, path, listofagents):
-        return get_vehicle_information(self._cursor, vehicle, link_information_dict, simulationname, path, listofagents)
+    def calculate_vehicle_information(self, vehicle, link_information_dict, path, listofagents):
+        return get_vehicle_information(self._cursor, vehicle, link_information_dict, path, listofagents)
 
     # def create_dict_event_id_links(self) -> "dict":
     #     """ reads all vehicle_link_events from DB and stores this information with the event_id as key in a dictionary """

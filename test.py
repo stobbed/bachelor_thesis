@@ -5,8 +5,34 @@ from config import *
 import gzip
 import xml.etree.cElementTree as ET
 import csv
-
 import pandas as pd
+
+path="/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats"
+data = pd.read_csv(os.path.join(path, getsimulationname(path) + '_vehicleinfo.csv'))
+totalkm_region = 0 ;totalkm_notregion = 0; totalpkm = 0
+intown_pct = 0; countryroad_pct = 0; highway_pct = 0
+pkm_intown = 0; pkm_countryroad = 0; pkm_highway = 0
+avgpassenger_amount = 0
+data = pd.read_csv("/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats/hundekopf-rebalancing-1000vehicles-2seats_vehicleinfo.csv")
+vehicleamount = data._values.shape[0]
+for line in data._values:
+    totalkm_region += line[1]; totalkm_notregion += line[10]; totalpkm += line[8]
+    intown_pct += line[2]; countryroad_pct += line[3]; highway_pct += line[4]
+    pkm_intown += line[5]; pkm_countryroad += line[6]; pkm_highway += line[7]
+    avgpassenger_amount += line[9]
+totalkm = totalkm_region + totalkm_notregion
+avg_totalkm = totalkm / vehicleamount
+avg_totalkm_region = totalkm_region / vehicleamount
+avg_totalkm_notregion = totalkm_notregion / vehicleamount
+avg_totalpkm = totalpkm / vehicleamount
+avg_intown_pct = intown_pct / vehicleamount
+avg_countryroad_pct = countryroad_pct / vehicleamount
+avg_highway_pct = highway_pct / vehicleamount
+avg_pkm_intown = pkm_intown / vehicleamount
+avg_pkm_countryroad = pkm_countryroad / vehicleamount
+avg_pkm_highway = pkm_highway / vehicleamount
+avgpassenger_amount = avgpassenger_amount / vehicleamount
+
 region = 'berlin'
 data = pd.read_csv("/Users/dstobbe/Downloads/MATSIM Output/berlin-drt-v5.5-1pct/berlin-drt-v5.5-1pct.output_persons.csv.gz", compression='gzip')
 listofagents = []
@@ -16,13 +42,6 @@ for line in data._values:
     homeregion = text[-1].replace("']","")
     if homeregion == region:
         listofagents.append(agent)
-
-# file = gzip.open(os.path.join(path, simulationname + '..output_persons.csv.gz'), mode='rt', encoding='UTF-8')
-file = gzip.open("/Users/dstobbe/Downloads/MATSIM Output/berlin-drt-v5.5-1pct/berlin-drt-v5.5-1pct.output_persons.csv.gz", mode='rt', encoding='UTF8')
-with open(file, 'r') as f:
-    csv_reader= csv.reader(f)
-    for line in csv_reader:
-        print(line)
 
 with open('link_event_id_dict.pickle', 'rb') as fp:
     content = pickle.load(fp)
