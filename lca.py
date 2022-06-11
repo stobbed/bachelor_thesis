@@ -1,5 +1,6 @@
 from numpy import product
-from config import *
+import os.path
+from configuration import getfromconfig
 import olca
 
 class olcaclient():
@@ -11,6 +12,7 @@ class olcaclient():
         # set impact method
         self._setup.impact_method = self._client.find(olca.ImpactMethod, 'zeroCUTS')
         self._resultspath = os.path.join(path, 'results')
+        self.drt_vehiclesize = getfromconfig('vehicle_parameters', 'drt_vehiclesize')
 
     def redefinition(self, paramatername, value):
         self.setup.parameter_redefs = []
@@ -22,7 +24,7 @@ class olcaclient():
     def calculate_and_save(self, productname):
         productsystem = self._client.find(olca.ProductSystem, productname)
         self._setup.product_system = productsystem
-        excelname = os.path.join(self._resultspath, productname + '-' + drt_vehiclesize + '-seats' + '.xlsx')
+        excelname = os.path.join(self._resultspath, productname + '-' + self.drt_vehiclesize + '-seats' + '.xlsx')
         try:
             openlca_result = self._client.calculate(self._setup)
             self._client.excel_export(openlca_result, excelname)
@@ -35,11 +37,11 @@ class olcaclient():
 
         # setting up IPC connection (port may have to be adjusted)
         
-        if drt_vehiclesize == 2:
+        if self.drt_vehiclesize == 2:
             drt_size = 'small'
-        elif drt_vehiclesize == 4:
+        elif self.drt_vehiclesize == 4:
             drt_size = 'medium'
-        elif drt_vehiclesize == 7:
+        elif self.drt_vehiclesize == 7:
             print("this drt vehicle size needs to be implemented first")
             pass
         else:

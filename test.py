@@ -1,11 +1,31 @@
+from calendar import c
 import pytest
 import pickle
 import os.path
-from config import *
+from configuration import *
 import gzip
 import xml.etree.cElementTree as ET
 import csv
 import pandas as pd
+
+import configparser
+
+# config = configparser.ConfigParser()
+# config.add_section('paths')
+# config.set('paths', 'path_drt', "r'/Users/dstobbe/Downloads/MATSIM Output/berlin-drt-v5.5-1pct'")
+# config.set('paths', 'path_refrence', "r'/Users/dstobbe/Downloads/MATSIM Output/berlin-v5.5.3-1pct'")
+
+# config.add_section('vehicle_parameters')
+# config.set('vehicle_parameters', 'drt_vehiclesize', str(2))
+
+# with open("config.ini", "w") as file:
+#     config.write(file)
+
+# from configurationgui import *
+# app = App()
+# app.mainloop()
+
+# print(path_drt)
 
 path="/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats"
 data = pd.read_csv(os.path.join(path, getsimulationname(path) + '_vehicleinfo.csv'))

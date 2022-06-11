@@ -52,7 +52,8 @@ def batching_nondrt(path):
         create_results_dir(path)
 
         #progress bar
-        global pbar 
+        global pbar
+        pbar.reset()
         pbar = tqdm(total=len(listofagents))
 
         # multiprocessing
@@ -61,5 +62,7 @@ def batching_nondrt(path):
         result = [p.get() for p in processes]
         pool.close()
         pool.join()
+        pbar.update()
+        os.rename(os.path.join(os.path.join(path, 'results', simulationname + '_vehicleinfo.csv')), os.path.join(path, 'results', simulationname + '_vehicleinfo_finished.csv'))
     else:
         print("vehicle info csv already exists!")

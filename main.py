@@ -4,8 +4,8 @@ from collections import defaultdict
 import os.path
 import pickle
 
-from config import dbpath as dbfile_path
-from config import simulationdate
+from configuration import dbpath as dbfile_path
+from configuration import simulationdate
 
 from XML2DB import create_database
 from database_operations import establish_db_connection, close_db_connection

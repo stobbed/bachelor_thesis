@@ -2,7 +2,7 @@ import sqlite3
 import os.path
 from collections import defaultdict
 
-from config import *
+from configuration import *
 from vtypes import *
 from XML2DB import *
 from processing import *

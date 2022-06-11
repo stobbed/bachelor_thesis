@@ -1,11 +1,18 @@
-from config import *
+from configuration import *
 from db import *
-import time
-
+from configurationgui import *
 import mprocessing
 
+import time
+
+
 if __name__ == "__main__":
+    gui = configui()
+
     tic = time.perf_counter()
+
+    path_drt = getfromconfig('paths','path_drt')
+    path_reference = getfromconfig('paths','path_reference')
 
     mprocessing.batching_drt(path_drt)
     print("finished analyzing drt scenario!")

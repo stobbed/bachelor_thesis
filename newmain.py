@@ -1,7 +1,7 @@
 from timeit import default_timer as timer
 
 from py import process
-from config import *
+from configuration import *
 from db import *
 import multiprocessing
 

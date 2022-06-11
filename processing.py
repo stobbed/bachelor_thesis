@@ -6,7 +6,7 @@ from datetime import datetime
 import csv
 import pandas as pd
 
-from config import *
+from configuration import *
 from database_operations import query_db
 from vtypes import *
 
@@ -233,7 +233,7 @@ def create_vehicle_info(vehicle, driven_links: list) -> "dict":
     # return vehicledict
     return vehicleinfo
 
-def calculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Vehicle":
+def itcalculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Vehicle":
     """ calculates total driven distance, checks road type and stores road percentages as well as person kilometers and returns Vehicle Class with information for vehicle id"""
     # evtl. speeds anpassen
     in_town_max = 51 / 3.6
@@ -379,11 +379,11 @@ def calculate_avg_vehicle(path):
     data = pd.read_csv(os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo_finished.csv'))
     vehicleamount = data._values.shape[0]
     for line in data._values:
-        totalkm_region += line[1]; totalkm_notregion += line[10]; totalpkm += line[8]
+        totalkm_region += line[1]; totalkm_notregion += line[17]; totalpkm += line[8]
         intown_pct += line[2]; countryroad_pct += line[3]; highway_pct += line[4]
         pkm_intown += line[5]; pkm_countryroad += line[6]; pkm_highway += line[7]
-        avg_speed += line[9]; speed_length += line[10]; speed_above_90 += line[11]; speed_below_70 += line[12]; speed_below_50 += line[13]; speed_below_30 += line[14]; speed_below_10 += line[15]
-        avgpassenger_amount += line[16]
+        avg_speed += line[10]; speed_length += line[11]; speed_above_90 += line[12]; speed_below_70 += line[13]; speed_below_50 += line[14]; speed_below_30 += line[15]; speed_below_10 += line[16]
+        avgpassenger_amount += line[9]
     info = {}
     info['vehicleamount'] = vehicleamount
     info['totalkm'] = totalkm_region + totalkm_notregion
