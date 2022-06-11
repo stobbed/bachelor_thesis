@@ -78,3 +78,12 @@ def getfromconfig(group, object):
     content = config_group[object]
 
     return content
+
+def getfromvehicleconfig(group, object):
+    config_obj = configparser.ConfigParser()
+    config_obj.read("vehiclestandards.ini")
+
+    config_group = config_obj[group]
+    content = config_group[object]
+
+    return content

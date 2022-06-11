@@ -1,3 +1,6 @@
+# this python file contains all sort of functions needed to analyze the MATSIM outputs
+# in order to return the vehicleinfo.csv
+
 from collections import defaultdict
 import pickle
 import os.path
@@ -63,12 +66,16 @@ def create_link_information_dict(cursor, link_information_dict: dict) -> "dict":
     return link_information_dict
 
 def create_results_dir(path):
+    ''' creates a direcotry called results in the MATSIM outputs folder for each scenario '''
     if not os.path.exists(os.path.join(path,'results')):
         os.mkdir(os.path.join(path,'results'))
     # if os.path.exists(os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo.csv')):
     #     os.remove(os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo.csv'))
 
 def get_vehicle_information(cursor, vehicle, link_information_dict: dict, path, listofagents, drt_status = True):
+    ''' primary function that gets called for every vehicle inside the multiprocessing 
+        first gets the driven links and if drt_status = True goes through all events
+        and adds the information how many passengers where present in the car on which link'''
     event_id_link_dict = get_links_for_vehicleid(cursor, vehicle, link_information_dict)
     driven_links = create_entered_link_list(vehicle, event_id_link_dict, cursor, listofagents)
     del event_id_link_dict
@@ -83,7 +90,6 @@ def get_vehicle_information(cursor, vehicle, link_information_dict: dict, path, 
         keys = []
         for nis in vehicleinfo.__dict__:
             vinfo.append(vehicleinfo.__dict__[nis])
-        #creating resuslts directory
         filename = os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo.csv')
         with open(filename,'a') as file:
             writer_object = csv.writer(file)

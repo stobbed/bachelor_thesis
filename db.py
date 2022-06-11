@@ -21,7 +21,7 @@ class LinksForEvent:
 
 class Db:
     def __init__(self,path):
-        xmlpath_nw, xmlpath_evts, xmlpath_vehicles, dbpath  = setpaths(path)
+        xmlpath_nw, xmlpath_evts, xmlpath_vehicles, dbpath = setpaths(path)
         if os.path.exists(dbpath):
             try:
                 # connects to sqlite database file - if path is faulty, creates a new and empty database

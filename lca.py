@@ -12,28 +12,30 @@ class olcaclient():
         # set impact method
         self._setup.impact_method = self._client.find(olca.ImpactMethod, 'zeroCUTS')
         self._resultspath = os.path.join(path, 'results')
-        self.drt_vehiclesize = getfromconfig('vehicle_parameters', 'drt_vehiclesize')
+        self.drt_vehiclesize = int(getfromconfig('vehicle_parameters', 'drt_vehiclesize'))
+        self.charging = getfromconfig('vehicle_parameters', 'charging')
 
     def redefinition(self, paramatername, value):
-        self.setup.parameter_redefs = []
-        redef_Parameter = olca.Parameterredef()
+        self._setup.parameter_redefs = []
+        redef_Parameter = olca.ParameterRedef()
         redef_Parameter.name = paramatername
         redef_Parameter.value = value
-        self.setup.parameter_redefs.append(redef_Parameter)
+        self._setup.parameter_redefs.append(redef_Parameter)
 
     def calculate_and_save(self, productname):
         productsystem = self._client.find(olca.ProductSystem, productname)
         self._setup.product_system = productsystem
-        excelname = os.path.join(self._resultspath, productname + '-' + self.drt_vehiclesize + '-seats' + '.xlsx')
+        excelname = os.path.join(self._resultspath, productname + '-' + str(self.drt_vehiclesize) + '-seats' + '.xlsx')
         try:
             openlca_result = self._client.calculate(self._setup)
+            print("finished calculation for,", productname, "storing into Excel now")
             self._client.excel_export(openlca_result, excelname)
             self._client.dispose(openlca_result)
         except Exception as e:
             print('Berechnung hat nicht stattgefunden'+ e) 
         
 
-    def lifecycleassessment_electric(self, chargingtype = 'normal'):
+    def lifecycleassessment_electric(self):
 
         # setting up IPC connection (port may have to be adjusted)
         
@@ -47,9 +49,11 @@ class olcaclient():
         else:
             print("there has been an error with your selected vehicle size")
 
-        production_name = "passenger car production, electric, " + chargingtype + ", " + drt_size +  " size passenger car | Cutoff, U"
+        production_name = "passenger car production, electric, " + self.charging + ", " + drt_size +  " size passenger car | Cutoff, U"
         transport_name = "transport only, passenger car, " + drt_size + " size, electric | Cutoff, U"
-        fuel_name = "eletric use"
+        fuel_name = "electric use"
+
+        self.redefinition('battery size small', 100)
         
         self.calculate_and_save(production_name)
         self.calculate_and_save(transport_name)
