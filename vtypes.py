@@ -42,6 +42,13 @@ class Vehicle:
     pkm_highway: float
     total_pkm: float
     avgpassenger_amount: float
+    avg_speed: float
+    speed_length: float
+    speed_above_90: float
+    speed_below_70: float
+    speed_below_50: float
+    speed_below_30: float
+    speed_below_10: float
     distance_not_from_region: float = 0
     capacity: int = -1
     # trips: list[Trip]

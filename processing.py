@@ -1,6 +1,7 @@
 from collections import defaultdict
 import pickle
 import os.path
+import os
 from datetime import datetime
 import csv
 import pandas as pd
@@ -61,24 +62,33 @@ def create_link_information_dict(cursor, link_information_dict: dict) -> "dict":
     # print("...succesfully created link_information_dict!" + str(gettime()))
     return link_information_dict
 
-def get_vehicle_information(cursor, vehicle, link_information_dict: dict, path, listofagents):
+def create_results_dir(path):
+    if not os.path.exists(os.path.join(path,'results')):
+        os.mkdir(os.path.join(path,'results'))
+    # if os.path.exists(os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo.csv')):
+    #     os.remove(os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo.csv'))
+
+def get_vehicle_information(cursor, vehicle, link_information_dict: dict, path, listofagents, drt_status = True):
     event_id_link_dict = get_links_for_vehicleid(cursor, vehicle, link_information_dict)
     driven_links = create_entered_link_list(vehicle, event_id_link_dict, cursor, listofagents)
     del event_id_link_dict
-    passengeroccupancy = get_passenger_occupancy(vehicle, cursor)
-    driven_links = get_passengers_for_link(vehicle, passengeroccupancy, driven_links, cursor)
-    del passengeroccupancy
-    vehicleinfo = create_vehicle_info(vehicle, driven_links)
-    del driven_links
-    vinfo = []
-    keys = []
-    for nis in vehicleinfo.__dict__:
-        vinfo.append(vehicleinfo.__dict__[nis])
-    filename = os.path.join(path, getsimulationname(path) + '_vehicleinfo.csv')
-    with open(filename,'a') as file:
-        writer_object = csv.writer(file)
-        writer_object.writerow(vinfo)
-        file.close()    
+    if drt_status == True:
+        passengeroccupancy = get_passenger_occupancy(vehicle, cursor)
+        driven_links = get_passengers_for_link(vehicle, passengeroccupancy, driven_links, cursor)
+        del passengeroccupancy
+    if len(driven_links) > 0:
+        vehicleinfo = create_vehicle_info(vehicle, driven_links)
+        del driven_links
+        vinfo = []
+        keys = []
+        for nis in vehicleinfo.__dict__:
+            vinfo.append(vehicleinfo.__dict__[nis])
+        #creating resuslts directory
+        filename = os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo.csv')
+        with open(filename,'a') as file:
+            writer_object = csv.writer(file)
+            writer_object.writerow(vinfo)
+            file.close()   
 
 
 def get_links_for_vehicleid(cursor, vehicle, link_information_dict: dict) -> "dict":
@@ -172,7 +182,7 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
                 index_left_traffic -= 1
             query = ''' SELECT link FROM vehicle_traffic_events WHERE event_id = ?'''
             # if index for left_traffic was found and is not 0...
-            if index_left_traffic != 0:
+            if index_left_traffic > 0:
                 # looks up the link for the event_id corresponding to the entered and left traffic events
                 link_entered_traffic = query_db(query, cursor, db_output[index_entered_traffic][0])[0]
                 link_left_traffic = query_db(query, cursor, db_output[index_left_traffic][0])[0]
@@ -237,7 +247,14 @@ def calculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Vehi
     highway = 0
     pkm_highway = 0
     totalpassengers = 0
+    speed_above_90 = 0; speed_below_70 = 0; speed_below_50 = 0; speed_below_30 = 0; speed_below_10 = 0
+    speed_length_sum = 0
     distance_not_from_region = 0
+    intownpct = 0
+    countryroadpct = 0
+    highwaypct = 0
+    avg_speed = 0
+    avgpassenger_amount = 0
     # iterate through entered links
     for trips in enteredlinks_for_vehicle:
         if trips.passengerfromregion == True:
@@ -252,15 +269,29 @@ def calculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Vehi
                 highway += trips.link_length
                 pkm_highway += trips.link_length * trips.passengers
             totalpassengers += trips.passengers
+            speed_length_sum += trips.actual_speed * trips.link_length
             intownpct = intown/totaldistance
             countryroadpct = countryroad/totaldistance
             highwaypct = highway/totaldistance
+            if trips.speed_pct >= .9:
+                speed_above_90 += trips.link_length
+            if trips.speed_pct <= .7:
+                speed_below_70 += trips.link_length
+            elif trips.speed_pct <= .5:
+                speed_below_50 += trips.link_length
+            elif trips.speed_pct <= .3:
+                speed_below_30 += trips.link_length
+            elif trips.speed_pct <= .1:
+                speed_below_10 += trips.link_length
         elif trips.passengerfromregion == False:
             # if passenger is not from region
             distance_not_from_region += trips.link_length
     totalpkm = pkm_intown + pkm_countryroad + pkm_highway
-    avgpassenger_amount = totalpassengers/len(enteredlinks_for_vehicle)
-    vehicleinfo = Vehicle(vehicle, totaldistance, intownpct, countryroadpct, highwaypct, pkm_intown, pkm_countryroad, pkm_highway, totalpkm, avgpassenger_amount, distance_not_from_region)
+    if totaldistance > 0:
+        avg_speed = (speed_length_sum * 3.6) / totaldistance
+        avgpassenger_amount = totalpassengers/len(enteredlinks_for_vehicle)
+    speed_length_sum = speed_length_sum * 3.6
+    vehicleinfo = Vehicle(vehicle, totaldistance, intownpct, countryroadpct, highwaypct, pkm_intown, pkm_countryroad, pkm_highway, totalpkm, avgpassenger_amount, avg_speed, speed_length_sum, speed_above_90, speed_below_70, speed_below_50, speed_below_30, speed_below_10, distance_not_from_region)
     return vehicleinfo
 
 
@@ -342,16 +373,19 @@ def calculate_avg_vehicle(path):
     totalkm_region = 0 ;totalkm_notregion = 0; totalpkm = 0
     intown_pct = 0; countryroad_pct = 0; highway_pct = 0
     pkm_intown = 0; pkm_countryroad = 0; pkm_highway = 0
+    avg_speed = 0; speed_length = 0; speed_above_90 = 0; speed_below_70 = 0; speed_below_50 = 0; speed_below_30 = 0; speed_below_10 = 0
     avgpassenger_amount = 0
     # data = pd.read_csv("/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats/hundekopf-rebalancing-1000vehicles-2seats_vehicleinfo.csv")
-    data = pd.read_csv(os.path.join(path, getsimulationname(path) + '_vehicleinfo.csv'))
+    data = pd.read_csv(os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo_finished.csv'))
     vehicleamount = data._values.shape[0]
     for line in data._values:
         totalkm_region += line[1]; totalkm_notregion += line[10]; totalpkm += line[8]
         intown_pct += line[2]; countryroad_pct += line[3]; highway_pct += line[4]
         pkm_intown += line[5]; pkm_countryroad += line[6]; pkm_highway += line[7]
-        avgpassenger_amount += line[9]
+        avg_speed += line[9]; speed_length += line[10]; speed_above_90 += line[11]; speed_below_70 += line[12]; speed_below_50 += line[13]; speed_below_30 += line[14]; speed_below_10 += line[15]
+        avgpassenger_amount += line[16]
     info = {}
+    info['vehicleamount'] = vehicleamount
     info['totalkm'] = totalkm_region + totalkm_notregion
     info['avg_totalkm'] = (totalkm_region + totalkm_notregion) / vehicleamount
     info['avg_totalkm_region'] = totalkm_region / vehicleamount
@@ -363,6 +397,13 @@ def calculate_avg_vehicle(path):
     info['avg_pkm_intown'] = pkm_intown / vehicleamount
     info['avg_pkm_countryroad'] = pkm_countryroad / vehicleamount
     info['avg_pkm_highway'] = pkm_highway / vehicleamount
+    info['avg_speed_pervehicle'] = avg_speed / vehicleamount
+    info['avg_speed_overlength'] = speed_length / (totalkm_region + totalkm_notregion)
+    info['avg_speed_above_90'] = speed_above_90 / (totalkm_region + totalkm_notregion)
+    info['avg_speed_below_70'] = speed_below_70 / (totalkm_region + totalkm_notregion)
+    info['avg_speed_below_50'] = speed_below_50 / (totalkm_region + totalkm_notregion)
+    info['avg_speed_below_30'] = speed_below_30 / (totalkm_region + totalkm_notregion)
+    info['avg_speed_below_10'] = speed_below_10 / (totalkm_region + totalkm_notregion)
     info['avg_passenger_amount'] = avgpassenger_amount / vehicleamount
     return info
 

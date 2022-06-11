@@ -17,6 +17,8 @@ manualdirectory = False
 
 region = 'berlin'
 path_drt = r'/Users/dstobbe/Downloads/MATSIM Output/berlin-drt-v5.5-1pct'
+# vehiclesize can either be 2 or 4 at the moment..
+drt_vehiclesize = 2
 path_reference = r'/Users/dstobbe/Downloads/MATSIM Output/berlin-v5.5.3-1pct'
 # path_drt = r'G:\MATSIM Output\berlin-drt-v5.5-1pct'
 # path_drt = r'G:\MATSIM Output\hundekopf-rebalancing-1000vehicles-2seats'

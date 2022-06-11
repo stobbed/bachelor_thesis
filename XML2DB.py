@@ -832,31 +832,33 @@ def create_database(dbpath, xmlpath_nw, xmlpath_evts, xmlpath_vehicles):
             #i+=1
         i = i + 1
 
+    sqliteConnection.commit()
 
     xmlpath = xmlpath_vehicles
     if os.path.exists(xmlpath):
         print('opening xml.gz file...')
         file = gzip.open(xmlpath, mode='rt', encoding='UTF-8')
         print('file opened!')
+        
+        tree = ET.parse(file)
+        root = tree.getroot()
+        vehicle_record = []
+        query = '''INSERT INTO vehicles
+                    VALUES (?, ?, ?)'''
+
+        for child in root:
+            vehicle_record.append(child.attrib['id'])
+            vehicle_record.append(child.attrib['start_link'])
+            vehicle_record.append(child.attrib['capacity'])
+            try:
+                cursor.execute(query, vehicle_record)
+            except sqlite3.Error as error:
+                print('Error when inserting node record into vehicles table: ', error)
+            finally:
+                vehicle_record = []
     else:
-        raise FileNotFoundError('Invalid path (xmlpath): '+xmlpath+' - *.xml.gz file doesn\'t exist.')
-
-    tree = ET.parse(file)
-    root = tree.getroot()
-    vehicle_record = []
-    query = '''INSERT INTO vehicles
-                VALUES (?, ?, ?)'''
-
-    for child in root:
-        vehicle_record.append(child.attrib['id'])
-        vehicle_record.append(child.attrib['start_link'])
-        vehicle_record.append(child.attrib['capacity'])
-        try:
-            cursor.execute(query, vehicle_record)
-        except sqlite3.Error as error:
-            print('Error when inserting node record into vehicles table: ', error)
-        finally:
-            vehicle_record = []
+        # raise FileNotFoundError('Invalid path (xmlpath): '+xmlpath+' - *.xml.gz file doesn\'t exist.')
+        print("no such file exists...")
 
             
     print('vehicle information successfully stored in DB!')
