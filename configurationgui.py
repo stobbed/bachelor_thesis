@@ -201,11 +201,6 @@ class vehicleparams(tk.Tk, object):
         self.consumption_small_opportunity = getfromvehicleconfig('energy_consumption','consumption_small_opportunity')
         self.consumption_medium_opportunity = getfromvehicleconfig('energy_consumption','consumption_medium_opportunity')
         self.consumption_large_opportunity = getfromvehicleconfig('energy_consumption','consumption_large_opportunity')
-        # self.path_drt = getfromconfig('paths', 'path_drt')
-        # self.path_reference = getfromconfig('paths', 'path_reference')
-        # self.drtvehiclesize = getfromconfig('vehicle_parameters', 'drt_vehiclesize')
-        # self.charging = getfromconfig('vehicle_parameters', 'charging')
-        # self.publictransport = getfromconfig('settings', 'publictransport_ignore')
 
         # get the screen dimension
         screen_width = self.winfo_screenwidth()
@@ -370,8 +365,11 @@ class vehicleparams(tk.Tk, object):
         self.consumption_large_opportunity_box.grid(column=5, row=5, sticky=tk.E, pady=10)
         self.consumption_large_opportunity_box.insert(0, self.consumption_large_opportunity)
 
-        self.saveparameters_button = ttk.Button(self, text="save parameters", command=lambda:[f() for f in [self.saveparameters, self.destroy]])
-        self.saveparameters_button.grid(column=0, row=6, columnspan=6)
+        self.restorestandards_button = ttk.Button(self, text="restore standards", command=self.restorestandards)
+        self.restorestandards_button.grid(column=1, row=6, sticky=tk.W, columnspan=4)
+
+        self.saveparameters_button = ttk.Button(self, text="save parameters and close", command=lambda:[f() for f in [self.saveparameters, self.destroy]])
+        self.saveparameters_button.grid(column=1, row=6, sticky=tk.E, columnspan=4)
         self.mainloop()
 
     def saveparameters(self):
@@ -403,3 +401,54 @@ class vehicleparams(tk.Tk, object):
 
         with open("vehicle.ini", 'w') as file:
             edit.write(file)
+
+    def restorestandards(self):
+        self.mass_small = getfromvehicleconfig('mass_wo_battery','mass_electric_small', True)
+        self.mass_small_box.delete(0, tk.END)
+        self.mass_small_box.insert(0, self.mass_small)
+        self.mass_medium = getfromvehicleconfig('mass_wo_battery','mass_electric_medium', True)
+        self.mass_medium_box.delete(0, tk.END)
+        self.mass_medium_box.insert(0, self.mass_medium)
+        self.mass_large = getfromvehicleconfig('mass_wo_battery','mass_electric_large', True)
+        self.mass_large_box.delete(0, tk.END)
+        self.mass_large_box.insert(0, self.mass_large)
+
+        self.battery_small = getfromvehicleconfig('battery_size','battery_small', True)
+        self.battery_small_box.delete(0, tk.END)
+        self.battery_small_box.insert(0, self.battery_small)
+        self.battery_medium = getfromvehicleconfig('battery_size','battery_medium', True)
+        self.battery_medium_box.delete(0, tk.END)
+        self.battery_medium_box.insert(0, self.battery_medium)
+        self.battery_large = getfromvehicleconfig('battery_size','battery_large', True)
+        self.battery_large_box.delete(0, tk.END)
+        self.battery_large_box.insert(0, self.battery_large)
+
+        self.battery_small_opportunity = getfromvehicleconfig('battery_size','battery_small_opportunity', True)
+        self.battery_small_opportunity_box.delete(0, tk.END)
+        self.battery_small_opportunity_box.insert(0, self.battery_small_opportunity)
+        self.battery_medium_opportunity = getfromvehicleconfig('battery_size','battery_medium_opportunity', True)
+        self.battery_medium_opportunity_box.delete(0, tk.END)
+        self.battery_medium_opportunity_box.insert(0, self.battery_medium_opportunity)
+        self.battery_large_opportunity = getfromvehicleconfig('battery_size','battery_large_opportunity', True)
+        self.battery_large_opportunity_box.delete(0, tk.END)
+        self.battery_large_opportunity_box.insert(0, self.battery_large_opportunity)
+
+        self.consumption_small = getfromvehicleconfig('energy_consumption','consumption_small', True)
+        self.consumption_small_box.delete(0, tk.END)
+        self.consumption_small_box.insert(0, self.consumption_small)
+        self.consumption_medium = getfromvehicleconfig('energy_consumption','consumption_medium', True)
+        self.consumption_medium_box.delete(0, tk.END)
+        self.consumption_medium_box.insert(0, self.consumption_medium)
+        self.consumption_large = getfromvehicleconfig('energy_consumption','consumption_large', True)
+        self.consumption_large_box.delete(0, tk.END)
+        self.consumption_large_box.insert(0, self.consumption_large)
+
+        self.consumption_small_opportunity = getfromvehicleconfig('energy_consumption','consumption_small_opportunity', True)
+        self.consumption_small_opportunity_box.delete(0, tk.END)
+        self.consumption_small_opportunity_box.insert(0, self.consumption_small_opportunity)
+        self.consumption_medium_opportunity = getfromvehicleconfig('energy_consumption','consumption_medium_opportunity', True)
+        self.consumption_medium_opportunity_box.delete(0, tk.END)
+        self.consumption_medium_opportunity_box.insert(0, self.consumption_medium_opportunity)
+        self.consumption_large_opportunity = getfromvehicleconfig('energy_consumption','consumption_large_opportunity', True)
+        self.consumption_large_opportunity_box.delete(0, tk.END)
+        self.consumption_large_opportunity_box.insert(0, self.consumption_large_opportunity)
