@@ -10,6 +10,11 @@ import pandas as pd
 
 import configparser
 
+Parameter = {'electric':2, 'battery':10}
+for key, value in Parameter.items():
+    print(key)
+    print(value)
+
 # config = configparser.ConfigParser()
 # config.add_section('paths')
 # config.set('paths', 'path_drt', "r'/Users/dstobbe/Downloads/MATSIM Output/berlin-drt-v5.5-1pct'")

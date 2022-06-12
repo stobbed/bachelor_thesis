@@ -23,18 +23,17 @@ if __name__ == "__main__":
     mprocessing.batching_nondrt(path_reference)
     print("finished analyzing reference scenario!")
 
-    drt_info = calculate_avg_vehicle(path_drt)
-    reference_info = calculate_avg_vehicle(path_reference)
+    # drt_info = calculate_avg_vehicle(path_drt)
+    # reference_info = calculate_avg_vehicle(path_reference)
 
-    time.sleep(1)
-    # openlca = olcaclient(path_drt)
-    # openlca.lifecycleassessment_electric()
+    openlca = olcaclient(path_drt)
+    openlca.lifecycleassessment_electric()
 
     # openlca = olcaclient(path_reference)
 
-    print(drt_info)
-    print(" ")
-    print(reference_info)
+    # print(drt_info)
+    # print(" ")
+    # print(reference_info)
 
     toc = time.perf_counter()
     print(f'took you: {toc-tic:0.1f} seconds')

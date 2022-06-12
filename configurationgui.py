@@ -50,7 +50,7 @@ class configgui(tk.Tk, object):
         self.path_drt_label = ttk.Label(self, text="DRT path:")
         self.path_drt_label.grid(column=0, row=2, sticky=tk.E)
 
-        self.path_drt_box = ttk.Entry(self, textvariable=self.path_drt, width=65, **entry_font)
+        self.path_drt_box = ttk.Entry(self, textvariable=tk.StringVar(), width=65, **entry_font)
         self.path_drt_box.grid(column=1, row=2, sticky=tk.W, pady=10)
         self.path_drt_box.insert(0, self.path_drt)
 
@@ -66,7 +66,7 @@ class configgui(tk.Tk, object):
         self.path_reference_label = ttk.Label(self, text="Reference path:")
         self.path_reference_label.grid(column=0, row=4, sticky=tk.E)        
 
-        self.path_reference_box = ttk.Entry(self, textvariable=self.path_reference, width=65, **entry_font)
+        self.path_reference_box = ttk.Entry(self, textvariable=tk.StringVar(), width=65, **entry_font)
         self.path_reference_box.grid(column=1, row=4, sticky=tk.W, pady=10)
         self.path_reference_box.insert(0, self.path_reference)
 
@@ -82,7 +82,7 @@ class configgui(tk.Tk, object):
         self.drtvehiclesize_label = ttk.Label(self, text="DRT vehicle size")
         self.drtvehiclesize_label.grid(column=0, row=6, sticky=tk.E)
 
-        self.drtvehiclesize_combo = ttk.Combobox(self, textvariable=self.drtvehiclesize, values=[2, 4, 7], width = 10, justify=tk.CENTER)
+        self.drtvehiclesize_combo = ttk.Combobox(self, textvariable=tk.IntVar(), values=[2, 4, 7], width = 10, justify=tk.CENTER)
         self.drtvehiclesize_combo.grid(column=1, row=6, sticky=tk.W, pady=10)
         if int(self.drtvehiclesize) == 2:
             self.drtvehiclesize_combo.current(0)
@@ -100,7 +100,7 @@ class configgui(tk.Tk, object):
         self.charging_label = ttk.Label(self, text="charging strategy:")
         self.charging_label.grid(column=0, row=8, sticky=tk.E)
 
-        self.charging_combo = ttk.Combobox(self, textvariable=self.charging, values=['opportunity', 'normal'], width = 10, justify=tk.CENTER)
+        self.charging_combo = ttk.Combobox(self, textvariable=tk.StringVar(), values=['opportunity', 'normal'], width = 10, justify=tk.CENTER)
         self.charging_combo.grid(column=1, row=8, sticky=tk.W, pady=10)
         if self.charging == 'opportunity':
             self.charging_combo.current(0)
@@ -115,7 +115,7 @@ class configgui(tk.Tk, object):
         self.publictransport_label = ttk.Label(self, text="ignore publictransport:")
         self.publictransport_label.grid(column=0, row=10, sticky=tk.E)
 
-        self.publictransport_combo = ttk.Combobox(self, textvariable=self.publictransport, values=['True', 'False'], width = 10, justify=tk.CENTER)
+        self.publictransport_combo = ttk.Combobox(self, textvariable=tk.StringVar(), values=['True', 'False'], width = 10, justify=tk.CENTER)
         self.publictransport_combo.grid(column=1, row=10, sticky=tk.W, pady=10)
         if self.publictransport == 'True':
             self.publictransport_combo.current(0)
@@ -245,7 +245,7 @@ class vehicleparams(tk.Tk, object):
         self.mass_small_label.grid(column=0, row=1, sticky=tk.E)
         self.mass_small_label.configure(font=description)
 
-        self.mass_small_box = ttk.Entry(self, textvariable=self.mass_small, width=6, **entry_font)
+        self.mass_small_box = ttk.Entry(self, textvariable=tk.IntVar(), width=6, **entry_font)
         self.mass_small_box.grid(column=1, row=1, sticky=tk.E, pady=10)
         self.mass_small_box.insert(0, self.mass_small)
 
@@ -253,7 +253,7 @@ class vehicleparams(tk.Tk, object):
         self.mass_medium_label.grid(column=2, row=1, sticky=tk.E)
         self.mass_medium_label.configure(font=description)
 
-        self.mass_medium_box = ttk.Entry(self, textvariable=self.mass_medium, width=6, **entry_font)
+        self.mass_medium_box = ttk.Entry(self, textvariable=tk.IntVar(), width=6, **entry_font)
         self.mass_medium_box.grid(column=3, row=1, sticky=tk.E, pady=10)
         self.mass_medium_box.insert(0, self.mass_medium)
 
@@ -261,7 +261,7 @@ class vehicleparams(tk.Tk, object):
         self.mass_large_label.grid(column=4, row=1, sticky=tk.E)
         self.mass_large_label.configure(font=description)
 
-        self.mass_large_box = ttk.Entry(self, textvariable=self.mass_large, width=6, **entry_font)
+        self.mass_large_box = ttk.Entry(self, textvariable=tk.IntVar(), width=6, **entry_font)
         self.mass_large_box.grid(column=5, row=1, sticky=tk.E, pady=10)
         self.mass_large_box.insert(0, self.mass_large)
 
@@ -270,7 +270,7 @@ class vehicleparams(tk.Tk, object):
         self.battery_small_label.grid(column=0, row=2, sticky=tk.E)
         self.battery_small_label.configure(font=description)
 
-        self.battery_small_box = ttk.Entry(self, textvariable=self.battery_small, width=6, **entry_font)
+        self.battery_small_box = ttk.Entry(self, textvariable=tk.IntVar(), width=6, **entry_font)
         self.battery_small_box.grid(column=1, row=2, sticky=tk.E, pady=10)
         self.battery_small_box.insert(0, self.battery_small)
 
@@ -278,7 +278,7 @@ class vehicleparams(tk.Tk, object):
         self.battery_medium_label.grid(column=2, row=2, sticky=tk.E)
         self.battery_medium_label.configure(font=description)
 
-        self.battery_medium_box = ttk.Entry(self, textvariable=self.battery_medium, width=6, **entry_font)
+        self.battery_medium_box = ttk.Entry(self, textvariable=tk.IntVar(), width=6, **entry_font)
         self.battery_medium_box.grid(column=3, row=2, sticky=tk.E, pady=10)
         self.battery_medium_box.insert(0, self.battery_medium)
 
@@ -286,7 +286,7 @@ class vehicleparams(tk.Tk, object):
         self.battery_large_label.grid(column=4, row=2, sticky=tk.E)
         self.battery_large_label.configure(font=description)
 
-        self.battery_large_box = ttk.Entry(self, textvariable=self.battery_large, width=6, **entry_font)
+        self.battery_large_box = ttk.Entry(self, textvariable=tk.IntVar(), width=6, **entry_font)
         self.battery_large_box.grid(column=5, row=2, sticky=tk.E, pady=10)
         self.battery_large_box.insert(0, self.battery_large)
 
@@ -295,7 +295,7 @@ class vehicleparams(tk.Tk, object):
         self.battery_small_opportunity_label.grid(column=0, row=3, sticky=tk.E)
         self.battery_small_opportunity_label.configure(font=description)
 
-        self.battery_small_opportunity_box = ttk.Entry(self, textvariable=self.battery_small_opportunity, width=6, **entry_font)
+        self.battery_small_opportunity_box = ttk.Entry(self, textvariable=tk.IntVar(), width=6, **entry_font)
         self.battery_small_opportunity_box.grid(column=1, row=3, sticky=tk.E, pady=10)
         self.battery_small_opportunity_box.insert(0, self.battery_small_opportunity)
 
@@ -303,7 +303,7 @@ class vehicleparams(tk.Tk, object):
         self.battery_medium_opportunity_label.grid(column=2, row=3, sticky=tk.E)
         self.battery_medium_opportunity_label.configure(font=description)
 
-        self.battery_medium_opportunity_box = ttk.Entry(self, textvariable=self.battery_medium_opportunity, width=6, **entry_font)
+        self.battery_medium_opportunity_box = ttk.Entry(self, textvariable=tk.IntVar(), width=6, **entry_font)
         self.battery_medium_opportunity_box.grid(column=3, row=3, sticky=tk.E, pady=10)
         self.battery_medium_opportunity_box.insert(0, self.battery_medium_opportunity)
 
@@ -311,7 +311,7 @@ class vehicleparams(tk.Tk, object):
         self.battery_large_opportunity_label.grid(column=4, row=3, sticky=tk.E)
         self.battery_large_opportunity_label.configure(font=description)
 
-        self.battery_large_opportunity_box = ttk.Entry(self, textvariable=self.battery_large_opportunity, width=6, **entry_font)
+        self.battery_large_opportunity_box = ttk.Entry(self, textvariable=tk.IntVar(), width=6, **entry_font)
         self.battery_large_opportunity_box.grid(column=5, row=3, sticky=tk.E, pady=10)
         self.battery_large_opportunity_box.insert(0, self.battery_large_opportunity)
 
@@ -320,7 +320,7 @@ class vehicleparams(tk.Tk, object):
         self.consumption_small_label.grid(column=0, row=4, sticky=tk.E)
         self.consumption_small_label.configure(font=description)
 
-        self.consumption_small_box = ttk.Entry(self, textvariable=self.consumption_small, width=6, **entry_font)
+        self.consumption_small_box = ttk.Entry(self, textvariable=tk.IntVar(), width=6, **entry_font)
         self.consumption_small_box.grid(column=1, row=4, sticky=tk.E, pady=10)
         self.consumption_small_box.insert(0, self.consumption_small)
 
@@ -328,7 +328,7 @@ class vehicleparams(tk.Tk, object):
         self.consumption_medium_label.grid(column=2, row=4, sticky=tk.E)
         self.consumption_medium_label.configure(font=description)
 
-        self.consumption_medium_box = ttk.Entry(self, textvariable=self.consumption_medium, width=6, **entry_font)
+        self.consumption_medium_box = ttk.Entry(self, textvariable=tk.IntVar(), width=6, **entry_font)
         self.consumption_medium_box.grid(column=3, row=4, sticky=tk.E, pady=10)
         self.consumption_medium_box.insert(0, self.consumption_medium)
 
@@ -336,7 +336,7 @@ class vehicleparams(tk.Tk, object):
         self.consumption_large_label.grid(column=4, row=4, sticky=tk.E)
         self.consumption_large_label.configure(font=description)
 
-        self.consumption_large_box = ttk.Entry(self, textvariable=self.consumption_large, width=6, **entry_font)
+        self.consumption_large_box = ttk.Entry(self, textvariable=tk.IntVar(), width=6, **entry_font)
         self.consumption_large_box.grid(column=5, row=4, sticky=tk.E, pady=10)
         self.consumption_large_box.insert(0, self.consumption_large)
 
@@ -345,7 +345,7 @@ class vehicleparams(tk.Tk, object):
         self.consumption_small_opportunity_label.grid(column=0, row=5, sticky=tk.E)
         self.consumption_small_opportunity_label.configure(font=description)
 
-        self.consumption_small_opportunity_box = ttk.Entry(self, textvariable=self.consumption_small_opportunity, width=6, **entry_font)
+        self.consumption_small_opportunity_box = ttk.Entry(self, textvariable=tk.IntVar(), width=6, **entry_font)
         self.consumption_small_opportunity_box.grid(column=1, row=5, sticky=tk.E, pady=10)
         self.consumption_small_opportunity_box.insert(0, self.consumption_small_opportunity)
 
@@ -353,7 +353,7 @@ class vehicleparams(tk.Tk, object):
         self.consumption_medium_opportunity_label.grid(column=2, row=5, sticky=tk.E)
         self.consumption_medium_opportunity_label.configure(font=description)
 
-        self.consumption_medium_opportunity_box = ttk.Entry(self, textvariable=self.consumption_medium_opportunity, width=6, **entry_font)
+        self.consumption_medium_opportunity_box = ttk.Entry(self, textvariable=tk.IntVar(), width=6, **entry_font)
         self.consumption_medium_opportunity_box.grid(column=3, row=5, sticky=tk.E, pady=10)
         self.consumption_medium_opportunity_box.insert(0, self.consumption_medium_opportunity)
 
@@ -361,7 +361,7 @@ class vehicleparams(tk.Tk, object):
         self.consumption_large_opportunity_label.grid(column=4, row=5, sticky=tk.E)
         self.consumption_large_opportunity_label.configure(font=description)
 
-        self.consumption_large_opportunity_box = ttk.Entry(self, textvariable=self.consumption_large_opportunity, width=6, **entry_font)
+        self.consumption_large_opportunity_box = ttk.Entry(self, textvariable=tk.IntVar(), width=6, **entry_font)
         self.consumption_large_opportunity_box.grid(column=5, row=5, sticky=tk.E, pady=10)
         self.consumption_large_opportunity_box.insert(0, self.consumption_large_opportunity)
 
