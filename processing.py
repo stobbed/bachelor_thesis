@@ -44,6 +44,7 @@ def create_drtvehicleids_list(cursor):
 
 def create_personlist(path, simulationname):
     data = pd.read_csv(os.path.join(path, simulationname + '.output_persons.csv.gz'), compression='gzip')
+    region = getfromconfig('settings', 'region')
     listofagents = []
     for line in data._values:
         text = str(line).split(";")
@@ -234,12 +235,12 @@ def create_vehicle_info(vehicle, driven_links: list) -> "dict":
     """ creates a dictionary for each vehicle in vehicleids containing travelleddistance, road percentages as well as pkm and avgpassenger amounts"""
     # print("Creating vehicle dictionary... ", str(gettime()))
     # vehicledict[id] = calculate_distance_roadpct(vehicle, driven_links)
-    vehicleinfo =  calculate_distance_roadpct(vehicle, driven_links)
+    vehicleinfo = calculate_distance_roadpct(vehicle, driven_links)
     # print("..succesfully created vehicle dictionary ", str(gettime()))
     # return vehicledict
     return vehicleinfo
 
-def itcalculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Vehicle":
+def calculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Vehicle":
     """ calculates total driven distance, checks road type and stores road percentages as well as person kilometers and returns Vehicle Class with information for vehicle id"""
     # evtl. speeds anpassen
     in_town_max = 51 / 3.6
@@ -260,7 +261,12 @@ def itcalculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Ve
     countryroadpct = 0
     highwaypct = 0
     avg_speed = 0
+    speed_pct_sum = 0
     avgpassenger_amount = 0
+    avgpassenger_without_empty = 0
+    trips_without_empty = 0
+    pkm_without_empty = 0
+    km_without_empty = 0
     # iterate through entered links
     for trips in enteredlinks_for_vehicle:
         if trips.passengerfromregion == True:
@@ -275,7 +281,13 @@ def itcalculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Ve
                 highway += trips.link_length
                 pkm_highway += trips.link_length * trips.passengers
             totalpassengers += trips.passengers
+            if trips.passengers > 0:
+                avgpassenger_without_empty += trips.passengers
+                pkm_without_empty += trips.passengers * trips.link_length
+                km_without_empty += trips.link_length
+                trips_without_empty += 1
             speed_length_sum += trips.actual_speed * trips.link_length
+            speed_pct_sum += trips.speed_pct * trips.link_length
             intownpct = intown/totaldistance
             countryroadpct = countryroad/totaldistance
             highwaypct = highway/totaldistance
@@ -293,11 +305,15 @@ def itcalculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Ve
             # if passenger is not from region
             distance_not_from_region += trips.link_length
     totalpkm = pkm_intown + pkm_countryroad + pkm_highway
+    if trips_without_empty > 0:
+        avgpassenger_without_empty = avgpassenger_without_empty / trips_without_empty
+        pkm_without_empty = pkm_without_empty / km_without_empty
     if totaldistance > 0:
         avg_speed = (speed_length_sum * 3.6) / totaldistance
         avgpassenger_amount = totalpassengers/len(enteredlinks_for_vehicle)
+        speed_pct = speed_pct_sum / totaldistance
     speed_length_sum = speed_length_sum * 3.6
-    vehicleinfo = Vehicle(vehicle, totaldistance, intownpct, countryroadpct, highwaypct, pkm_intown, pkm_countryroad, pkm_highway, totalpkm, avgpassenger_amount, avg_speed, speed_length_sum, speed_above_90, speed_below_70, speed_below_50, speed_below_30, speed_below_10, distance_not_from_region)
+    vehicleinfo = Vehicle(vehicle, totaldistance, intownpct, countryroadpct, highwaypct, pkm_intown, pkm_countryroad, pkm_highway, totalpkm, avgpassenger_amount, avg_speed, speed_pct, speed_length_sum, speed_above_90, speed_below_70, speed_below_50, speed_below_30, speed_below_10, distance_not_from_region)
     return vehicleinfo
 
 
@@ -379,16 +395,17 @@ def calculate_avg_vehicle(path):
     totalkm_region = 0 ;totalkm_notregion = 0; totalpkm = 0
     intown_pct = 0; countryroad_pct = 0; highway_pct = 0
     pkm_intown = 0; pkm_countryroad = 0; pkm_highway = 0
-    avg_speed = 0; speed_length = 0; speed_above_90 = 0; speed_below_70 = 0; speed_below_50 = 0; speed_below_30 = 0; speed_below_10 = 0
+    avg_speed = 0; speed_pct = 0; speed_length = 0; speed_above_90 = 0; speed_below_70 = 0; speed_below_50 = 0; speed_below_30 = 0; speed_below_10 = 0
     avgpassenger_amount = 0
+    # avgpassenger_without_empty = 0
     # data = pd.read_csv("/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats/hundekopf-rebalancing-1000vehicles-2seats_vehicleinfo.csv")
     data = pd.read_csv(os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo_finished.csv'))
     vehicleamount = data._values.shape[0]
     for line in data._values:
-        totalkm_region += line[1]; totalkm_notregion += line[17]; totalpkm += line[8]
+        totalkm_region += line[1]; totalkm_notregion += line[18]; totalpkm += line[8]
         intown_pct += line[2]; countryroad_pct += line[3]; highway_pct += line[4]
         pkm_intown += line[5]; pkm_countryroad += line[6]; pkm_highway += line[7]
-        avg_speed += line[10]; speed_length += line[11]; speed_above_90 += line[12]; speed_below_70 += line[13]; speed_below_50 += line[14]; speed_below_30 += line[15]; speed_below_10 += line[16]
+        avg_speed += line[10]; speed_pct += line[11]; speed_length += line[12]; speed_above_90 += line[13]; speed_below_70 += line[14]; speed_below_50 += line[15]; speed_below_30 += line[16]; speed_below_10 += line[17]
         avgpassenger_amount += line[9]
     info = {}
     info['vehicleamount'] = vehicleamount
