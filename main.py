@@ -31,9 +31,9 @@ if __name__ == "__main__":
 
     # openlca = olcaclient(path_reference)
 
-    print(drt_info)
-    print(" ")
-    print(reference_info)
+    # print(drt_info)
+    # print(" ")
+    # print(reference_info)
 
     toc = time.perf_counter()
     print(f'took you: {toc-tic:0.1f} seconds')

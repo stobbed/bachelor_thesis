@@ -7,7 +7,8 @@ class Trip:
     entered_time: int
     link_length: float
     link_freespeed: float
-    passengerfromregion: bool
+    passengerfromregion: int
+    passengernotfromregion: int
     left_time: int = -1
     actual_speed: float = -1
     speed_pct: float = -1
@@ -42,7 +43,10 @@ class Vehicle:
     pkm_highway: float
     total_pkm: float
     avgpassenger_amount: float
+    avgpassenger_without_empty: float
+    pkm_without_empty: float
     avg_speed: float
+    speed_pct: float
     speed_length: float
     speed_above_90: float
     speed_below_70: float

@@ -130,15 +130,19 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
     query_passengerequest = ''' SELECT person
                                 FROM PassengerRequest_events
                                 WHERE event_id = ? '''
+    query_passengervehicle = ''' SELECT person
+                                 FROM person_vehicle_events
+                                 WHERE event_id = ?'''
     db_output = query_db(query, cursor, vehicle)
     driven_links = []
     tripindex = 0
     # iterate through db_output with an index
     passengerfromregion = 0
-    if not str(vehicle).startswith("drt"):
-        if vehicle in listofagents:
-            passengerfromregion += 1
+    passengernotfromregion = 0
     for index in range(0, len(db_output)):
+        if not str(vehicle).startswith("drt"):
+            # if vehicle in listofagents:
+            passengerfromregion = 1
         event_id = db_output[index][0]
         time = db_output[index][1]
         type_id = db_output[index][2]
@@ -148,7 +152,8 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
             if str(db_output_request[0][0]) in listofagents:
                 passengerfromregion += 1
             else:
-                passengerfromregion -= 1
+                passengernotfromregion += 1
+                # passengerfromregion -= 1
                 # print('passenger ', db_output_request[0][0], 'not from region')
         # type_id == 8 means entered link and therefore appends the dictionary with the Class trip and its information
         if type_id == 8:
@@ -156,7 +161,7 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
             link = trip.link
             length = trip.length
             freespeed = trip.freespeed
-            driven_links.append(Trip(link, event_id, time, length, freespeed, passengerfromregion))
+            driven_links.append(Trip(link, event_id, time, length, freespeed, passengerfromregion, passengernotfromregion))
             tripindex += 1
         # type_id == 7 means left link
         elif type_id == 7:
@@ -210,7 +215,11 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
                     driven_links[index_entered_link_corrected].speed_pct = driven_links[index_entered_link_corrected].actual_speed/driven_links[index_entered_link_corrected].link_freespeed
                     driven_links[index_entered_link_corrected].corrected = True
         elif type_id == 10:
-
+            db_output_vehicleevent = query_db(query_passengervehicle, cursor, event_id)
+            if db_output_vehicleevent[0][0] in listofagents:
+                passengerfromregion -= 1
+            else:
+                passengernotfromregion -=1
     # print("...succesfully created entered_link_dict!", str(gettime()))
     return driven_links
 
@@ -304,9 +313,12 @@ def calculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Vehi
                 speed_below_30 += trips.link_length
             elif trips.speed_pct <= .1:
                 speed_below_10 += trips.link_length
-        elif trips.passengerfromregion == 0:
+        elif trips.passengerfromregion > 0:
             # if passenger is not from region
             distance_not_from_region += trips.link_length
+        elif trips.passengerfromregion == 0 and trips.passengernotfromregion == 0:
+            #empty_travel
+            pass
     totalpkm = pkm_intown + pkm_countryroad + pkm_highway
     if trips_without_empty > 0:
         avgpassenger_without_empty = avgpassenger_without_empty / trips_without_empty

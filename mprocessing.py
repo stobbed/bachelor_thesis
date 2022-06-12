@@ -24,7 +24,8 @@ def batching_drt(path):
 
         #progress bar
         global pbar
-        pbar.reset()
+        # if pbar:
+        #     pbar.reset()
         pbar = tqdm(total=len(vehicleslist))
 
         # multiprocessing
