@@ -407,44 +407,73 @@ def get_time_for_event_id (event_id: int, cursor) -> "float":
     return time[0][0]
 
 def calculate_avg_vehicle(path):
-    totalkm_region = 0 ;totalkm_notregion = 0; totalpkm = 0
+    drt_vehicleamount = 0
+    drt_totalkm_region = 0 ;drt_totalkm_notregion = 0; drt_totalpkm = 0
+    drt_intown_pct = 0; drt_countryroad_pct = 0; drt_highway_pct = 0
+    drt_pkm_intown = 0; drt_pkm_countryroad = 0; drt_pkm_highway = 0
+    drt_avg_speed = 0; drt_speed_pct = 0; drt_speed_length = 0; drt_speed_above_90 = 0; drt_speed_below_70 = 0; drt_speed_below_50 = 0; drt_speed_below_30 = 0; drt_speed_below_10 = 0
+    drt_avgpassenger_amount = 0; drt_avgpassenger_without_empty = 0; drt_pkm_without_empty = 0
+
+    vehicleamount = 0
+    totalkm = 0
     intown_pct = 0; countryroad_pct = 0; highway_pct = 0
-    pkm_intown = 0; pkm_countryroad = 0; pkm_highway = 0
     avg_speed = 0; speed_pct = 0; speed_length = 0; speed_above_90 = 0; speed_below_70 = 0; speed_below_50 = 0; speed_below_30 = 0; speed_below_10 = 0
-    avgpassenger_amount = 0; avgpassenger_without_empty = 0; pkm_without_empty = 0
     # avgpassenger_without_empty = 0
     # data = pd.read_csv("/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats/hundekopf-rebalancing-1000vehicles-2seats_vehicleinfo.csv")
     data = pd.read_csv(os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo_finished.csv'))
-    vehicleamount = data._values.shape[0]
+    # vehicleamount = data._values.shape[0]
     for line in data._values:
-        totalkm_region += line[1]; totalkm_notregion += line[20]; totalpkm += line[8]
-        intown_pct += line[2]; countryroad_pct += line[3]; highway_pct += line[4]
-        pkm_intown += line[5]; pkm_countryroad += line[6]; pkm_highway += line[7]
-        avg_speed += line[12]; speed_pct += line[13]; speed_length += line[14]; speed_above_90 += line[15]; speed_below_70 += line[16]; speed_below_50 += line[17]; speed_below_30 += line[18]; speed_below_10 += line[19]
-        avgpassenger_amount += line[9]; avgpassenger_without_empty += line[10]; pkm_without_empty += line[11]
+        if str(line[0]).startswith("drt"):
+            drt_vehicleamount += 1
+            drt_totalkm_region += line[1]; drt_totalkm_notregion += line[20]; drt_totalpkm += line[8]
+            drt_intown_pct += line[2]; drt_countryroad_pct += line[3]; drt_highway_pct += line[4]
+            drt_pkm_intown += line[5]; drt_pkm_countryroad += line[6]; drt_pkm_highway += line[7]
+            drt_avg_speed += line[12]; drt_speed_pct += line[13]; drt_speed_length += line[14]; drt_speed_above_90 += line[15]; drt_speed_below_70 += line[16]; drt_speed_below_50 += line[17]; drt_speed_below_30 += line[18]; drt_speed_below_10 += line[19]
+            drt_avgpassenger_amount += line[9]; drt_avgpassenger_without_empty += line[10]; drt_pkm_without_empty += line[11]
+        else:
+            vehicleamount += 1
+            totalkm += line[1]
+            intown_pct += line[2]; countryroad_pct += line[3]; highway_pct += line[4]
+            avg_speed += line[12]; speed_pct += line[13]; speed_length += line[14]; speed_above_90 += line[15]; speed_below_70 += line[16]; speed_below_50 += line[17]; speed_below_30 += line[18]; speed_below_10 += line[19]
     info = {}
+    info['drt_vehicleamount'] = drt_vehicleamount
+    info['drt_avg_totalkm_region'] = drt_totalkm_region / drt_vehicleamount
+    info['drt_avg_totalkm_notregion'] = drt_totalkm_notregion / drt_vehicleamount
+    info['drt_totalkm'] = drt_totalkm_region + drt_totalkm_notregion
+    info['drt_avg_totalkm'] = (drt_totalkm_region + drt_totalkm_notregion) / drt_vehicleamount
+    info['drt_avg_totalpkm'] = drt_totalpkm / drt_vehicleamount
+    info['drt_avg_intown_pct'] = drt_intown_pct / drt_vehicleamount
+    info['drt_avg_countryroad_pct'] = drt_countryroad_pct / drt_vehicleamount
+    info['drt_avg_highway_pct'] = drt_highway_pct / drt_vehicleamount
+    info['drt_avg_pkm_intown'] = drt_pkm_intown / drt_vehicleamount
+    info['drt_avg_pkm_countryroad'] = drt_pkm_countryroad / drt_vehicleamount
+    info['drt_avg_pkm_highway'] = drt_pkm_highway / drt_vehicleamount
+    info['drt_avg_speed_pervehicle'] = drt_avg_speed / drt_vehicleamount
+    info['drt_avg_speed_overlength'] = drt_speed_length / drt_totalkm_region
+    info['drt_avg_speed_pct'] = drt_speed_pct / drt_vehicleamount
+    info['drt_avg_speed_above_90'] = drt_speed_above_90 / (drt_totalkm_region + drt_totalkm_notregion)
+    info['drt_avg_speed_below_70'] = drt_speed_below_70 / (drt_totalkm_region + drt_totalkm_notregion)
+    info['drt_avg_speed_below_50'] = drt_speed_below_50 / (drt_totalkm_region + drt_totalkm_notregion)
+    info['drt_avg_speed_below_30'] = drt_speed_below_30 / (drt_totalkm_region + drt_totalkm_notregion)
+    info['drt_avg_speed_below_10'] = drt_speed_below_10 / (drt_totalkm_region + drt_totalkm_notregion)
+    info['drt_avg_passenger_amount'] = drt_avgpassenger_amount / drt_vehicleamount
+    info['drt_avgpassenger_without_empty'] = drt_avgpassenger_without_empty / drt_vehicleamount
+    info['drt_pkm_without_empty'] = drt_pkm_without_empty / drt_vehicleamount
+
     info['vehicleamount'] = vehicleamount
-    info['totalkm'] = totalkm_region + totalkm_notregion
-    info['avg_totalkm'] = (totalkm_region + totalkm_notregion) / vehicleamount
-    info['avg_totalkm_region'] = totalkm_region / vehicleamount
-    info['avg_totalkm_notregion'] = totalkm_notregion / vehicleamount
-    info['avg_totalpkm'] = totalpkm / vehicleamount
+    info['totalkm'] = totalkm
+    info['avg_totalkm'] = totalkm / vehicleamount
     info['avg_intown_pct'] = intown_pct / vehicleamount
     info['avg_countryroad_pct'] = countryroad_pct / vehicleamount
     info['avg_highway_pct'] = highway_pct / vehicleamount
-    info['avg_pkm_intown'] = pkm_intown / vehicleamount
-    info['avg_pkm_countryroad'] = pkm_countryroad / vehicleamount
-    info['avg_pkm_highway'] = pkm_highway / vehicleamount
     info['avg_speed_pervehicle'] = avg_speed / vehicleamount
-    info['avg_speed_overlength'] = speed_length / (totalkm_region + totalkm_notregion)
-    info['avg_speed_above_90'] = speed_above_90 / (totalkm_region + totalkm_notregion)
-    info['avg_speed_below_70'] = speed_below_70 / (totalkm_region + totalkm_notregion)
-    info['avg_speed_below_50'] = speed_below_50 / (totalkm_region + totalkm_notregion)
-    info['avg_speed_below_30'] = speed_below_30 / (totalkm_region + totalkm_notregion)
-    info['avg_speed_below_10'] = speed_below_10 / (totalkm_region + totalkm_notregion)
-    info['avg_passenger_amount'] = avgpassenger_amount / vehicleamount
-    info['avgpassenger_without_empty'] = avgpassenger_without_empty / vehicleamount
-    info['pkm_without_empty'] = pkm_without_empty / vehicleamount
+    info['avg_speed_overlength'] = speed_length / totalkm
+    info['avg_speed_pct'] = speed_pct / vehicleamount
+    info['avg_speed_above_90'] = speed_above_90 / totalkm
+    info['avg_speed_below_70'] = speed_below_70 / totalkm
+    info['avg_speed_below_50'] = speed_below_50 / totalkm
+    info['avg_speed_below_30'] = speed_below_30 / totalkm
+    info['avg_speed_below_10'] = speed_below_10 / totalkm
     return info
 
 def create_fleet_information(vehicledict: dict, vehiclelist: list) -> "Fleet":

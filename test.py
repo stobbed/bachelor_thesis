@@ -9,6 +9,12 @@ import csv
 import pandas as pd
 
 import configparser
+from processing import *
+from postprocessing import *
+
+path_drt = getfromconfig('paths','path_drt')
+drt_info = calculate_avg_vehicle(path_drt)
+scale_drtscenario(drt_info)
 
 Parameter = {'electric':2, 'battery':10}
 for key, value in Parameter.items():
