@@ -87,6 +87,8 @@ def get_vehicle_information(cursor, vehicle, link_information_dict: dict, path, 
         del passengeroccupancy
     if len(driven_links) > 0:
         vehicleinfo = create_vehicle_info(vehicle, driven_links)
+        if drt_status == True:
+            vehicleinfo.capacity(get_capacity(vehicle, cursor))
         del driven_links
         vinfo = []
         keys = []
@@ -269,6 +271,7 @@ def calculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Vehi
     speed_above_90 = 0; speed_below_70 = 0; speed_below_50 = 0; speed_below_30 = 0; speed_below_10 = 0
     speed_length_sum = 0
     distance_not_from_region = 0
+    distance_from_region = 0
     intownpct = 0
     countryroadpct = 0
     highwaypct = 0
@@ -283,6 +286,7 @@ def calculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Vehi
     for trips in enteredlinks_for_vehicle:
         if trips.passengerfromregion > 0:
             totaldistance += trips.link_length
+            distance_from_region += trips.link_length
             if trips.link_freespeed <= in_town_max:
                 intown += trips.link_length
                 pkm_intown += trips.link_length * trips.passengers
@@ -313,11 +317,13 @@ def calculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Vehi
                 speed_below_30 += trips.link_length
             elif trips.speed_pct <= .1:
                 speed_below_10 += trips.link_length
-        elif trips.passengerfromregion > 0:
+        elif trips.passengernotfromregion > 0:
             # if passenger is not from region
+            totaldistance += trips.link_length
             distance_not_from_region += trips.link_length
-        elif trips.passengerfromregion == 0 and trips.passengernotfromregion == 0:
+        else:
             #empty_travel
+            totaldistance += trips.link_length
             pass
     totalpkm = pkm_intown + pkm_countryroad + pkm_highway
     if trips_without_empty > 0:
@@ -328,7 +334,7 @@ def calculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Vehi
         avgpassenger_amount = totalpassengers/len(enteredlinks_for_vehicle)
         speed_pct = speed_pct_sum / totaldistance
     speed_length_sum = speed_length_sum * 3.6
-    vehicleinfo = Vehicle(vehicle, totaldistance, intownpct, countryroadpct, highwaypct, pkm_intown, pkm_countryroad, pkm_highway, totalpkm, avgpassenger_amount, avgpassenger_without_empty, pkm_without_empty, avg_speed, speed_pct, speed_length_sum, speed_above_90, speed_below_70, speed_below_50, speed_below_30, speed_below_10, distance_not_from_region)
+    vehicleinfo = Vehicle(vehicle, totaldistance, intownpct, countryroadpct, highwaypct, pkm_intown, pkm_countryroad, pkm_highway, totalpkm, avgpassenger_amount, avgpassenger_without_empty, pkm_without_empty, avg_speed, speed_pct, speed_length_sum, speed_above_90, speed_below_70, speed_below_50, speed_below_30, speed_below_10, distance_not_from_region, distance_from_region)
     return vehicleinfo
 
 
@@ -354,16 +360,13 @@ def get_passenger_occupancy(vehicle, cursor) -> "dict":
     # print("...created occupancy dictionary! ", str(gettime()))
     return passengeroccupancy
 
-def get_capacity(vehicleids: list, vehicledict: dict, cursor) -> "dict":
-    """ looks up capacity for each vehicle id in vehicleids in DB and returns capacity and adds it in the vehicledict"""
+def get_capacity(vehicle, cursor):
+    """ looks up capacity for each vehicle id in vehicleids in DB and returns capacity """
     # print("adding capacity to each vehicle in vehicledict...")
     query = ''' SELECT capacity from vehicles WHERE vehicle_id = ?'''
-    for id in vehicleids:
-        db_output = query_db(query, cursor, id)
-        capacity = db_output[0][0]
-        vehicledict[id].capacity = capacity
-    # print("...succesfully added capacity to each vehicle!")
-    return vehicledict
+    db_output = query_db(query, cursor, id)
+    capacity = db_output[0][0]
+    return capacity
 
 def get_passengers_for_link(vehicle, passengeroccupancy: list, driven_links: list, cursor) -> "dict":
     """ uses the previously created dictionary dictofPassengerOccupancy to retrieve how many passengers where in the car and stores that information based on the links (connected by the event_id) in a dictionary"""
@@ -408,7 +411,7 @@ def get_time_for_event_id (event_id: int, cursor) -> "float":
 
 def calculate_avg_vehicle(path):
     drt_vehicleamount = 0
-    drt_totalkm_region = 0 ;drt_totalkm_notregion = 0; drt_totalpkm = 0
+    drt_totalkm = 0; drt_totalkm_region = 0; drt_totalkm_notregion = 0; drt_totalpkm = 0
     drt_intown_pct = 0; drt_countryroad_pct = 0; drt_highway_pct = 0
     drt_pkm_intown = 0; drt_pkm_countryroad = 0; drt_pkm_highway = 0
     drt_avg_speed = 0; drt_speed_pct = 0; drt_speed_length = 0; drt_speed_above_90 = 0; drt_speed_below_70 = 0; drt_speed_below_50 = 0; drt_speed_below_30 = 0; drt_speed_below_10 = 0
@@ -425,7 +428,7 @@ def calculate_avg_vehicle(path):
     for line in data._values:
         if str(line[0]).startswith("drt"):
             drt_vehicleamount += 1
-            drt_totalkm_region += line[1]; drt_totalkm_notregion += line[20]; drt_totalpkm += line[8]
+            drt_totalkm += line[1]; drt_totalkm_region += line[21]; drt_totalkm_notregion += line[20]; drt_totalpkm += line[8]
             drt_intown_pct += line[2]; drt_countryroad_pct += line[3]; drt_highway_pct += line[4]
             drt_pkm_intown += line[5]; drt_pkm_countryroad += line[6]; drt_pkm_highway += line[7]
             drt_avg_speed += line[12]; drt_speed_pct += line[13]; drt_speed_length += line[14]; drt_speed_above_90 += line[15]; drt_speed_below_70 += line[16]; drt_speed_below_50 += line[17]; drt_speed_below_30 += line[18]; drt_speed_below_10 += line[19]
@@ -439,7 +442,7 @@ def calculate_avg_vehicle(path):
     info['drt_vehicleamount'] = drt_vehicleamount
     info['drt_avg_totalkm_region'] = drt_totalkm_region / drt_vehicleamount
     info['drt_avg_totalkm_notregion'] = drt_totalkm_notregion / drt_vehicleamount
-    info['drt_totalkm'] = drt_totalkm_region + drt_totalkm_notregion
+    info['drt_totalkm'] = drt_totalkm
     info['drt_avg_totalkm'] = (drt_totalkm_region + drt_totalkm_notregion) / drt_vehicleamount
     info['drt_avg_totalpkm'] = drt_totalpkm / drt_vehicleamount
     info['drt_avg_intown_pct'] = drt_intown_pct / drt_vehicleamount

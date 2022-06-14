@@ -54,6 +54,7 @@ class Vehicle:
     speed_below_30: float
     speed_below_10: float
     distance_not_from_region: float = 0
+    distance_from_region: float = 0
     capacity: int = -1
     # trips: list[Trip]
 

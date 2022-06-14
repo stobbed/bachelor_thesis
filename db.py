@@ -49,6 +49,8 @@ class Db:
         self._sqliteConnection.close()
         # print('The SQLite connection is closed')
     
+    def fetchcursor(self):
+        return self._cursor
 
     def get_drtvehicles(self) -> "list[str]":
         """ creates a list containing the drtvehicleids that entered traffic """

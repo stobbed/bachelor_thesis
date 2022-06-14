@@ -3,6 +3,7 @@ from db import *
 from configurationgui import *
 from lca import *
 import mprocessing
+from postprocessing import *
 
 import time
 
@@ -22,10 +23,14 @@ if __name__ == "__main__":
     print("finished analyzing drt scenario!")
     mprocessing.batching_nondrt(path_reference)
     print("finished analyzing reference scenario!")
-
     drt_info = calculate_avg_vehicle(path_drt)
     reference_info = calculate_avg_vehicle(path_reference)
 
+    db_drt = Db(path_drt)
+    cursor = db_drt.fetchcursor()
+
+    drt_vehicles_drt, drt_vehicles_nondrt = scale_scenario(drt_info, cursor)
+    vehicles_drt, vehicles_nondrt = scale_scenario(reference_info, cursor)
     # openlca = olcaclient(path_drt)
     # openlca.lifecycleassessment_electric()
 

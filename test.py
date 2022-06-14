@@ -10,11 +10,18 @@ import pandas as pd
 
 import configparser
 from processing import *
-from postprocessing import *
+# from postprocessing import *
+
+test = {}
+test['small'] = 20
+test['medium'] = 100
+
+for item in test:
+    print(item)
 
 path_drt = getfromconfig('paths','path_drt')
 drt_info = calculate_avg_vehicle(path_drt)
-scale_drtscenario(drt_info)
+scale_scenario(drt_info, 1)
 
 Parameter = {'electric':2, 'battery':10}
 for key, value in Parameter.items():
