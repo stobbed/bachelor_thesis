@@ -22,7 +22,7 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
     countryroad_factor = 1
     intown_factor = 1.2
     
-    drt_consumption_km_average = 0
+    vehicles_drt = {}
 
     if vehicleinfo['drt_vehicleamount'] > 0:
         drt_vehicleamount = vehicleinfo['drt_vehicleamount']
@@ -69,7 +69,6 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
             if int(capacity) == 7:
                 vehicles_7 += 1
 
-        vehicles_drt = {}
         if vehicles_2 > 0:
             vehicles_drt['small'] = {}
             vehicles_drt['small']['amount'] = int(vehicles_2 * drt_scalingfactor_vehicles)
@@ -133,11 +132,11 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
 
             vehicles_drt[drt_size]['consumption_km'] = drt_consumption_km
             vehicles_drt[drt_size]['batteries'] = vehicles_drt[drt_size]['amount'] * drt_add_batteries_lifespan_vehicle
-            vehicles_drt[drt_size]['km'] = (drt_km_lifespan_fleet_scaled * vehicles_drt[drt_size]['amount']) / drt_vehicleamount_scaled
+            vehicles_drt[drt_size]['km'] = drt_km_lifespan_fleet_scaled * (vehicles_drt[drt_size]['amount'] / drt_vehicleamount_scaled)
 
         vehicles_drt['consumption'] = drt_consumption_km_amount / drt_vehicleamount_scaled
 
-        drt_consumption_year_fleet = drt_km_year_fleet_scaled * drt_consumption_km_average
+        # drt_consumption_year_fleet = drt_km_year_fleet_scaled * drt_consumption_km_average
         
         # drt_consumption_lifespan_fleet = drt_km_lifespan_fleet_scaled * drt_consumption_km_average
 

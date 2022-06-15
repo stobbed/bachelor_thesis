@@ -7,7 +7,6 @@ from postprocessing import *
 
 import time
 
-print("hello")
 if __name__ == "__main__":
     # ppening GUI to configure paths
     gui = configgui()
