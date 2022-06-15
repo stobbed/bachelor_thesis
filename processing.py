@@ -88,7 +88,7 @@ def get_vehicle_information(cursor, vehicle, link_information_dict: dict, path, 
     if len(driven_links) > 0:
         vehicleinfo = create_vehicle_info(vehicle, driven_links)
         if drt_status == True:
-            vehicleinfo.capacity(get_capacity(vehicle, cursor))
+            vehicleinfo.capacity = get_capacity(vehicle, cursor)
         del driven_links
         vinfo = []
         keys = []
@@ -363,8 +363,8 @@ def get_passenger_occupancy(vehicle, cursor) -> "dict":
 def get_capacity(vehicle, cursor):
     """ looks up capacity for each vehicle id in vehicleids in DB and returns capacity """
     # print("adding capacity to each vehicle in vehicledict...")
-    query = ''' SELECT capacity from vehicles WHERE vehicle_id = ?'''
-    db_output = query_db(query, cursor, id)
+    query = ''' SELECT capacity FROM vehicles WHERE vehicle_id = ?'''
+    db_output = query_db(query, cursor, vehicle)
     capacity = db_output[0][0]
     return capacity
 
