@@ -12,6 +12,10 @@ def create_database(dbpath, xmlpath_nw, xmlpath_evts, xmlpath_vehicles):
     start = timer()
 
     publictransport_ignore = getfromconfig('settings', 'publictransport_ignore')
+    if publictransport_ignore == 'True':
+        publictransport_ignore = True
+    elif publictransport_ignore == 'False':
+        publictransport_ignore = False
     # !!!make sure the database file doesnt exist already!!!
 
     # create database

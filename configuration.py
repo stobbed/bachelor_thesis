@@ -37,7 +37,7 @@ def adjustpaths(drt, reference):
 def getsimulationname(path):
     your_os = platform.system()
     if your_os == 'Windows':
-        text = path.split("\\")
+        text = path.split("/")
     elif your_os == 'Darwin': # MacOs
         text = path.split("/")
     else:
@@ -55,7 +55,7 @@ def setpaths(path):
 
     dbpath = ''
     if your_os == 'Windows':
-        text = path.split("\\")
+        text = path.split("/")
     elif your_os == 'Darwin': # MacOs
         text = path.split("/")
     else:
