@@ -9,6 +9,8 @@ import os
 from datetime import datetime
 import csv
 import pandas as pd
+import gzip
+import xml.etree.cElementTree as ET
 
 from configuration import *
 from database_operations import query_db
@@ -42,6 +44,25 @@ def create_drtvehicleids_list(cursor):
 
     # print("...Vehicle IDS sucessfully stored")
     return drtvehicleids
+
+def create_vehicle_list(path):
+    xmlpath = os.path.join(path, getsimulationname(path) + '.output_allVehicles.xml.gz')
+    if os.path.exists(xmlpath):
+        print('opening xml.gz file...')
+        file = gzip.open(xmlpath, mode='rt', encoding='UTF-8')
+        print('file opened!')
+    else:
+        raise FileNotFoundError('Invalid path (xmlpath): '+xmlpath+' - *.xml.gz file doesn\'t exist.')
+
+    tree = ET.parse(file)
+    root = tree.getroot()
+
+    vehicles = []
+    for child in root:
+        if len(child.attrib) > 1:
+            if child.attrib['type'] == "car":
+                vehicles.append(child.attrib['id'])
+    return vehicles
 
 def create_personlist(path, simulationname):
     data = pd.read_csv(os.path.join(path, simulationname + '.output_persons.csv.gz'), compression='gzip')

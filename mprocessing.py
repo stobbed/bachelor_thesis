@@ -41,13 +41,14 @@ def batching_drt(path):
 
         # for any other trips from Berlin people
         drt = False
+        vehicleslist = create_vehicle_list(path)
 
         pbar.reset()
         pbar = tqdm(total=len(listofagents))
 
         # multiprocessing
         pool = multiprocessing.Pool()
-        processes = [pool.apply_async(vehicleinfo_batch, args = (vehicle, link_information_dict, path, listofagents, drt), callback = update) for vehicle in listofagents]
+        processes = [pool.apply_async(vehicleinfo_batch, args = (vehicle, link_information_dict, path, listofagents, drt), callback = update) for vehicle in vehicleslist]
         result = [p.get() for p in processes]
         pool.close()
         pool.join()

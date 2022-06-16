@@ -12,6 +12,52 @@ import configparser
 from processing import *
 # from postprocessing import *
 
+vehicles = create_vehicle_list("/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats")
+
+xmlpath = "/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats/hundekopf-rebalancing-1000vehicles-2seats.output_allVehicles.xml.gz"
+if os.path.exists(xmlpath):
+    print('opening xml.gz file...')
+    file = gzip.open(xmlpath, mode='rt', encoding='UTF-8')
+    print('file opened!')
+else:
+    raise FileNotFoundError('Invalid path (xmlpath): '+xmlpath+' - *.xml.gz file doesn\'t exist.')
+
+tree = ET.parse(file)
+root = tree.getroot()
+
+vehicles = []
+for child in root:
+    if len(child.attrib) > 1:
+        if child.attrib['type'] == "car":
+            vehicles.append(child.attrib['id'])
+
+print(len(vehicles))
+
+# xmlpath = "/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats/hundekopf-rebalancing-1000vehicles-2seats.output_allVehicles.xml.gz"
+# if os.path.exists(xmlpath):
+#     print('opening xml.gz file...')
+#     file = gzip.open(xmlpath, mode='rt', encoding='UTF-8')
+#     print('file opened!')
+# else:
+#     raise FileNotFoundError('Invalid path (xmlpath): '+xmlpath+' - *.xml.gz file doesn\'t exist.')
+
+# # single nodes can be deleted from RAM after parsing using iterparse() function and an iterator
+# # set up iterator for event xml
+# print('setting up parser...')
+# parser = ET.iterparse(file, events=('start', 'end'), parser=ET.XMLParser(encoding='UTF-8'))
+# # parser = iter(parser)
+# event, root = parser.__next__()
+# print('parser set!')
+
+# vehicles = []
+# for child in root:
+#     if len(child.attrib) > 1:
+#         if child.attrib['type'] == "car":
+#             vehicles.append(child.attrib['id'])
+
+# print(len(vehicles))
+
+
 test = {}
 test['small'] = 20
 test['medium'] = 100
