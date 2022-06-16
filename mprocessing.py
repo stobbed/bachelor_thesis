@@ -69,6 +69,7 @@ def batching_nondrt(path):
         db = Db(path)
         link_information_dict = db.create_dict_link_info()
         db.disconnect()
+        vehicleslist = create_vehicle_list(path)
         listofagents = create_personlist(path, simulationname)
         create_results_dir(path)
 
@@ -79,7 +80,7 @@ def batching_nondrt(path):
 
         # multiprocessing
         pool = multiprocessing.Pool()
-        processes = [pool.apply_async(vehicleinfo_batch, args = (vehicle, link_information_dict, path, listofagents, drt), callback = update) for vehicle in listofagents]
+        processes = [pool.apply_async(vehicleinfo_batch, args = (vehicle, link_information_dict, path, listofagents, drt), callback = update) for vehicle in vehicleslist]
         result = [p.get() for p in processes]
         pool.close()
         pool.join()
