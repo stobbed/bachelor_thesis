@@ -49,6 +49,9 @@ class Db:
         self._sqliteConnection.close()
         # print('The SQLite connection is closed')
     
+    def create_vehicle_list(self):
+        return create_vehicleids_list(self._cursor)
+
     def fetchcursor(self):
         return self._cursor
 

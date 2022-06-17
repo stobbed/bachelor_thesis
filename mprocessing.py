@@ -18,7 +18,6 @@ def batching_drt(path):
         db = Db(path)
         link_information_dict = db.create_dict_link_info()
         vehicleslist = db.get_drtvehicles()
-        db.disconnect()
         listofagents = create_personlist(path, simulationname)
         create_results_dir(path)
 
@@ -26,8 +25,6 @@ def batching_drt(path):
 
         #progress bar
         global pbar
-        # if pbar:
-        #     pbar.reset()
         pbar = tqdm(total=len(vehicleslist))
 
         # multiprocessing
@@ -41,10 +38,11 @@ def batching_drt(path):
 
         # for any other trips from Berlin people
         drt = False
-        vehicleslist = create_vehicle_list(path)
+        vehicles = db.create_vehicle_list()
+        vehicleslist = match_passengers_and_cars(listofagents, vehicles)
 
         pbar.reset()
-        pbar = tqdm(total=len(listofagents))
+        pbar = tqdm(total=len(vehicleslist))
 
         # multiprocessing
         pool = multiprocessing.Pool()
@@ -69,14 +67,15 @@ def batching_nondrt(path):
         db = Db(path)
         link_information_dict = db.create_dict_link_info()
         db.disconnect()
-        vehicleslist = create_vehicle_list(path)
         listofagents = create_personlist(path, simulationname)
+        vehicles = db.create_vehicle_list()
+        vehicleslist = match_passengers_and_cars(listofagents, vehicles)
         create_results_dir(path)
 
         #progress bar
         global pbar
         pbar.reset()
-        pbar = tqdm(total=len(listofagents))
+        pbar = tqdm(total=len(vehicleslist))
 
         # multiprocessing
         pool = multiprocessing.Pool()

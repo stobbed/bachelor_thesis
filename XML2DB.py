@@ -352,6 +352,22 @@ def create_database(dbpath, xmlpath_nw, xmlpath_evts, xmlpath_vehicles):
         except sqlite3.Error as error:
             print('Error when creating leftlink_events table: ', error)
 
+        print('creating DrtRequest_events table...')
+        query = '''CREATE TABLE DrtRequest_events (
+                    event_id INTEGER NOT NULL,
+                    person INTEGER,
+                    mode TEXT,
+                    request TEXT,
+                    fromLink TEXT,
+                    toLink TEXT,
+                    unsharedRideTime TEXT,
+                    unsharedRideDistance TEXT);'''
+        try:
+            cursor.execute(query)
+            print('created DrtRequest_events table')
+        except sqlite3.Error as error:
+            print('Error when creating DrtRequest_events table: ', error)
+
         print('creating personMoney_events table...')
         query = '''CREATE TABLE personMoney_events (
                     personMoney_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -758,22 +774,24 @@ def create_database(dbpath, xmlpath_nw, xmlpath_evts, xmlpath_vehicles):
                 finally:
                     single_row = []
             elif elem.attrib['type'] == 'DrtRequest submitted':
-                single_row.append(i)
-                single_row.append(elem.attrib['person'])
-                single_row.append(elem.attrib['mode'])
-                single_row.append(elem.attrib['request'])
-                single_row.append(elem.attrib['fromLink'])
-                single_row.append(elem.attrib['toLink'])
-                single_row.append(elem.attrib['unsharedRideTime'])
-                single_row.append(elem.attrib['unsharedRideDistance'])
-                query = '''INSERT INTO DrtRequest_events(event_id, person, mode, request, fromLink, toLink, unsharedRideTime, unsharedRideDistance)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?);'''
-                try:
-                    cursor.execute(query, single_row)
-                except sqlite3.Error as error:
-                    print('Error when inserting row into DrtRequest_events table: ', error)
-                finally:
-                    single_row = []
+                if increase_performance == False:
+                    single_row.append(i)
+                    single_row.append(elem.attrib['person'])
+                    single_row.append(elem.attrib['mode'])
+                    single_row.append(elem.attrib['request'])
+                    single_row.append(elem.attrib['fromLink'])
+                    single_row.append(elem.attrib['toLink'])
+                    single_row.append(elem.attrib['unsharedRideTime'])
+                    single_row.append(elem.attrib['unsharedRideDistance'])
+                    query = '''INSERT INTO DrtRequest_events(event_id, person, mode, request, fromLink, toLink, unsharedRideTime, unsharedRideDistance)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?);'''
+                    try:
+                        cursor.execute(query, single_row)
+                    except sqlite3.Error as error:
+                        print('Error when inserting row into DrtRequest_events table: ', error)
+                    finally:
+                        pass
+                single_row = []
             elif elem.attrib['type'] == 'PassengerRequest scheduled':
                 single_row.append(i)
                 single_row.append(elem.attrib['person'])
