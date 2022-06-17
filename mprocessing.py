@@ -41,7 +41,7 @@ def batching_drt(path):
 
         # for any other trips from Berlin people
         drt = False
-        vehicleslist = create_vehicle_list(path)
+        vehicleslist = create_vehicle_list(path, listofagents)
 
         pbar.reset()
         pbar = tqdm(total=len(listofagents))

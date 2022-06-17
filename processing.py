@@ -45,7 +45,7 @@ def create_drtvehicleids_list(cursor):
     # print("...Vehicle IDS sucessfully stored")
     return drtvehicleids
 
-def create_vehicle_list(path):
+def create_vehicle_list(path, listofagents):
     xmlpath = os.path.join(path, getsimulationname(path) + '.output_allVehicles.xml.gz')
     if os.path.exists(xmlpath):
         print('opening xml.gz file...')
@@ -61,7 +61,8 @@ def create_vehicle_list(path):
     for child in root:
         if len(child.attrib) > 1:
             if child.attrib['type'] == "car":
-                vehicles.append(child.attrib['id'])
+                if child.attrib['id'] in listofagents:
+                    vehicles.append(child.attrib['id'])
     return vehicles
 
 def create_personlist(path, simulationname):
@@ -197,7 +198,7 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
                     driven_links[entered_index].actual_speed = driven_links[entered_index].link_length/(time - driven_links[entered_index].entered_time)
                     driven_links[entered_index].speed_pct = driven_links[entered_index].actual_speed/driven_links[entered_index].link_freespeed
         # type_id == 4 means vehicle enters traffic, therefore further calculation is required
-        elif type_id == 4 and db_output[index+1][2] == 7:
+        elif type_id == 4 and db_output[index+1][2] == 7 and index > 0:
             stop1 = False
             stop2 = False
             index_entered_link = index
@@ -218,7 +219,7 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
                 index_left_traffic -= 1
             query = ''' SELECT link FROM vehicle_traffic_events WHERE event_id = ?'''
             # if index for left_traffic was found and is not 0...
-            if index_left_traffic > 0:
+            if index_left_traffic > 0 and index_entered_link > 0:
                 # looks up the link for the event_id corresponding to the entered and left traffic events
                 link_entered_traffic = query_db(query, cursor, db_output[index_entered_traffic][0])[0]
                 link_left_traffic = query_db(query, cursor, db_output[index_left_traffic][0])[0]
