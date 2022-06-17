@@ -65,7 +65,8 @@ def setpaths(path):
         dbpath = dbpath + '/' + elements
     m_time = os.path.getmtime(xmlpath_evts)
     simulationdate = str(datetime.datetime.fromtimestamp(m_time).date())
-    dbpath = dbpath + '/' + simulationname + '-' + simulationdate + '.db'
+    dbpath = dbpath + '/' + simulationname + '.db'
+    # dbpath = dbpath + '/' + simulationname + '-' + simulationdate + '.db'
     dbpath = dbpath[1:]
 
     return xmlpath_nw, xmlpath_evts, xmlpath_vehicles, dbpath

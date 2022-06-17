@@ -45,25 +45,34 @@ def create_drtvehicleids_list(cursor):
     # print("...Vehicle IDS sucessfully stored")
     return drtvehicleids
 
-def create_vehicle_list(path, listofagents):
-    xmlpath = os.path.join(path, getsimulationname(path) + '.output_allVehicles.xml.gz')
-    if os.path.exists(xmlpath):
-        print('opening xml.gz file...')
-        file = gzip.open(xmlpath, mode='rt', encoding='UTF-8')
-        print('file opened!')
-    else:
-        raise FileNotFoundError('Invalid path (xmlpath): '+xmlpath+' - *.xml.gz file doesn\'t exist.')
+def create_vehicleids_list(cursor):
+    """ creates a list containing the vehicleids that entered traffic
+        input: cursor
+        output: vehicleids (list of ids) """
+    # extracting the vehicle ids that executed traffic events from the DB
+    # print("Retrieving Vehicle IDS from database file...")
+    query = '''  SELECT vehicle FROM vehicle_traffic_events'''
+    vehicleiddata = query_db(query, cursor)
 
-    tree = ET.parse(file)
-    root = tree.getroot()
+    # creating empty lists
+    var = []
+    vehicleids = []
 
-    vehicles = []
-    for child in root:
-        if len(child.attrib) > 1:
-            if child.attrib['type'] == "car":
-                if child.attrib['id'] in listofagents:
-                    vehicles.append(child.attrib['id'])
-    return vehicles
+    # creating a list from the list with tuples inside that come from SQLITE
+    for item in vehicleiddata:
+        for x in item:
+            var.append(x)
+
+    # writing the used drt vehicles into the variable drtvehicles
+    for aussortieren in var:
+        if not (str(aussortieren).startswith("freight") and str(aussortieren).startswith("drt")):
+            vehicleids.append(aussortieren)
+
+    # deleting duplicates
+    vehicleids = list(dict.fromkeys(vehicleids))
+
+    # print("...Vehicle IDS sucessfully stored")
+    return vehicleids
 
 def create_personlist(path, simulationname):
     data = pd.read_csv(os.path.join(path, simulationname + '.output_persons.csv.gz'), compression='gzip')
@@ -74,8 +83,15 @@ def create_personlist(path, simulationname):
         agent = text[0].replace("['","")
         homeregion = text[-1].replace("']","")
         if homeregion == region:
-            listofagents.append(agent)
+            listofagents.append(int(agent))
     return listofagents
+
+def match_passengers_and_cars(listofagents, vehiclesllist):
+    agents = set(listofagents)
+    vehicles = set(vehiclesllist)
+
+    usedvehicles = agents & vehicles
+    return usedvehicles
 
 def create_link_information_dict(cursor, link_information_dict: dict) -> "dict":
     """ creates a dictionary with every link id, length and freespeed """
@@ -246,25 +262,6 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
                 passengernotfromregion -=1
     # print("...succesfully created entered_link_dict!", str(gettime()))
     return driven_links
-
-def analyse_speed_pct_threshold(vehicleslist: list, driven_links_dict: dict, speed_pct_threshold = .2):
-    """ this function can be used to analyse what amount of the total trips falls below a certain speed_pct_threshold"""
-    error = {}
-    sumtrips = 0
-    sumerror = 0
-    for id in vehicleslist:
-        counter = 0
-        for trip in driven_links_dict.d[id]:
-            # this can be used to determine a more detailed analysis
-            # if trip.corrected == False and trip.actual_speed == -1 or trip.speed_pct < speed_pct_threshold:
-            #     counter += 1
-            if trip.speed_pct < speed_pct_threshold:
-                counter += 1
-        error[id] = [len(driven_links_dict.d[id]), counter]
-        sumtrips += len(driven_links_dict.d[id])
-        sumerror += counter
-    # hier noch anständige Auswertung, mit 10,20....90.. Prozenz
-    print('total of: ' + str(sumtrips) + ' trips, with ' + str(sumerror) + ' trips below the threshold of: ' + str(speed_pct_threshold) + ', which results in a percentage of: ' + str(sumerror/ sumtrips))
 
 
 def create_vehicle_info(vehicle, driven_links: list) -> "dict":
@@ -500,40 +497,6 @@ def calculate_avg_vehicle(path):
     info['avg_speed_below_30'] = speed_below_30 / totalkm
     info['avg_speed_below_10'] = speed_below_10 / totalkm
     return info
-
-def create_fleet_information(vehicledict: dict, vehiclelist: list) -> "Fleet":
-    """ creates an item of the Class Fleet which contains all the information for the fleet consisting of the vehicles in vehicleslist.
-        calculates fleetdistance, distance and pkm for different road types, as well as the biggest distance with roadpcts"""
-    print("creating fleet information...")
-    fleetdistance = 0
-    total_pkm = 0
-    distance_intown = 0
-    pkm_intown = 0
-    distance_countryroad = 0
-    pkm_countryroad = 0
-    distance_highway = 0
-    pkm_highway = 0
-    maximum_distance = 0
-    # iterare for every vehicle in vehiclelist
-    for id in vehiclelist:
-        fleetdistance += vehicledict[id].traveleddistance
-        distance_intown += vehicledict[id].traveleddistance * vehicledict[id].intown_pct
-        pkm_intown += vehicledict[id].pkm_intown
-        distance_countryroad += vehicledict[id].traveleddistance * vehicledict[id].countryroad_pct
-        pkm_countryroad += vehicledict[id].pkm_countryroad
-        distance_highway += vehicledict[id].traveleddistance * vehicledict[id].highway_pct
-        pkm_highway += vehicledict[id].pkm_highway
-        # checks for the biggest travel distance and stores it in the variable maximum_distance
-        if vehicledict[id].traveleddistance > maximum_distance:
-            maximum_distance = vehicledict[id].traveleddistance
-            roadpct = []
-            roadpct.append(vehicledict[id].intown_pct)
-            roadpct.append(vehicledict[id].countryroad_pct)
-            roadpct.append(vehicledict[id].highway_pct)
-    total_pkm = pkm_intown + pkm_countryroad + pkm_highway
-    avg_distance = fleetdistance / len(vehiclelist)
-    print("...created fleet information")
-    return Fleet(vehicledict, fleetdistance, total_pkm, avg_distance, distance_intown, pkm_intown, distance_countryroad, pkm_countryroad, distance_highway, pkm_highway, maximum_distance, roadpct)
 
 def gettime():
     now = datetime.datetime.now()
@@ -932,3 +895,75 @@ def picklefile_read(filename: str):
 #                     driven_links_dict.d[id][tripindex].passengers = dictofPassengerOccupancy[id][index][1]
 #     print("...succesfully added passengers to all trips!")
 #     return driven_links_dict
+
+# def analyse_speed_pct_threshold(vehicleslist: list, driven_links_dict: dict, speed_pct_threshold = .2):
+#     """ this function can be used to analyse what amount of the total trips falls below a certain speed_pct_threshold"""
+#     error = {}
+#     sumtrips = 0
+#     sumerror = 0
+#     for id in vehicleslist:
+#         counter = 0
+#         for trip in driven_links_dict.d[id]:
+#             # this can be used to determine a more detailed analysis
+#             # if trip.corrected == False and trip.actual_speed == -1 or trip.speed_pct < speed_pct_threshold:
+#             #     counter += 1
+#             if trip.speed_pct < speed_pct_threshold:
+#                 counter += 1
+#         error[id] = [len(driven_links_dict.d[id]), counter]
+#         sumtrips += len(driven_links_dict.d[id])
+#         sumerror += counter
+#     # hier noch anständige Auswertung, mit 10,20....90.. Prozenz
+#     print('total of: ' + str(sumtrips) + ' trips, with ' + str(sumerror) + ' trips below the threshold of: ' + str(speed_pct_threshold) + ', which results in a percentage of: ' + str(sumerror/ sumtrips))
+
+# def create_fleet_information(vehicledict: dict, vehiclelist: list) -> "Fleet":
+#     """ creates an item of the Class Fleet which contains all the information for the fleet consisting of the vehicles in vehicleslist.
+#         calculates fleetdistance, distance and pkm for different road types, as well as the biggest distance with roadpcts"""
+#     print("creating fleet information...")
+#     fleetdistance = 0
+#     total_pkm = 0
+#     distance_intown = 0
+#     pkm_intown = 0
+#     distance_countryroad = 0
+#     pkm_countryroad = 0
+#     distance_highway = 0
+#     pkm_highway = 0
+#     maximum_distance = 0
+#     # iterare for every vehicle in vehiclelist
+#     for id in vehiclelist:
+#         fleetdistance += vehicledict[id].traveleddistance
+#         distance_intown += vehicledict[id].traveleddistance * vehicledict[id].intown_pct
+#         pkm_intown += vehicledict[id].pkm_intown
+#         distance_countryroad += vehicledict[id].traveleddistance * vehicledict[id].countryroad_pct
+#         pkm_countryroad += vehicledict[id].pkm_countryroad
+#         distance_highway += vehicledict[id].traveleddistance * vehicledict[id].highway_pct
+#         pkm_highway += vehicledict[id].pkm_highway
+#         # checks for the biggest travel distance and stores it in the variable maximum_distance
+#         if vehicledict[id].traveleddistance > maximum_distance:
+#             maximum_distance = vehicledict[id].traveleddistance
+#             roadpct = []
+#             roadpct.append(vehicledict[id].intown_pct)
+#             roadpct.append(vehicledict[id].countryroad_pct)
+#             roadpct.append(vehicledict[id].highway_pct)
+#     total_pkm = pkm_intown + pkm_countryroad + pkm_highway
+#     avg_distance = fleetdistance / len(vehiclelist)
+#     print("...created fleet information")
+#     return Fleet(vehicledict, fleetdistance, total_pkm, avg_distance, distance_intown, pkm_intown, distance_countryroad, pkm_countryroad, distance_highway, pkm_highway, maximum_distance, roadpct)
+
+# def create_vehicle_list(path):
+#     xmlpath = os.path.join(path, getsimulationname(path) + '.output_allVehicles.xml.gz')
+#     if os.path.exists(xmlpath):
+#         print('opening xml.gz file...')
+#         file = gzip.open(xmlpath, mode='rt', encoding='UTF-8')
+#         print('file opened!')
+#     else:
+#         raise FileNotFoundError('Invalid path (xmlpath): '+xmlpath+' - *.xml.gz file doesn\'t exist.')
+
+#     tree = ET.parse(file)
+#     root = tree.getroot()
+
+#     vehicles = []
+#     for child in root:
+#         if len(child.attrib) > 1:
+#             if child.attrib['type'] == "car":
+#                 vehicles.append(child.attrib['id'])
+#     return vehicles
