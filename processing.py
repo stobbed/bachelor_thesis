@@ -36,7 +36,7 @@ def create_drtvehicleids_list(cursor):
 
     # writing the used drt vehicles into the variable drtvehicles
     for aussortieren in var:
-        if str(aussortieren).startswith("drt") == True:
+        if str(aussortieren).startswith("drt") or str(aussortieren).startswith("taxi"):
             drtvehicleids.append(aussortieren)
 
     # deleting duplicates
@@ -65,7 +65,7 @@ def create_vehicleids_list(cursor):
 
     # writing the used drt vehicles into the variable drtvehicles
     for aussortieren in var:
-        if not (str(aussortieren).startswith("freight") and str(aussortieren).startswith("drt")):
+        if not (str(aussortieren).startswith("freight") or str(aussortieren).startswith("drt") or str(aussortieren).startswith("taxi")):
             vehicleids.append(aussortieren)
 
     # deleting duplicates
@@ -73,6 +73,25 @@ def create_vehicleids_list(cursor):
 
     # print("...Vehicle IDS sucessfully stored")
     return vehicleids
+
+# def create_vehicle_list(path):
+#     xmlpath = os.path.join(path, getsimulationname(path) + '.output_allVehicles.xml.gz')
+#     if os.path.exists(xmlpath):
+#         print('opening xml.gz file...')
+#         file = gzip.open(xmlpath, mode='rt', encoding='UTF-8')
+#         print('file opened!')
+#     else:
+#         raise FileNotFoundError('Invalid path (xmlpath): '+xmlpath+' - *.xml.gz file doesn\'t exist.')
+
+#     tree = ET.parse(file)
+#     root = tree.getroot()
+
+#     vehicles = []
+#     for child in root:
+#         if len(child.attrib) > 1:
+#             if child.attrib['type'] == "car":
+#                 vehicles.append(child.attrib['id'])
+#     return vehicles
 
 def create_personlist(path, simulationname):
     data = pd.read_csv(os.path.join(path, simulationname + '.output_persons.csv.gz'), compression='gzip')
@@ -180,7 +199,7 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
     passengerfromregion = 0
     passengernotfromregion = 0
     for index in range(0, len(db_output)):
-        if not str(vehicle).startswith("drt"):
+        if not (str(vehicle).startswith("drt") or str(vehicle).startswith("taxi")):
             # if vehicle in listofagents:
             passengerfromregion = 1
         event_id = db_output[index][0]
@@ -189,12 +208,13 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
         vehicle = db_output[index][3]
         if type_id == 23:
             db_output_request = query_db(query_passengerequest, cursor, event_id)
-            if str(db_output_request[0][0]) in listofagents:
-                passengerfromregion += 1
-            else:
-                passengernotfromregion += 1
-                # passengerfromregion -= 1
-                # print('passenger ', db_output_request[0][0], 'not from region')
+            if (str(vehicle).startswith("drt") or str(vehicle).startswith("taxi")):
+                if int(db_output_request[0][0]) in listofagents:
+                    passengerfromregion += 1
+                else:
+                    passengernotfromregion += 1
+                    # passengerfromregion -= 1
+                    # print('passenger ', db_output_request[0][0], 'not from region')
         # type_id == 8 means entered link and therefore appends the dictionary with the Class trip and its information
         if type_id == 8:
             trip = event_id_link_dict[event_id]
@@ -255,11 +275,12 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
                     driven_links[index_entered_link_corrected].speed_pct = driven_links[index_entered_link_corrected].actual_speed/driven_links[index_entered_link_corrected].link_freespeed
                     driven_links[index_entered_link_corrected].corrected = True
         elif type_id == 10:
-            db_output_vehicleevent = query_db(query_passengervehicle, cursor, event_id)
-            if db_output_vehicleevent[0][0] in listofagents:
-                passengerfromregion -= 1
-            else:
-                passengernotfromregion -=1
+            if (str(vehicle).startswith("drt") or str(vehicle).startswith("taxi")):
+                db_output_vehicleevent = query_db(query_passengervehicle, cursor, event_id)
+                if db_output_vehicleevent[0][0] in listofagents:
+                    passengerfromregion -= 1
+                elif not (str(db_output_vehicleevent[0][0]).startswith("drt") or str(db_output_vehicleevent[0][0]).startswith("taxi")):
+                    passengernotfromregion -=1
     # print("...succesfully created entered_link_dict!", str(gettime()))
     return driven_links
 
@@ -948,22 +969,3 @@ def picklefile_read(filename: str):
 #     avg_distance = fleetdistance / len(vehiclelist)
 #     print("...created fleet information")
 #     return Fleet(vehicledict, fleetdistance, total_pkm, avg_distance, distance_intown, pkm_intown, distance_countryroad, pkm_countryroad, distance_highway, pkm_highway, maximum_distance, roadpct)
-
-# def create_vehicle_list(path):
-#     xmlpath = os.path.join(path, getsimulationname(path) + '.output_allVehicles.xml.gz')
-#     if os.path.exists(xmlpath):
-#         print('opening xml.gz file...')
-#         file = gzip.open(xmlpath, mode='rt', encoding='UTF-8')
-#         print('file opened!')
-#     else:
-#         raise FileNotFoundError('Invalid path (xmlpath): '+xmlpath+' - *.xml.gz file doesn\'t exist.')
-
-#     tree = ET.parse(file)
-#     root = tree.getroot()
-
-#     vehicles = []
-#     for child in root:
-#         if len(child.attrib) > 1:
-#             if child.attrib['type'] == "car":
-#                 vehicles.append(child.attrib['id'])
-#     return vehicles

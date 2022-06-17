@@ -66,10 +66,10 @@ def batching_nondrt(path):
         drt = False
         db = Db(path)
         link_information_dict = db.create_dict_link_info()
-        db.disconnect()
         listofagents = create_personlist(path, simulationname)
         vehicles = db.create_vehicle_list()
         vehicleslist = match_passengers_and_cars(listofagents, vehicles)
+        db.disconnect()
         create_results_dir(path)
 
         #progress bar

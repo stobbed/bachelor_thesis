@@ -12,7 +12,12 @@ import configparser
 from processing import *
 # from postprocessing import *
 
-vehicles = create_vehicle_list("/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats")
+vehicle = "taxi12"
+
+if not (str(vehicle).startswith("drt") or str(vehicle).startswith("taxi")):
+    print("yes")
+
+# vehicles = create_vehicle_list("/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats")
 
 xmlpath = "/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats/hundekopf-rebalancing-1000vehicles-2seats.output_allVehicles.xml.gz"
 if os.path.exists(xmlpath):
