@@ -1,6 +1,9 @@
 from db import *
 from postprocessing import *
 
+drt_vehicles_drt = (picklefile_read("drt_vehicles_drt.pickle"))
+drt_vehicles_nondrt = picklefile_read("drt_vehicles_nondrt.pickle")
+
 
 path_drt = "/Users/dstobbe/Downloads/MATSIM Output/berlin-drt-v5.5-1pct"
 

@@ -14,6 +14,16 @@ from postprocessing import *
 from db import *
 # from postprocessing import *
 
+test = {}
+test['consumption'] = 6
+test['small'] = {}
+test['small']['km'] = 15
+test['small']['amount'] = 2
+
+for key, value in test.items():
+    print("key:", key)
+    print("value:",value)
+
 path = "/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats/hundekopf-rebalancing-1000vehicles-2seats_vehicleinfo_finished.csv"
 
 drt_info = calculate_avg_vehicle(path)

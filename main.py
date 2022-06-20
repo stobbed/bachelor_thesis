@@ -30,10 +30,9 @@ if __name__ == "__main__":
 
     drt_vehicles_drt, drt_vehicles_nondrt = scale_scenario(drt_info, cursor)
     vehicles_drt, vehicles_nondrt = scale_scenario(reference_info, cursor)
-    # openlca = olcaclient(path_drt)
+    # openlca = olcaclient()
     # openlca.lifecycleassessment_electric()
 
-    # openlca = olcaclient(path_reference)
 
     # print(drt_info)
     # print(" ")

@@ -538,14 +538,14 @@ def gettime():
 def picklefile_write(filename: str, content) -> "None":
     """ creates a pickle file with filename (complete path if not in the same directory as the script) and the contents, especially useful for debugging"""
     #file = os.path.join(path_drt, 'pickle', filename)
-    file = os.path.join(path_drt, filename)
+    file = os.path.join(filename)
     with open(file, 'wb') as fp:
         pickle.dump(content, fp)
    
 def picklefile_read(filename: str):
     """ reads the pickle file under filename (complete path if not in the same directory as the script) and returns it contents"""
     # file = os.path.join(path_drt, 'pickle', filename)
-    file = os.path.join(path_drt, filename)
+    file = os.path.join(filename)
     if os.path.exists(file):
         with open(file, 'rb') as fp:
             content = pickle.load(fp)

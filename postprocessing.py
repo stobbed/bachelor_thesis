@@ -117,6 +117,7 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
         drt_add_batteries_lifespan_vehicle = int(drt_add_batteries_lifespan_vehicle)
         
         drt_consumption_km_amount = 0
+        vehicles_drt['consumption'] = 0
         # would need to analyze per vehicle type here in order for pkm average to work properly
 
         for drt_size in vehicles_drt:
@@ -133,8 +134,11 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
             vehicles_drt[drt_size]['consumption_km'] = drt_consumption_km
             vehicles_drt[drt_size]['batteries'] = vehicles_drt[drt_size]['amount'] * drt_add_batteries_lifespan_vehicle
             vehicles_drt[drt_size]['km'] = drt_km_lifespan_fleet_scaled * (vehicles_drt[drt_size]['amount'] / drt_vehicleamount_scaled)
+            vehicles_drt[drt_size]['pkm'] = drt_pkm_lifespan_fleet_scaled * (vehicles_drt[drt_size]['amount'] / drt_vehicleamount_scaled)
+            vehicles_drt['consumption'] += drt_consumption_km * vehicles_drt[drt_size]['km']
 
-        vehicles_drt['consumption'] = drt_consumption_km_amount / drt_vehicleamount_scaled
+        # vehicles_drt['consumption'] = drt_consumption_km_amount
+        # vehicles_drt['consumption_lifespan_fleet'] = drt_consumption_km * drt_km_year_fleet_scaled
 
         # drt_consumption_year_fleet = drt_km_year_fleet_scaled * drt_consumption_km_average
         

@@ -1,10 +1,12 @@
 import pandas as pd
 import os.path
+
+from pyrsistent import s
 from configuration import getfromconfig, getfromvehicleconfig
 import olca
 
 class olcaclient():
-    def __init__(self, path) -> None:
+    def __init__(self) -> None:
         # setting up IPC connection (port may have to be adjusted)
         self._client = olca.Client(8080)
         self._setup = olca.CalculationSetup()
@@ -12,7 +14,9 @@ class olcaclient():
         self._setup.calculation_type = olca.CalculationType.SIMPLE_CALCULATION
         # set impact method
         self._setup.impact_method = self._client.find(olca.ImpactMethod, 'zeroCUTS')
-        self._resultspath = os.path.join(path, 'results')
+        if not os.path.exists('lca'):
+            os.mkdir('lca')
+        self._resultspath = 'lca'
         self.drt_vehiclesize = int(getfromconfig('vehicle_parameters', 'drt_vehiclesize'))
         self.charging = getfromconfig('vehicle_parameters', 'charging')
         self.parameterdict = {}
@@ -104,8 +108,8 @@ class olcaclient():
 
         drt_batteries_kwh = 0
         batteries_kwh = 0
-        drt_electric_production = 0
-        electric_production = 0
+        drt_electric_production_vehicle = 0
+        electric_production_vehicle = 0
         drt_electric_transport = 0
         electric_transport = 0
         drt_electric_consumption = 0
@@ -132,28 +136,29 @@ class olcaclient():
                     if size == 'small':
                         if self.charging == "opportunity":
                             drt_batteries_kwh += vehicles_drt[size]['batteries'] * self.battery_small_opportunity
-                            drt_electric_production += electric_production_vehicle_kg * (self.mass_electric_small + (self.battery_small_opportunity * kWh_to_kg)) * vehicles_nondrt[size]['amount']
+                            drt_electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_small + (self.battery_small_opportunity * kWh_to_kg)) * vehicles_nondrt[size]['amount']
                         else:
                             drt_batteries_kwh += vehicles_drt[size]['batteries'] * self.battery_small
-                            drt_electric_production += electric_production_vehicle_kg * (self.mass_electric_small + (self.battery_small * kWh_to_kg)) * vehicles_nondrt[size]['amount']
+                            drt_electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_small + (self.battery_small * kWh_to_kg)) * vehicles_nondrt[size]['amount']
                         drt_electric_transport += electric_transport_km * vehicles_drt[size]['km']
                     elif size == 'medium':
                         if self.charging == "opportunity":
                             drt_batteries_kwh += vehicles_drt[size]['batteries'] * self.battery_medium_opportunity
-                            drt_electric_production += electric_production_vehicle_kg * (self.mass_electric_medium + (self.battery_medium_opportunity * kWh_to_kg)) * vehicles_nondrt[size]['amount']
+                            drt_electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_medium + (self.battery_medium_opportunity * kWh_to_kg)) * vehicles_nondrt[size]['amount']
                         else:
                             drt_batteries_kwh += vehicles_drt[size]['batteries'] * self.battery_medium
-                            drt_electric_production += electric_production_vehicle_kg * (self.mass_electric_medium + (self.battery_medium * kWh_to_kg)) * vehicles_nondrt[size]['amount']
+                            drt_electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_medium + (self.battery_medium * kWh_to_kg)) * vehicles_nondrt[size]['amount']
                         drt_electric_transport += electric_transport_km * vehicles_drt[size]['km']
                     elif size == 'large':
                         if self.charging == "opportunity":
                             drt_batteries_kwh += vehicles_drt[size]['batteries'] * self.battery_large_opportunity
-                            drt_electric_production += electric_production_vehicle_kg * (self.mass_electric_large + (self.battery_large_opportunity * kWh_to_kg)) * vehicles_nondrt[size]['amount']
+                            drt_electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_large + (self.battery_large_opportunity * kWh_to_kg)) * vehicles_nondrt[size]['amount']
                         else:
                             drt_batteries_kwh += vehicles_drt[size]['batteries'] * self.battery_large
-                            drt_electric_production += electric_production_vehicle_kg * (self.mass_electric_large + (self.battery_large * kWh_to_kg)) * vehicles_nondrt[size]['amount']
+                            drt_electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_large + (self.battery_large * kWh_to_kg)) * vehicles_nondrt[size]['amount']
                         drt_electric_transport += electric_transport_km * vehicles_drt[size]['km']
             
+            # emissions
             drt_electric_production_batteries = (drt_batteries_kwh * kWh_to_kg) * electric_production_battery_kg
             drt_electric_consumption = vehicles_drt['consumption'] * electricity_use_kWh
 
@@ -177,27 +182,26 @@ class olcaclient():
                             if size == 'small':
                                 if self.charging == "opportunity":
                                     batteries_kwh += vehicles_nondrt[size]['batteries'] * self.battery_small_opportunity
-                                    electric_production += electric_production_vehicle_kg * (self.mass_electric_small + (self.battery_small_opportunity * kWh_to_kg)) * vehicles_nondrt[size]['amount']
+                                    electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_small + (self.battery_small_opportunity * kWh_to_kg)) * vehicles_nondrt[size]['amount']
                                 else:
                                     batteries_kwh += vehicles_nondrt[size]['batteries'] * self.battery_small
-                                    electric_production += electric_production_vehicle_kg * (self.mass_electric_small + (self.battery_small * kWh_to_kg)) * vehicles_nondrt[size]['amount']
-                                electric_transport += electric_transport_km * vehicles_nondrt[size]['km']
+                                    electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_small + (self.battery_small * kWh_to_kg)) * vehicles_nondrt[size]['amount']
                             elif size == 'medium':
                                 if self.charging == "opportunity":
                                     batteries_kwh += vehicles_nondrt[size]['batteries'] * self.battery_medium_opportunity
-                                    electric_production += electric_production_vehicle_kg * (self.mass_electric_medium + (self.battery_medium_opportunity * kWh_to_kg)) * vehicles_nondrt[size]['amount']
+                                    electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_medium + (self.battery_medium_opportunity * kWh_to_kg)) * vehicles_nondrt[size]['amount']
                                 else:
                                     batteries_kwh += vehicles_nondrt[size]['batteries'] * self.battery_medium
-                                    electric_production += electric_production_vehicle_kg * (self.mass_electric_medium + (self.battery_medium * kWh_to_kg)) * vehicles_nondrt[size]['amount']
-                                electric_transport += electric_transport_km * vehicles_nondrt[size]['km']
+                                    electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_medium + (self.battery_medium * kWh_to_kg)) * vehicles_nondrt[size]['amount']
                             elif size == 'large':
                                 if self.charging == "opportunity":
                                     batteries_kwh += vehicles_nondrt[size]['batteries'] * self.battery_large_opportunity
-                                    electric_production += electric_production_vehicle_kg * (self.mass_electric_large + (self.battery_large_opportunity * kWh_to_kg)) * vehicles_nondrt[size]['amount']
+                                    electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_large + (self.battery_large_opportunity * kWh_to_kg)) * vehicles_nondrt[size]['amount']
                                 else:
                                     batteries_kwh += vehicles_nondrt[size]['batteries'] * self.battery_large
-                                    electric_production += electric_production_vehicle_kg * (self.mass_electric_large + (self.battery_large * kWh_to_kg)) * vehicles_nondrt[size]['amount']
-                                electric_transport += electric_transport_km * vehicles_nondrt[size]['km']
+                                    electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_large + (self.battery_large * kWh_to_kg)) * vehicles_nondrt[size]['amount']
+                            
+                            electric_transport += electric_transport_km * vehicles_nondrt[size]['km']
                     
                     else:
                         if size == 'small' or size == 'medium' or size == 'large':
@@ -225,8 +229,10 @@ class olcaclient():
                             elif size == 'large':
                                 combustion_production += production_vehicle_kg * self.mass_electric_large * vehicles_nondrt[size]['amount']
                                 combustion_transport += transport_km * vehicles_nondrt[size]['km']
+
                         
-                combustion_consumption = vehicles_
+                combustion_consumption = vehicles_nondrt[fuel]
+            electric_production_batteries = (batteries_kwh * kWh_to_kg) * electric_production_battery_kg
             electric_consumption = vehicles_nondrt['consumption'] * electricity_use_kWh
             
             
