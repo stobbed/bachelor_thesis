@@ -10,7 +10,18 @@ import pandas as pd
 
 import configparser
 from processing import *
+from postprocessing import *
+from db import *
 # from postprocessing import *
+
+path = "/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats/hundekopf-rebalancing-1000vehicles-2seats_vehicleinfo_finished.csv"
+
+drt_info = calculate_avg_vehicle(path)
+db_drt = Db(path_drt)
+cursor = db_drt.fetchcursor()
+
+drt_vehicles_drt, drt_vehicles_nondrt = scale_scenario(drt_info, cursor)
+
 
 vehicle = "taxi12"
 

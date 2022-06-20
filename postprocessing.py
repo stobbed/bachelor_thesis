@@ -47,7 +47,7 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
         drt_scalingfactor_vehicles = ((pct_scenario/100)**(-0.637))                     # = 4,335 for 10 pct
         drt_scalingfactor_km = ((pct_scenario/100)**(-0.928))                           # = 8,472 for 10 pct
         drt_scalingfactor_km_pervehicle = drt_scalingfactor_km / drt_scalingfactor_vehicles     # = 1,954 for 10 pct
-        drt_scalingfactor_persons = 1.2     # NEEDS TO BE ADJUSTED
+        drt_scalingfactor_persons = 1.3     # NEEDS TO BE ADJUSTED
 
         # drt_vehiclesize = getfromconfig('vehicle_parameters', 'drt_vehiclesize')
         # if int(drt_vehiclesize) == 2:
@@ -57,7 +57,7 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
         # elif int(drt_vehiclesize) == 7:
         #     drt_size = "large"
         drt_vehicleslist = create_drtvehicleids_list(cursor)
-        query_capacity = ''' SELECT capacity from vehicles WHERE vehicle = ?'''
+        query_capacity = ''' SELECT capacity from vehicles WHERE vehicle_id = ?'''
         vehicles_2 = 0; vehicles_4 = 0; vehicles_7 = 0
         for vehicle in drt_vehicleslist:
             db_output = query_db(query_capacity, cursor, vehicle)
@@ -90,6 +90,8 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
 
         drt_vehicleamount_scaled = drt_vehicleamount * drt_scalingfactor_vehicles
         drt_vehicleamount_scaled = int(drt_vehicleamount_scaled) + 1
+
+        drt_avg_passenger_scaled = drt_avg_passenger * drt_scalingfactor_persons
 
         # per year
         drt_km_year_vehicle = ((workdays * drt_avg_totalkm_region) + (weekenddays * weekendfactor * drt_avg_totalkm_region)) / m_to_km
@@ -128,8 +130,6 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
 
             drt_consumption_km_amount += drt_consumption_km * vehicles_drt[drt_size]['amount']
 
-            drt_avg_passenger_scaled = drt_avg_passenger * drt_scalingfactor_persons
-
             vehicles_drt[drt_size]['consumption_km'] = drt_consumption_km
             vehicles_drt[drt_size]['batteries'] = vehicles_drt[drt_size]['amount'] * drt_add_batteries_lifespan_vehicle
             vehicles_drt[drt_size]['km'] = drt_km_lifespan_fleet_scaled * (vehicles_drt[drt_size]['amount'] / drt_vehicleamount_scaled)
@@ -165,27 +165,27 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
     vehicles_nondrt = {}
     vehicles_nondrt['petrol'] = {}
     vehicles_nondrt['petrol']['small'] = {}
-    vehicles_nondrt['petrol']['small']['amount'] = vehicleamount_scaled * share_petrol * share_small
+    vehicles_nondrt['petrol']['small']['amount'] = int(vehicleamount_scaled * share_petrol * share_small)
     vehicles_nondrt['petrol']['medium'] = {}
-    vehicles_nondrt['petrol']['medium']['amount'] = vehicleamount_scaled * share_petrol * share_medium
+    vehicles_nondrt['petrol']['medium']['amount'] = int(vehicleamount_scaled * share_petrol * share_medium)
     vehicles_nondrt['petrol']['large'] = {}
-    vehicles_nondrt['petrol']['large']['amount'] = vehicleamount_scaled * share_petrol * share_large
+    vehicles_nondrt['petrol']['large']['amount'] = int(vehicleamount_scaled * share_petrol * share_large)
     
     vehicles_nondrt['diesel'] = {}
     vehicles_nondrt['diesel']['small'] = {}
-    vehicles_nondrt['diesel']['small']['amount'] = vehicleamount_scaled * share_diesel * share_small
+    vehicles_nondrt['diesel']['small']['amount'] = int(vehicleamount_scaled * share_diesel * share_small)
     vehicles_nondrt['diesel']['medium'] = {}
-    vehicles_nondrt['diesel']['medium']['amount'] = vehicleamount_scaled * share_diesel * share_medium
+    vehicles_nondrt['diesel']['medium']['amount'] = int(vehicleamount_scaled * share_diesel * share_medium)
     vehicles_nondrt['diesel']['large'] = {}
-    vehicles_nondrt['diesel']['large']['amount'] = vehicleamount_scaled * share_diesel * share_large
+    vehicles_nondrt['diesel']['large']['amount'] = int(vehicleamount_scaled * share_diesel * share_large)
     
     vehicles_nondrt['electric'] = {}
     vehicles_nondrt['electric']['small'] = {}
-    vehicles_nondrt['electric']['small']['amount'] = vehicleamount_scaled * share_electric * share_small
-    vehicles_nondrt['electric']['small'] = {}
-    vehicles_nondrt['electric']['medium']['amount'] = vehicleamount_scaled * share_electric * share_medium
-    vehicles_nondrt['electric']['small'] = {}
-    vehicles_nondrt['electric']['large']['amount'] = vehicleamount_scaled * share_electric * share_large
+    vehicles_nondrt['electric']['small']['amount'] = int(vehicleamount_scaled * share_electric * share_small)
+    vehicles_nondrt['electric']['medium'] = {}
+    vehicles_nondrt['electric']['medium']['amount'] = int(vehicleamount_scaled * share_electric * share_medium)
+    vehicles_nondrt['electric']['large'] = {}
+    vehicles_nondrt['electric']['large']['amount'] = int(vehicleamount_scaled * share_electric * share_large)
 
     # per year
     km_year_vehicle = ((workdays * avg_totalkm) + (weekenddays * weekendfactor * avg_totalkm)) / m_to_km
@@ -221,7 +221,7 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
 
     consumption_petrol = km_lifespan_fleet_scaled * share_petrol * ((share_small * consumption_petrol_small) + (share_medium * consumption_petrol_medium) + (share_large * consumption_petrol_large))
     consumption_diesel = km_lifespan_fleet_scaled * share_diesel * ((share_small * consumption_diesel_small) + (share_medium * consumption_diesel_medium) + (share_large * consumption_diesel_large))
-    consumption_electric = km_lifespan_fleet_scaled * share_electric((share_small * consumption_electric_small) + (share_medium * consumption_electric_medium) + (share_large * consumption_electric_large))
+    consumption_electric = km_lifespan_fleet_scaled * share_electric * ((share_small * consumption_electric_small) + (share_medium * consumption_electric_medium) + (share_large * consumption_electric_large))
 
     vehicles_nondrt['petrol']['consumption'] = consumption_petrol
     vehicles_nondrt['diesel']['consumption'] = consumption_diesel

@@ -342,8 +342,9 @@ def calculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Vehi
                 pkm_without_empty += trips.passengers * trips.link_length
                 km_without_empty += trips.link_length
                 trips_without_empty += 1
-            speed_length_sum += trips.actual_speed * trips.link_length
-            speed_pct_sum += trips.speed_pct * trips.link_length
+            if trips.actual_speed != -1:
+                speed_length_sum += trips.actual_speed * trips.link_length
+                speed_pct_sum += trips.speed_pct * trips.link_length
             intownpct = intown/totaldistance
             countryroadpct = countryroad/totaldistance
             highwaypct = highway/totaldistance
@@ -463,10 +464,10 @@ def calculate_avg_vehicle(path):
     avg_speed = 0; speed_pct = 0; speed_length = 0; speed_above_90 = 0; speed_below_70 = 0; speed_below_50 = 0; speed_below_30 = 0; speed_below_10 = 0
     # avgpassenger_without_empty = 0
     # data = pd.read_csv("/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats/hundekopf-rebalancing-1000vehicles-2seats_vehicleinfo.csv")
-    data = pd.read_csv(os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo_finished.csv'))
+    data = pd.read_csv(os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo_finished.csv'), low_memory=False, header=0, skip_blank_lines=True)
     # vehicleamount = data._values.shape[0]
     for line in data._values:
-        if str(line[0]).startswith("drt"):
+        if str(line[0]).startswith("drt") or str(line[0]).startswith("taxi"):
             drt_vehicleamount += 1
             drt_totalkm += line[1]; drt_totalkm_region += line[21]; drt_totalkm_notregion += line[20]; drt_totalpkm += line[8]
             drt_intown_pct += line[2]; drt_countryroad_pct += line[3]; drt_highway_pct += line[4]
@@ -474,10 +475,18 @@ def calculate_avg_vehicle(path):
             drt_avg_speed += line[12]; drt_speed_pct += line[13]; drt_speed_length += line[14]; drt_speed_above_90 += line[15]; drt_speed_below_70 += line[16]; drt_speed_below_50 += line[17]; drt_speed_below_30 += line[18]; drt_speed_below_10 += line[19]
             drt_avgpassenger_amount += line[9]; drt_avgpassenger_without_empty += line[10]; drt_pkm_without_empty += line[11]
         else:
-            vehicleamount += 1
-            totalkm += line[1]
-            intown_pct += line[2]; countryroad_pct += line[3]; highway_pct += line[4]
-            avg_speed += line[12]; speed_pct += line[13]; speed_length += line[14]; speed_above_90 += line[15]; speed_below_70 += line[16]; speed_below_50 += line[17]; speed_below_30 += line[18]; speed_below_10 += line[19]
+            if line[1] > 0:
+                vehicleamount += 1
+                totalkm += line[1]
+                intown_pct += line[2]; countryroad_pct += line[3]; highway_pct += line[4]
+                avg_speed += line[12]; speed_pct += line[13]; speed_length += line[14]; speed_above_90 += line[15]; speed_below_70 += line[16]; speed_below_50 += line[17]; speed_below_30 += line[18]; speed_below_10 += line[19]
+            if totalkm > 0:
+                print(totalkm)
+                pass
+            else: 
+                print(line[1])
+                print(type(line[1]))
+                break
     info = {}
     info['drt_vehicleamount'] = drt_vehicleamount
     info['drt_avg_totalkm_region'] = drt_totalkm_region / drt_vehicleamount

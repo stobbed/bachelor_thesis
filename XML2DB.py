@@ -559,7 +559,10 @@ def create_database(dbpath, xmlpath_nw, xmlpath_evts, xmlpath_vehicles):
                 if publictransport_ignore == True and str(single_row[3]).startswith('pt') or str(single_row[3]).startswith('freigth') or single_row[2] == 14 or single_row[2] == 15 or single_row[2] == 16 or single_row[2] == 17:
                     pass
                 else:
-                    cursor.execute(query, single_row)
+                    if increase_performance == True and (single_row[2] == 4 or single_row[2] == 7 or single_row[2] == 8 or single_row[2] == 9 or single_row[2] == 10 or single_row[2] == 20 or single_row[2] == 21 or single_row[2] == 23 or single_row[2] == 24 or single_row[2] == 25):
+                        cursor.execute(query, single_row)
+                    elif increase_performance == False:
+                        cursor.execute(query, single_row)
             except sqlite3.Error as error:
                 print('Error when inserting row into events table: ', error)
             finally:

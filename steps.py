@@ -13,7 +13,7 @@ print(len(vehicleslist))
 listofagents = create_personlist(path_drt, getsimulationname(path_drt))
 print(len(listofagents))
 
-usedvehicles = match_passengers_and_cars(listofagents, vehicleslist)
+usedvehicles = list(match_passengers_and_cars(listofagents, vehicleslist))
 
 print(len(usedvehicles))
 
