@@ -121,21 +121,29 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
         # would need to analyze per vehicle type here in order for pkm average to work properly
 
         for drt_size in vehicles_drt:
-            consumption_type = "consumption_" + drt_size
-            if charging == "opportunity":
-                consumption_type = consumption_type + "_opportunity"
-            drt_consumption_100km = float(getfromvehicleconfig('energy_consumption', consumption_type))
+            if drt_size == "small" or drt_size == "medium" or drt_size == "large":
+                consumption_type = "consumption_" + drt_size
+                if charging == "opportunity":
+                    consumption_type = consumption_type + "_opportunity"
+                drt_consumption_100km = float(getfromvehicleconfig('energy_consumption', consumption_type))
 
-            drt_totalroad_factor = (drt_avg_intown_pct * intown_factor) + (drt_avg_countryroad_pct * countryroad_factor) + (drt_avg_highway_pct * highwaypct_factor)
-            drt_consumption_km = (drt_consumption_100km * drt_speed_factor * drt_totalroad_factor) / 100
+                drt_totalroad_factor = (drt_avg_intown_pct * intown_factor) + (drt_avg_countryroad_pct * countryroad_factor) + (drt_avg_highway_pct * highwaypct_factor)
+                drt_consumption_km = (drt_consumption_100km * drt_speed_factor * drt_totalroad_factor) / 100
 
-            drt_consumption_km_amount += drt_consumption_km * vehicles_drt[drt_size]['amount']
+                drt_consumption_km_amount += drt_consumption_km * vehicles_drt[drt_size]['amount']
 
-            vehicles_drt[drt_size]['consumption_km'] = drt_consumption_km
-            vehicles_drt[drt_size]['batteries'] = vehicles_drt[drt_size]['amount'] * drt_add_batteries_lifespan_vehicle
-            vehicles_drt[drt_size]['km'] = drt_km_lifespan_fleet_scaled * (vehicles_drt[drt_size]['amount'] / drt_vehicleamount_scaled)
-            vehicles_drt[drt_size]['pkm'] = drt_pkm_lifespan_fleet_scaled * (vehicles_drt[drt_size]['amount'] / drt_vehicleamount_scaled)
-            vehicles_drt['consumption'] += drt_consumption_km * vehicles_drt[drt_size]['km']
+                vehicles_drt[drt_size]['consumption_km'] = drt_consumption_km
+                vehicles_drt[drt_size]['batteries'] = vehicles_drt[drt_size]['amount'] * drt_add_batteries_lifespan_vehicle
+                vehicles_drt[drt_size]['km'] = drt_km_lifespan_fleet_scaled * (vehicles_drt[drt_size]['amount'] / drt_vehicleamount_scaled)
+                vehicles_drt[drt_size]['pkm'] = drt_pkm_lifespan_fleet_scaled * (vehicles_drt[drt_size]['amount'] / drt_vehicleamount_scaled)
+                vehicles_drt['consumption'] += drt_consumption_km * vehicles_drt[drt_size]['km']
+        vehicles_drt['totalkm'] = drt_km_lifespan_fleet_scaled
+        vehicles_drt['totalpkm'] = drt_pkm_lifespan_fleet_scaled
+        vehicles_drt['total_batteries'] = drt_add_batteries_lifespan_vehicle * drt_vehicleamount_scaled
+        vehicles_drt['avg_speed'] = vehicleinfo['drt_avg_speed_pervehicle']
+        vehicles_drt['speed_pct'] = vehicleinfo['drt_avg_speed_pct']
+        vehicles_drt['avg_passengers'] = vehicleinfo['drt_avg_passenger_amount']
+        vehicles_drt['total_vehicles'] = drt_vehicleamount_scaled
 
         # vehicles_drt['consumption'] = drt_consumption_km_amount
         # vehicles_drt['consumption_lifespan_fleet'] = drt_consumption_km * drt_km_year_fleet_scaled
@@ -212,6 +220,10 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
     vehicles_nondrt['electric']['medium']['km'] = km_lifespan_fleet_scaled * share_electric * share_medium
     vehicles_nondrt['electric']['large']['km'] = km_lifespan_fleet_scaled * share_electric * share_large
 
+    vehicles_nondrt['electric']['small']['batteries'] = int((km_lifespan_vehicle / battery_lifetime)) * vehicleamount_scaled * share_electric * share_small
+    vehicles_nondrt['electric']['medium']['batteries'] = int((km_lifespan_vehicle / battery_lifetime)) * vehicleamount_scaled * share_electric * share_medium
+    vehicles_nondrt['electric']['large']['batteries'] = int((km_lifespan_vehicle / battery_lifetime)) * vehicleamount_scaled * share_electric * share_large
+
     consumption_petrol_small = float(getfromvehicleconfig('combustion_consumption', 'consumption_petrol_small', True)) / 100
     consumption_petrol_medium = float(getfromvehicleconfig('combustion_consumption', 'consumption_petrol_medium', True)) / 100
     consumption_petrol_large = float(getfromvehicleconfig('combustion_consumption', 'consumption_petrol_large', True)) / 100
@@ -230,5 +242,11 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
     vehicles_nondrt['petrol']['consumption'] = consumption_petrol
     vehicles_nondrt['diesel']['consumption'] = consumption_diesel
     vehicles_nondrt['electric']['consumption'] = consumption_electric
+
+    vehicles_nondrt['totalkm'] = km_lifespan_fleet_scaled
+    vehicles_nondrt['totalpkm'] = pkm_lifespan_fleet_scaled
+    vehicles_nondrt['avg_speed'] = vehicleinfo['avg_speed_pervehicle']
+    vehicles_nondrt['speed_pct'] = vehicleinfo['avg_speed_pct']
+    vehicles_nondrt['total_vehicles'] = vehicleamount_scaled
 
     return vehicles_drt, vehicles_nondrt
