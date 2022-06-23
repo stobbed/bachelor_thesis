@@ -11,6 +11,10 @@ if __name__ == "__main__":
     # ppening GUI to configure paths
     gui = configgui()
 
+    if gui.success == False:
+        print("\naborted program, due to failure or closing the window, you need to press the button 'Start Script'!\n")
+        quit()
+
     tic = time.perf_counter()
 
     # getting the (adjusted) paths from the config.ini

@@ -13,10 +13,13 @@ class configgui(tk.Tk, object):
     def __init__(self):
         super().__init__()
 
+        # determines whether program ran succesfully or if the window was closed
+        self.success = False
+
         # read in current config
         self.path_drt = getfromconfig('paths', 'path_drt')
         self.path_reference = getfromconfig('paths', 'path_reference')
-        self.drtvehiclesize = getfromconfig('vehicle_parameters', 'drt_vehiclesize')
+        self.energymix = getfromconfig('vehicle_parameters', 'energymix')
         self.charging = getfromconfig('vehicle_parameters', 'charging')
         self.publictransport = getfromconfig('settings', 'publictransport_ignore')
 
@@ -75,21 +78,21 @@ class configgui(tk.Tk, object):
 
 
         # vehicle size note, label and box
-        self.drtvehiclesize_note = ttk.Label(self, text="DRT vehicle size can only be 2 (small), 4 (medium) or 7 (large) at this moment")
-        self.drtvehiclesize_note.grid(column=0, row=5, columnspan=3, pady=5)
-        self.drtvehiclesize_note.configure(font=description)
+        self.energymix_note = ttk.Label(self, text="Select the grid mix that is to be used for the use phase of BEVs")
+        self.energymix_note.grid(column=0, row=5, columnspan=3, pady=5)
+        self.energymix_note.configure(font=description)
 
-        self.drtvehiclesize_label = ttk.Label(self, text="DRT vehicle size")
-        self.drtvehiclesize_label.grid(column=0, row=6, sticky=tk.E)
+        self.energymix_label = ttk.Label(self, text="grid mix")
+        self.energymix_label.grid(column=0, row=6, sticky=tk.E)
 
-        self.drtvehiclesize_combo = ttk.Combobox(self, textvariable=tk.IntVar(), values=[2, 4, 7], width = 10, justify=tk.CENTER)
-        self.drtvehiclesize_combo.grid(column=1, row=6, sticky=tk.W, pady=10)
-        if int(self.drtvehiclesize) == 2:
-            self.drtvehiclesize_combo.current(0)
-        elif int(self.drtvehiclesize) == 4:
-            self.drtvehiclesize_combo.current(1)
+        self.energymix_combo = ttk.Combobox(self, textvariable=tk.IntVar(), values=["Greenmix", "today", "2030"], width = 10, justify=tk.CENTER)
+        self.energymix_combo.grid(column=1, row=6, sticky=tk.W, pady=10)
+        if self.energymix == "Greenmix":
+            self.energymix_combo.current(0)
+        elif self.energymix == "today":
+            self.energymix_combo.current(1)
         else:
-            self.drtvehiclesize_combo.current(2)
+            self.energymix_combo.current(2)
 
 
         # definition of charging strategy, which ultimately determines the battery capacity
@@ -122,6 +125,21 @@ class configgui(tk.Tk, object):
         else:
             self.publictransport_combo.current(1)
 
+        # definition of charging strategy, which ultimately determines the battery capacity
+        self.publictransport_note = ttk.Label(self, text="choose whether to ignore public transport during DB creation or not (saves a bit of space if True)")
+        self.publictransport_note.grid(column=0, row=11, columnspan=3, pady=5)
+        self.publictransport_note.configure(font=description)
+
+        self.publictransport_label = ttk.Label(self, text="use csv")
+        self.publictransport_label.grid(column=0, row=12, sticky=tk.E)
+
+        self.publictransport_combo = ttk.Combobox(self, textvariable=tk.StringVar(), values=['True', 'False'], width = 10, justify=tk.CENTER)
+        self.publictransport_combo.grid(column=1, row=12, sticky=tk.W, pady=10)
+        if self.publictransport == 'True':
+            self.publictransport_combo.current(0)
+        else:
+            self.publictransport_combo.current(1)
+
         # button that triggers the storing of the chosen specs and closes this GUI
         self.startbutton = ttk.Button(self, text="Start Script", command=lambda:[f() for f in [self.startscript, self.destroy]])
         self.startbutton.grid(column=1, row=14, sticky=tk.E, pady=10)
@@ -142,13 +160,15 @@ class configgui(tk.Tk, object):
         paths['path_drt'] = self.path_drt_box.get()
         paths['path_reference'] = self.path_reference_box.get()
 
-        vehicleparameters['drt_vehiclesize'] = self.drtvehiclesize_combo.get()
+        vehicleparameters['drt_vehiclesize'] = self.energymix_combo.get()
         vehicleparameters['charging'] = self.charging_combo.get()
         
         settings['publictransport_ignore'] = self.publictransport_combo.get()
 
         with open("config.ini", 'w') as file:
             edit.write(file)
+
+        self.success = True
 
     def opendirectorywindow(self):
         ''' opens a directory browser window and returns the chose direcotry'''
@@ -241,7 +261,7 @@ class vehicleparams(tk.Tk, object):
         self.large_label.grid(column= 4, row=0, columnspan=2)
         self.large_label.configure(font=title)
 
-        self.mass_small_label = ttk.Label(self, text="mass:")
+        self.mass_small_label = ttk.Label(self, text="mass [kg]:")
         self.mass_small_label.grid(column=0, row=1, sticky=tk.E)
         self.mass_small_label.configure(font=description)
 
@@ -249,7 +269,7 @@ class vehicleparams(tk.Tk, object):
         self.mass_small_box.grid(column=1, row=1, sticky=tk.E, pady=10)
         self.mass_small_box.insert(0, self.mass_small)
 
-        self.mass_medium_label = ttk.Label(self, text="mass:")
+        self.mass_medium_label = ttk.Label(self, text="mass [kg]:")
         self.mass_medium_label.grid(column=2, row=1, sticky=tk.E)
         self.mass_medium_label.configure(font=description)
 
@@ -257,7 +277,7 @@ class vehicleparams(tk.Tk, object):
         self.mass_medium_box.grid(column=3, row=1, sticky=tk.E, pady=10)
         self.mass_medium_box.insert(0, self.mass_medium)
 
-        self.mass_large_label = ttk.Label(self, text="mass:")
+        self.mass_large_label = ttk.Label(self, text="mass [kg]:")
         self.mass_large_label.grid(column=4, row=1, sticky=tk.E)
         self.mass_large_label.configure(font=description)
 
@@ -266,7 +286,7 @@ class vehicleparams(tk.Tk, object):
         self.mass_large_box.insert(0, self.mass_large)
 
 
-        self.battery_small_label = ttk.Label(self, text="battery size:")
+        self.battery_small_label = ttk.Label(self, text="battery size [kWh]:")
         self.battery_small_label.grid(column=0, row=2, sticky=tk.E)
         self.battery_small_label.configure(font=description)
 
@@ -274,7 +294,7 @@ class vehicleparams(tk.Tk, object):
         self.battery_small_box.grid(column=1, row=2, sticky=tk.E, pady=10)
         self.battery_small_box.insert(0, self.battery_small)
 
-        self.battery_medium_label = ttk.Label(self, text="battery size:")
+        self.battery_medium_label = ttk.Label(self, text="battery size [kWh]:")
         self.battery_medium_label.grid(column=2, row=2, sticky=tk.E)
         self.battery_medium_label.configure(font=description)
 
@@ -282,7 +302,7 @@ class vehicleparams(tk.Tk, object):
         self.battery_medium_box.grid(column=3, row=2, sticky=tk.E, pady=10)
         self.battery_medium_box.insert(0, self.battery_medium)
 
-        self.battery_large_label = ttk.Label(self, text="battery size:")
+        self.battery_large_label = ttk.Label(self, text="battery size [kWh]:")
         self.battery_large_label.grid(column=4, row=2, sticky=tk.E)
         self.battery_large_label.configure(font=description)
 
@@ -291,7 +311,7 @@ class vehicleparams(tk.Tk, object):
         self.battery_large_box.insert(0, self.battery_large)
 
 
-        self.battery_small_opportunity_label = ttk.Label(self, text="battery size opportunity:")
+        self.battery_small_opportunity_label = ttk.Label(self, text="battery size opportunity [kWh]:")
         self.battery_small_opportunity_label.grid(column=0, row=3, sticky=tk.E)
         self.battery_small_opportunity_label.configure(font=description)
 
@@ -299,7 +319,7 @@ class vehicleparams(tk.Tk, object):
         self.battery_small_opportunity_box.grid(column=1, row=3, sticky=tk.E, pady=10)
         self.battery_small_opportunity_box.insert(0, self.battery_small_opportunity)
 
-        self.battery_medium_opportunity_label = ttk.Label(self, text="battery size opportunity:")
+        self.battery_medium_opportunity_label = ttk.Label(self, text="battery size opportunity [kWh]:")
         self.battery_medium_opportunity_label.grid(column=2, row=3, sticky=tk.E)
         self.battery_medium_opportunity_label.configure(font=description)
 
@@ -307,7 +327,7 @@ class vehicleparams(tk.Tk, object):
         self.battery_medium_opportunity_box.grid(column=3, row=3, sticky=tk.E, pady=10)
         self.battery_medium_opportunity_box.insert(0, self.battery_medium_opportunity)
 
-        self.battery_large_opportunity_label = ttk.Label(self, text="battery size opportunity:")
+        self.battery_large_opportunity_label = ttk.Label(self, text="battery size opportunity [kWh]:")
         self.battery_large_opportunity_label.grid(column=4, row=3, sticky=tk.E)
         self.battery_large_opportunity_label.configure(font=description)
 
@@ -316,7 +336,7 @@ class vehicleparams(tk.Tk, object):
         self.battery_large_opportunity_box.insert(0, self.battery_large_opportunity)
 
 
-        self.consumption_small_label = ttk.Label(self, text="consumption:")
+        self.consumption_small_label = ttk.Label(self, text="consumption [kWh/100km]:")
         self.consumption_small_label.grid(column=0, row=4, sticky=tk.E)
         self.consumption_small_label.configure(font=description)
 
@@ -324,7 +344,7 @@ class vehicleparams(tk.Tk, object):
         self.consumption_small_box.grid(column=1, row=4, sticky=tk.E, pady=10)
         self.consumption_small_box.insert(0, self.consumption_small)
 
-        self.consumption_medium_label = ttk.Label(self, text="consumption:")
+        self.consumption_medium_label = ttk.Label(self, text="consumption [kWh/100km]:")
         self.consumption_medium_label.grid(column=2, row=4, sticky=tk.E)
         self.consumption_medium_label.configure(font=description)
 
@@ -332,7 +352,7 @@ class vehicleparams(tk.Tk, object):
         self.consumption_medium_box.grid(column=3, row=4, sticky=tk.E, pady=10)
         self.consumption_medium_box.insert(0, self.consumption_medium)
 
-        self.consumption_large_label = ttk.Label(self, text="consumption:")
+        self.consumption_large_label = ttk.Label(self, text="consumption [kWh/100km]:")
         self.consumption_large_label.grid(column=4, row=4, sticky=tk.E)
         self.consumption_large_label.configure(font=description)
 
@@ -341,7 +361,7 @@ class vehicleparams(tk.Tk, object):
         self.consumption_large_box.insert(0, self.consumption_large)
 
 
-        self.consumption_small_opportunity_label = ttk.Label(self, text="consumption opportunity:")
+        self.consumption_small_opportunity_label = ttk.Label(self, text="consumption opportunity [kWh/100km]:")
         self.consumption_small_opportunity_label.grid(column=0, row=5, sticky=tk.E)
         self.consumption_small_opportunity_label.configure(font=description)
 
@@ -349,7 +369,7 @@ class vehicleparams(tk.Tk, object):
         self.consumption_small_opportunity_box.grid(column=1, row=5, sticky=tk.E, pady=10)
         self.consumption_small_opportunity_box.insert(0, self.consumption_small_opportunity)
 
-        self.consumption_medium_opportunity_label = ttk.Label(self, text="consumption opportunity:")
+        self.consumption_medium_opportunity_label = ttk.Label(self, text="consumption opportunity [kWh/100km]:")
         self.consumption_medium_opportunity_label.grid(column=2, row=5, sticky=tk.E)
         self.consumption_medium_opportunity_label.configure(font=description)
 
@@ -357,7 +377,7 @@ class vehicleparams(tk.Tk, object):
         self.consumption_medium_opportunity_box.grid(column=3, row=5, sticky=tk.E, pady=10)
         self.consumption_medium_opportunity_box.insert(0, self.consumption_medium_opportunity)
 
-        self.consumption_large_opportunity_label = ttk.Label(self, text="consumption opportunity:")
+        self.consumption_large_opportunity_label = ttk.Label(self, text="consumption opportunity [kWh/100km]:")
         self.consumption_large_opportunity_label.grid(column=4, row=5, sticky=tk.E)
         self.consumption_large_opportunity_label.configure(font=description)
 
