@@ -31,15 +31,20 @@ class Db:
         finally:
             pass
         # self._sqliteConnection = sqlite3.connect(dbpath)
-        print('Connection to SQLite-DB >> SUCCESS!')
+        # print('Connection to SQLite-DB >> SUCCESS!')
 
         # self.event_id_link_dict = {}
         # self.driven_links_dict = LinksForEvent()
         self.link_information_dict = {}
 
-    def setup(self, path):
+    def setup(path):
         xmlpath_nw, xmlpath_evts, xmlpath_vehicles, dbpath = setpaths(path)
-        create_database(xmlpath_nw, xmlpath_evts, xmlpath_vehicles)
+        if not os.path.exists(dbpath):
+            create_database(dbpath, xmlpath_nw, xmlpath_evts, xmlpath_vehicles)
+        conn_file = sqlite3.connect(dbpath)
+        sqliteConnection = sqlite3.connect("file:memdb1?mode=memory", isolation_level=None)
+        conn_file.backup(sqliteConnection)
+        sqliteConnection.close()
 
     def disconnect(self):
         self._cursor.close()
