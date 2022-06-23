@@ -9,11 +9,11 @@ class Trip:
     link_freespeed: float
     passengerfromregion: int
     passengernotfromregion: int
+    passengers: int = 0
     left_time: int = -1
     actual_speed: float = -1
     speed_pct: float = -1
     corrected: bool = False
-    passengers: int = 0
 
 @dataclass
 class Fleet:

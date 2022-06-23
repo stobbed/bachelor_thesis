@@ -138,10 +138,10 @@ def get_vehicle_information(cursor, vehicle, link_information_dict: dict, path, 
     event_id_link_dict = get_links_for_vehicleid(cursor, vehicle, link_information_dict)
     driven_links = create_entered_link_list(vehicle, event_id_link_dict, cursor, listofagents)
     del event_id_link_dict
-    if drt_status == True:
-        passengeroccupancy = get_passenger_occupancy(vehicle, cursor)
-        driven_links = get_passengers_for_link(vehicle, passengeroccupancy, driven_links, cursor)
-        del passengeroccupancy
+    # if drt_status == True:
+    #     passengeroccupancy = get_passenger_occupancy(vehicle, cursor)
+    #     driven_links = get_passengers_for_link(vehicle, passengeroccupancy, driven_links, cursor)
+    #     del passengeroccupancy
     if len(driven_links) > 0:
         vehicleinfo = create_vehicle_info(vehicle, driven_links)
         if drt_status == True:
@@ -198,6 +198,7 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
     # iterate through db_output with an index
     passengerfromregion = 0
     passengernotfromregion = 0
+    passengers = 0
     for index in range(0, len(db_output)):
         if not (str(vehicle).startswith("drt") or str(vehicle).startswith("taxi")):
             # if vehicle in listofagents:
@@ -221,7 +222,7 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
             link = trip.link
             length = trip.length
             freespeed = trip.freespeed
-            driven_links.append(Trip(link, event_id, time, length, freespeed, passengerfromregion, passengernotfromregion))
+            driven_links.append(Trip(link, event_id, time, length, freespeed, passengerfromregion, passengernotfromregion, passengers))
             tripindex += 1
         # type_id == 7 means left link
         elif type_id == 7:
@@ -234,6 +235,8 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
                     driven_links[entered_index].actual_speed = driven_links[entered_index].link_length/(time - driven_links[entered_index].entered_time)
                     driven_links[entered_index].speed_pct = driven_links[entered_index].actual_speed/driven_links[entered_index].link_freespeed
         # type_id == 4 means vehicle enters traffic, therefore further calculation is required
+        elif type_id == 3:  # eventuell auch lieber über passenger picked up / dropped of events machen
+            passengers += 1
         elif type_id == 4 and db_output[index+1][2] == 7 and index > 0:
             stop1 = False
             stop2 = False
@@ -275,6 +278,7 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
                     driven_links[index_entered_link_corrected].speed_pct = driven_links[index_entered_link_corrected].actual_speed/driven_links[index_entered_link_corrected].link_freespeed
                     driven_links[index_entered_link_corrected].corrected = True
         elif type_id == 10:
+            passengers -= 1     # eventuell auch lieber über passenger picked up / dropped of events machen
             if (str(vehicle).startswith("drt") or str(vehicle).startswith("taxi")):
                 db_output_vehicleevent = query_db(query_passengervehicle, cursor, event_id)
                 if db_output_vehicleevent[0][0] in listofagents:

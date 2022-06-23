@@ -22,21 +22,18 @@ def batching_drt(path):
         create_results_dir(path)
 
         # for DRT vehicles
-        vehicle = vehicleslist[1]
-        print(vehicle)
 
         #progress bar
         global pbar
         pbar = tqdm(total=len(vehicleslist))
 
         # multiprocessing
-        # pool = multiprocessing.Pool()
-        # processes = [pool.apply_async(vehicleinfo_batch, args = (vehicle, link_information_dict, path, listofagents), callback = update) for vehicle in vehicleslist]
-        # result = [p.get() for p in processes]
-        # pool.close()
-        # pool.join()
-        # pbar.update()
-        vehicleinfo_batch(vehicle, link_information_dict, path, listofagents)
+        pool = multiprocessing.Pool()
+        processes = [pool.apply_async(vehicleinfo_batch, args = (vehicle, link_information_dict, path, listofagents), callback = update) for vehicle in vehicleslist]
+        result = [p.get() for p in processes]
+        pool.close()
+        pool.join()
+        pbar.update()
         print("created info for all drt trips!")
 
         # for any other trips from Berlin people
@@ -48,12 +45,12 @@ def batching_drt(path):
         pbar = tqdm(total=len(vehicleslist))
 
         # multiprocessing
-        # pool = multiprocessing.Pool()
-        # processes = [pool.apply_async(vehicleinfo_batch, args = (vehicle, link_information_dict, path, listofagents, drt), callback = update) for vehicle in vehicleslist]
-        # result = [p.get() for p in processes]
-        # pool.close()
-        # pool.join()
-        # pbar.update()
+        pool = multiprocessing.Pool()
+        processes = [pool.apply_async(vehicleinfo_batch, args = (vehicle, link_information_dict, path, listofagents, drt), callback = update) for vehicle in vehicleslist]
+        result = [p.get() for p in processes]
+        pool.close()
+        pool.join()
+        pbar.update()
         print("created info for all non drt trips in drt scenario!")
 
         os.rename(os.path.join(os.path.join(path, 'results', simulationname + '_vehicleinfo.csv')), os.path.join(path, 'results', simulationname + '_vehicleinfo_finished.csv'))
