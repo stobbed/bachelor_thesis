@@ -3,6 +3,55 @@ from postprocessing import *
 from lca import *
 from configurationgui import *
 
+# https://stackoverflow.com/questions/67056605/how-to-drop-all-tables-in-sqlite3-using-python
+
+TABLE_PARAMETER = "{TABLE_PARAMETER}"
+DROP_TABLE_SQL = f"DROP TABLE {TABLE_PARAMETER};"
+GET_TABLES_SQL = "SELECT name FROM sqlite_schema WHERE type='table';"
+
+def delete_all_tables(con):
+    tables = get_tables(con)
+    delete_tables(con, tables)
+
+
+def get_tables(con):
+    cur = con.cursor()
+    cur.execute(GET_TABLES_SQL)
+    tables = cur.fetchall()
+    cur.close()
+    return tables
+
+
+def delete_tables(con, tables):
+    cur = con.cursor()
+    for table, in tables:
+        sql = DROP_TABLE_SQL.replace(TABLE_PARAMETER, table)
+        cur.execute(sql)
+    cur.close()
+
+print('connecting to database...')
+try:
+    # sqliteConnection = sqlite3.connect("dbatabase.db")
+    # sqliteConnection = sqlite3.connect("file:memdb1?mode=memory")
+    sqliteConnection = sqlite3.connect("file:memdb1?mode=memory", isolation_level=None)
+except sqlite3.error as error:
+    sys.exit('Failed to connect to database: ', error, '...Quitting.')
+print('connection established!')
+
+# delete_all_tables(sqliteConnection)
+
+# create nodes and links table
+print('creating database cursor...')
+cursor = sqliteConnection.cursor()
+print('cursor created!')
+
+query2 = ''' SELECT * from network_nodes'''
+test = cursor.execute(query2)
+res = test.fetchall()
+print(res)
+
+cursor.close()
+sqliteConnection.close()
 path = "/Users/dstobbe/Downloads/MATSIM Output/berlin-rebalancing-10000vehicles-2seats"
 
 import mprocessing

@@ -20,29 +20,26 @@ class LinksForEvent:
 
 
 class Db:
-    def __init__(self,path):
-        xmlpath_nw, xmlpath_evts, xmlpath_vehicles, dbpath = setpaths(path)
-        if os.path.exists(dbpath):
-            try:
-                # connects to sqlite database file - if path is faulty, creates a new and empty database
-                self._sqliteConnection = sqlite3.connect(dbpath)
-                self._cursor = self._sqliteConnection.cursor()
-                # print('Connection to SQLite-File',dbpath,'>> SUCCESS!')
-            except sqlite3.Error as error:
-                print('SQLite error: ', error)
-            finally:
-                pass
-        else:
-            create_database(dbpath, xmlpath_nw, xmlpath_evts, xmlpath_vehicles)
-            self._sqliteConnection = sqlite3.connect(dbpath)
+    def __init__(self):
+        try:
+            # connects to sqlite database file - if path is faulty, creates a new and empty database
+            self._sqliteConnection = sqlite3.connect("file:memdb1?mode=memory", isolation_level=None)
             self._cursor = self._sqliteConnection.cursor()
-            print('Connection to SQLite-File',dbpath,'>> SUCCESS!')
-            # raise FileNotFoundError('Invalid path (dbfile): '+dbpath+' - *.db file doesn\'t exist.')
-        # self.entered_dict = LinksForEvent()
-        # self.left_dict = LinksForEvent()
-        self.event_id_link_dict = {}
-        self.driven_links_dict = LinksForEvent()
+            # print('Connection to SQLite-File',dbpath,'>> SUCCESS!')
+        except sqlite3.Error as error:
+            print('SQLite error: ', error)
+        finally:
+            pass
+        # self._sqliteConnection = sqlite3.connect(dbpath)
+        print('Connection to SQLite-DB >> SUCCESS!')
+
+        # self.event_id_link_dict = {}
+        # self.driven_links_dict = LinksForEvent()
         self.link_information_dict = {}
+
+    def setup(self, path):
+        xmlpath_nw, xmlpath_evts, xmlpath_vehicles, dbpath = setpaths(path)
+        create_database(xmlpath_nw, xmlpath_evts, xmlpath_vehicles)
 
     def disconnect(self):
         self._cursor.close()
@@ -99,11 +96,11 @@ class Db:
     #     create_dict_left_links(ids, self._cursor,self.left_dict)
     #     return self.left_dict
 
-    def get_link(self, event_id):
-        return self.event_id_link_dict[event_id]
+    # def get_link(self, event_id):
+    #     return self.event_id_link_dict[event_id]
 
-    def get_time(self, event_id):
-        return get_time_for_event_id(event_id, self._cursor)
+    # def get_time(self, event_id):
+    #     return get_time_for_event_id(event_id, self._cursor)
 
 
 class MockDb:  

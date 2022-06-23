@@ -6,7 +6,37 @@ from timeit import default_timer as timer
 import os.path
 from configuration import *
 
-def create_database(dbpath, xmlpath_nw, xmlpath_evts, xmlpath_vehicles):
+# for deletion purposes due to using memory database
+
+# https://stackoverflow.com/questions/67056605/how-to-drop-all-tables-in-sqlite3-using-python
+
+TABLE_PARAMETER = "{TABLE_PARAMETER}"
+DROP_TABLE_SQL = f"DROP TABLE {TABLE_PARAMETER};"
+GET_TABLES_SQL = "SELECT name FROM sqlite_schema WHERE type='table';"
+
+def delete_all_tables(con):
+    tables = get_tables(con)
+    delete_tables(con, tables)
+
+
+def get_tables(con):
+    cur = con.cursor()
+    cur.execute(GET_TABLES_SQL)
+    tables = cur.fetchall()
+    cur.close()
+    if ('sqlite_sequence',) in tables:
+        tables.remove(('sqlite_sequence',))
+    return tables
+
+
+def delete_tables(con, tables):
+    cur = con.cursor()
+    for table, in tables:
+        sql = DROP_TABLE_SQL.replace(TABLE_PARAMETER, table)
+        cur.execute(sql)
+    cur.close()
+
+def create_database(xmlpath_nw, xmlpath_evts, xmlpath_vehicles):
 
     # set timer to get elapsed time in seconds
     start = timer()
@@ -27,9 +57,12 @@ def create_database(dbpath, xmlpath_nw, xmlpath_evts, xmlpath_vehicles):
     # create database
     print('connecting to database...')
     try:
-        sqliteConnection = sqlite3.connect(dbpath)
-    except sqlite3.error as error:
-        sys.exit('Failed to connect to database: ', error, '...Quitting.')
+        # sqliteConnection = sqlite3.connect("dbatabase.db")
+        sqliteConnection = sqlite3.connect("file:memdb1?mode=memory", isolation_level=None)
+        delete_all_tables(sqliteConnection)
+    except sqlite3.Error as error:
+        print('Failed to connect to database: ', error, '...Quitting.')
+        sys.exit()
     print('connection established!')
 
     # open network xml

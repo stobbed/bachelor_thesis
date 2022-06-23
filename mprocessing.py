@@ -5,7 +5,7 @@ from processing import *
 from db import *
 
 def vehicleinfo_batch(vehicle, link_information_dict, path, listofagents, drt = True):
-    db = Db(path)
+    db = Db()
     db.calculate_vehicle_information(vehicle, link_information_dict, path, listofagents, drt)
 
 # pbar = tqdm(total=len(vehicleslist))
@@ -15,7 +15,8 @@ def update(*a):
 def batching_drt(path):
     simulationname = getsimulationname(path)
     if not os.path.exists(os.path.join(path, 'results', simulationname + '_vehicleinfo_finished.csv')):
-        db = Db(path)
+        db = Db()
+        db.setup(path)
         link_information_dict = db.create_dict_link_info()
         vehicleslist = db.get_drtvehicles()
         listofagents = create_personlist(path, simulationname)
@@ -45,13 +46,15 @@ def batching_drt(path):
         pbar = tqdm(total=len(vehicleslist))
 
         # multiprocessing
-        pool = multiprocessing.Pool()
-        processes = [pool.apply_async(vehicleinfo_batch, args = (vehicle, link_information_dict, path, listofagents, drt), callback = update) for vehicle in vehicleslist]
-        result = [p.get() for p in processes]
-        pool.close()
-        pool.join()
-        pbar.update()
-        print("created info for all non drt trips in drt scenario!")
+        # pool = multiprocessing.Pool()
+        # processes = [pool.apply_async(vehicleinfo_batch, args = (vehicle, link_information_dict, path, listofagents, drt), callback = update) for vehicle in vehicleslist]
+        # result = [p.get() for p in processes]
+        # pool.close()
+        # pool.join()
+        # pbar.update()
+        # print("created info for all non drt trips in drt scenario!")
+
+        db.close()
 
         os.rename(os.path.join(os.path.join(path, 'results', simulationname + '_vehicleinfo.csv')), os.path.join(path, 'results', simulationname + '_vehicleinfo_finished.csv'))
     else:
@@ -64,7 +67,8 @@ def batching_nondrt(path):
         pass
     if not os.path.exists(os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo_finished.csv')):
         drt = False
-        db = Db(path)
+        db = Db()
+        db.setup(path)
         link_information_dict = db.create_dict_link_info()
         listofagents = create_personlist(path, simulationname)
         vehicles = db.create_vehicle_list()
