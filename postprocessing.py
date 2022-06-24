@@ -2,6 +2,12 @@ from configuration import *
 from database_operations import *
 from processing import *
 
+import matplotlib.pyplot as plt
+import numpy as np
+
+import warnings
+warnings.simplefilter("ignore")
+
 def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
 
     # scalingfactor for non linear scaling
@@ -10,6 +16,7 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
     m_to_km = 1000
 
     years = int(getfromconfig('vehicle_parameters', 'timespan_in_years'))
+    battery_lifetime = int(getfromconfig('vehicle_parameters', 'battery_exchange_after_km'))
     #calculating the amount of days for the timespan
     weeksinyear = 52.14
     workdays = weeksinyear * 5        # Mo-Fr
@@ -38,7 +45,6 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
         drt_avg_passenger_wihtout_empty = vehicleinfo['drt_avgpassenger_without_empty']
         
         charging = getfromconfig('vehicle_parameters', 'charging')
-        battery_lifetime = int(getfromconfig('vehicle_parameters', 'battery_exchange_after_km'))
         # upscaling factors where x is 0.1 for 10%
         # Berlin
         # x^−0.637 (R2 = 0.9954)
@@ -250,3 +256,43 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
     vehicles_nondrt['total_vehicles'] = vehicleamount_scaled
 
     return vehicles_drt, vehicles_nondrt
+
+
+def compare_scnearios(path_drt, path_reference):
+    
+    drt_scneario = getsimulationname(path_drt)
+    referece_scneario = getsimulationname(path_reference)
+
+    drt_excel = os.path.join("lca","results_" + drt_scneario + ".xlsx")
+    reference_excel = os.path.join("lca","results_" +  referece_scneario + ".xlsx")
+
+    drtsc_lcatotal = pd.read_excel(os.path.join(drt_excel), sheet_name="LCA_results_total")
+    drtsc_totalco2 = drtsc_lcatotal._values[0][1]
+    drtsc_production = drtsc_lcatotal._values[2][1]
+    drtsc_batteries = drtsc_lcatotal._values[3][1]
+    drtsc_use = drtsc_lcatotal._values[4][1] + drtsc_lcatotal._values[5][1]
+
+
+    referencesc_lcatotal = pd.read_excel(os.path.join(reference_excel), sheet_name="LCA_results_total")
+    referencesc_totalco2 = referencesc_lcatotal._values[0][1]
+    referencesc_production = referencesc_lcatotal._values[2][1]
+    referencesc_batteries = referencesc_lcatotal._values[3][1]
+    referencesc_use = referencesc_lcatotal._values[4][1] + referencesc_lcatotal._values[5][1]
+
+    # ------------------- total CO2 comparison -------------------- #
+
+    names = (drt_scneario, referece_scneario)
+    data={"production vehicles":[drtsc_production, referencesc_production], "additional batteries":(drtsc_batteries, referencesc_batteries), "use phase":(drtsc_use, referencesc_use)}
+    #gestacktes Balkendiagramm aus DF
+    df=pd.DataFrame(data,index=names)
+    df.plot(kind="bar",stacked=True,figsize=(10,8), ylabel="in t $C0_{2}$ äq")
+
+    plt.title("GHG comparison")
+    plt.legend(loc="upper right",bbox_to_anchor=(0.8,1.0))
+    plt.yticks(np.arange(0, referencesc_totalco2, 1000000000))
+    fig1 = plt.gcf()
+    plt.show()
+
+    # ------------------- CO2 per year comparison ----#------------ #
+
+    

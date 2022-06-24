@@ -26,17 +26,24 @@ if __name__ == "__main__":
     print("finished analyzing drt scenario!")
     mprocessing.batching_nondrt(path_reference)
     print("finished analyzing reference scenario!")
+
     drt_info = calculate_avg_vehicle(path_drt)
     reference_info = calculate_avg_vehicle(path_reference)
 
-    db_drt = Db(path_drt)
-    cursor = db_drt.fetchcursor()
-
+    db = Db()
+    cursor = db.localcursor(path_drt)
     drt_vehicles_drt, drt_vehicles_nondrt = scale_scenario(drt_info, cursor)
     vehicles_drt, vehicles_nondrt = scale_scenario(reference_info, cursor)
-    openlca = olcaclient()
-    openlca.lifecycleassessment(drt_vehicles_drt, drt_vehicles_nondrt)
+    db.disconnect()
+    db.localdisconnect()
 
+    openlca = olcaclient()
+    openlca.lifecycleassessment(drt_vehicles_drt, drt_vehicles_nondrt, getsimulationname(path_drt))
+    print("lifecycleassessment for drt scenario done!")
+    openlca.lifecycleassessment(vehicles_drt, vehicles_nondrt, getsimulationname(path_reference))
+    print("lifecycleassessment for reference scenario done")
+
+    compare_scnearios(path_drt, path_reference)
 
     # print(drt_info)
     # print(" ")

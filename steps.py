@@ -3,6 +3,16 @@ from postprocessing import *
 from lca import *
 from configurationgui import *
 
+
+
+drt_excel = os.path.join("lca","drt_hundekopf.xlsx")
+
+excel = pd.read_excel(os.path.join(drt_excel), sheet_name="LCA_results_total")
+print(excel)
+print(excel._values[0][1])
+totalco2 = pd.read_excel(os.path.join(drt_excel), skiprows=3, nrows=4, sheet_name="LCA_results_total", usecols="B", header=None, names=["Nutzung"]).iloc[0]["Nutzung"]
+
+
 # https://stackoverflow.com/questions/67056605/how-to-drop-all-tables-in-sqlite3-using-python
 
 TABLE_PARAMETER = "{TABLE_PARAMETER}"

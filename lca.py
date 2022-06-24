@@ -5,6 +5,9 @@ import xlsxwriter
 from configuration import getfromconfig, getfromvehicleconfig
 import olca
 
+import warnings
+warnings.simplefilter("ignore")
+
 class olcaclient():
     def __init__(self) -> None:
         # setting up IPC connection (port may have to be adjusted)
@@ -17,7 +20,7 @@ class olcaclient():
         if not os.path.exists('lca'):
             os.mkdir('lca')
         self._resultspath = 'lca'
-        self.drt_vehiclesize = int(getfromconfig('vehicle_parameters', 'drt_vehiclesize'))
+        self.gridmix = getfromconfig('vehicle_parameters', 'gridmix')
         self.charging = getfromconfig('vehicle_parameters', 'charging')
         self.parameterdict = {}
         self.readparameters_from_config()
@@ -93,7 +96,7 @@ class olcaclient():
             print('Berechnung hat nicht stattgefunden'+ e) 
         
 
-    def lifecycleassessment(self, vehicles_drt, vehicles_nondrt, resultsfilename):
+    def lifecycleassessment(self, vehicles_drt, vehicles_nondrt, simulationname):
         electricity_use = "electric use"
         battery_production = "battery production, Li-ion, rechargeable, prismatic | battery, Li-ion, rechargeable, prismatic | Cutoff, U"
         
@@ -110,6 +113,7 @@ class olcaclient():
         drt_batteries_kwh = 0
         batteries_kwh = 0
         drt_electric_production_vehicle = 0
+        drt_electric_production_batteries = 0
         electric_production_vehicle = 0
         drt_electric_transport = 0
         electric_transport = 0
@@ -215,10 +219,6 @@ class olcaclient():
                             nondrt_production_name = "passenger car production, " + fuel + ", " + size +  " size passenger car | Cutoff, U"
                             nondrt_transport_name = "transport only, passenger car, " + size + " size, " + fuel + " | Cutoff, U"
 
-                            if not os.path.exists(os.path.join(self._resultspath, electric_production_name + '.xlsx')):
-                                self.calculate_and_save(electric_production_name)
-                            if not os.path.exists(os.path.join(self._resultspath, electric_transport_name + '.xlsx')):
-                                self.calculate_and_save(electric_transport_name)
                             if not os.path.exists(os.path.join(self._resultspath, nondrt_production_name + '.xlsx')):
                                 self.calculate_and_save(nondrt_production_name)
                             if not os.path.exists(os.path.join(self._resultspath, nondrt_transport_name + '.xlsx')):
@@ -260,119 +260,165 @@ class olcaclient():
         totalemissions = totalemissions_production + totalemissions_transport + totalemissions_use + totalemissions_batteries
 
         # create excel file
-        workbook = xlsxwriter.Workbook(os.path.join(self._resultspath, resultsfilename))
+        workbook = xlsxwriter.Workbook(os.path.join(self._resultspath, "results_" + str(simulationname) + ".xlsx"))
+
+        kgtotonnes = 1/1000
 
         worksheet_tot = workbook.add_worksheet(name = "LCA_results_total")
 
-        worksheet_tot.write(1, 0, "total CO2 emissions [kg CO2-Eq]")
-        worksheet_tot.write(1, 1, totalemissions)
+        worksheet_tot.write(1, 0, "total CO2 emissions [t CO2-Eq]")
+        worksheet_tot.write(1, 1, totalemissions * kgtotonnes)
 
-        worksheet_tot.write(3, 0, "total emissions, production [kg CO2-Eq]")
-        worksheet_tot.write(3, 1, totalemissions_production)
+        worksheet_tot.write(3, 0, "total emissions, production [t CO2-Eq]")
+        worksheet_tot.write(3, 1, totalemissions_production * kgtotonnes)
 
-        worksheet_tot.write(4, 0, "total emissions, batteries [kg CO2-Eq]")
-        worksheet_tot.write(4, 1, totalemissions_batteries)
+        worksheet_tot.write(4, 0, "total emissions, batteries [t CO2-Eq]")
+        worksheet_tot.write(4, 1, totalemissions_batteries * kgtotonnes)
 
-        worksheet_tot.write(5, 0, "total emissions, transport [kg CO2-Eq]")
-        worksheet_tot.write(5, 1, totalemissions_transport)
+        worksheet_tot.write(5, 0, "total emissions, transport [t CO2-Eq]")
+        worksheet_tot.write(5, 1, totalemissions_transport * kgtotonnes)
 
-        worksheet_tot.write(6, 0, "total emissions, use phase [kg CO2-Eq]")
-        worksheet_tot.write(6, 1, totalemissions_use)
+        worksheet_tot.write(6, 0, "total emissions, use phase [t CO2-Eq]")
+        worksheet_tot.write(6, 1, totalemissions_use * kgtotonnes)
 
         width= len("total emissions, production [kg CO2-Eq]")
         worksheet_tot.set_column(0,0, width)
 
         worksheet_drt = workbook.add_worksheet(name= "LCA_results_DRT")
 
-        worksheet_drt.write(1, 0, "total CO2 emissions [kg CO2-Eq]")
+        worksheet_drt.write(1, 0, "total CO2 emissions [t CO2-Eq]")
         worksheet_drt.write(1, 1, "=SUM(B4:B7)")
 
-        worksheet_drt.write(3, 0, "total emissions, production [kg CO2-Eq]")
-        worksheet_drt.write(3, 1, drt_electric_production_vehicle)
+        worksheet_drt.write(3, 0, "total emissions, production [t CO2-Eq]")
+        worksheet_drt.write(3, 1, drt_electric_production_vehicle * kgtotonnes)
 
-        worksheet_drt.write(4, 0, "total emissions, batteries [kg CO2-Eq]")
-        worksheet_drt.write(4, 1, drt_electric_production_batteries)
+        worksheet_drt.write(4, 0, "total emissions, batteries [t CO2-Eq]")
+        worksheet_drt.write(4, 1, drt_electric_production_batteries * kgtotonnes)
 
-        worksheet_drt.write(5, 0, "total emissions, transport [kg CO2-Eq]")
-        worksheet_drt.write(5, 1, drt_electric_transport)
+        worksheet_drt.write(5, 0, "total emissions, transport [t CO2-Eq]")
+        worksheet_drt.write(5, 1, drt_electric_transport * kgtotonnes)
 
-        worksheet_drt.write(6, 0, "total emissions, use [kg CO2-Eq]")
-        worksheet_drt.write(6, 1, drt_electric_consumption)
+        worksheet_drt.write(6, 0, "total emissions, use [t CO2-Eq]")
+        worksheet_drt.write(6, 1, drt_electric_consumption * kgtotonnes)
 
         worksheet_drt.set_column(0,0, width)
 
         worksheet_nondrt = workbook.add_worksheet(name= "LCA_results_non_DRT")
 
-        worksheet_nondrt.write(1, 0, "total CO2 emissions [kg CO2-Eq]")
+        worksheet_nondrt.write(1, 0, "total CO2 emissions [t CO2-Eq]")
         worksheet_nondrt.write(1, 1, "=SUM(B4:B7)")
 
-        worksheet_nondrt.write(3, 0, "total emissions, production [kg CO2-Eq]")
-        worksheet_nondrt.write(3, 1, (electric_production_vehicle + combustion_production))
+        worksheet_nondrt.write(3, 0, "total emissions, production [t CO2-Eq]")
+        worksheet_nondrt.write(3, 1, ((electric_production_vehicle + combustion_production) * kgtotonnes))
 
-        worksheet_nondrt.write(4, 0, "total emissions, batteries [kg CO2-Eq]")
-        worksheet_nondrt.write(4, 1, electric_production_batteries)
+        worksheet_nondrt.write(4, 0, "total emissions, batteries [t CO2-Eq]")
+        worksheet_nondrt.write(4, 1, electric_production_batteries * kgtotonnes)
 
-        worksheet_nondrt.write(5, 0, "total emissions, transport [kg CO2-Eq]")
-        worksheet_nondrt.write(5, 1, (electric_transport + combustion_transport))
+        worksheet_nondrt.write(5, 0, "total emissions, transport [t CO2-Eq]")
+        worksheet_nondrt.write(5, 1, ((electric_transport + combustion_transport) * kgtotonnes))
 
-        worksheet_nondrt.write(6, 0, "total emissions, use [kg CO2-Eq]")
-        worksheet_nondrt.write(6, 1, (electric_consumption + combustion_emissions))
+        worksheet_nondrt.write(6, 0, "total emissions, use [t CO2-Eq]")
+        worksheet_nondrt.write(6, 1, ((electric_consumption + combustion_emissions) * kgtotonnes))
 
         worksheet_nondrt.set_column(0,0, width)
 
         worksheet_infos = workbook.add_worksheet(name = "vehicle_infos")
 
-        worksheet_infos.write(1, 0, "totalkm [km]")
-        worksheet_infos.write(1, 1, "=SUM(B3+B4)")
+        if vehicles_drt != {}:
+            worksheet_infos.write(1, 0, "totalkm [km]")
+            worksheet_infos.write(1, 1, "=SUM(B3+B4)")
 
-        worksheet_infos.write(2, 0, "totalkm_drt [km]")
-        worksheet_infos.write(2, 1, vehicles_drt['totalkm'])
+            worksheet_infos.write(2, 0, "totalkm_drt [km]")
+            worksheet_infos.write(2, 1, vehicles_drt['totalkm'])
 
-        worksheet_infos.write(3, 0, "totalkm_nondrt [km]")
-        worksheet_infos.write(3, 1, vehicles_nondrt['totalkm'])
+            worksheet_infos.write(3, 0, "totalkm_nondrt [km]")
+            worksheet_infos.write(3, 1, vehicles_nondrt['totalkm'])
 
-        worksheet_infos.write(5, 0, "totalpkm [km]")
-        worksheet_infos.write(5, 1, "=SUM(B7+B8)")
+            worksheet_infos.write(5, 0, "totalpkm [km]")
+            worksheet_infos.write(5, 1, "=SUM(B7+B8)")
 
-        worksheet_infos.write(6, 0, "totalpkm_drt [km]")
-        worksheet_infos.write(6, 1, vehicles_drt['totalpkm'])
+            worksheet_infos.write(6, 0, "totalpkm_drt [km]")
+            worksheet_infos.write(6, 1, vehicles_drt['totalpkm'])
 
-        worksheet_infos.write(7, 0, "totalpkm_nondrt [km]")
-        worksheet_infos.write(7, 1, vehicles_nondrt['totalpkm'])
+            worksheet_infos.write(7, 0, "totalpkm_nondrt [km]")
+            worksheet_infos.write(7, 1, vehicles_nondrt['totalpkm'])
 
-        worksheet_infos.write(9, 0, "number_vehicles_drt [1]")
-        worksheet_infos.write(9, 1, vehicles_drt['total_vehicles'])
+            worksheet_infos.write(9, 0, "number_vehicles_drt [1]")
+            worksheet_infos.write(9, 1, vehicles_drt['total_vehicles'])
 
-        worksheet_infos.write(10, 0, "number_vehicles_nondrt [1]")
-        worksheet_infos.write(10, 1, vehicles_nondrt['total_vehicles'])
+            worksheet_infos.write(10, 0, "number_vehicles_nondrt [1]")
+            worksheet_infos.write(10, 1, vehicles_nondrt['total_vehicles'])
 
-        worksheet_infos.write(12, 0, "avg_speed_drt [km/h]")
-        worksheet_infos.write(12, 1, vehicles_drt['avg_speed'])
+            worksheet_infos.write(12, 0, "avg_speed_drt [km/h]")
+            worksheet_infos.write(12, 1, vehicles_drt['avg_speed'])
 
-        worksheet_infos.write(13, 0, "avg_speed_nondrt [km/h]")
-        worksheet_infos.write(13, 1, vehicles_nondrt['avg_speed'])
+            worksheet_infos.write(13, 0, "avg_speed_nondrt [km/h]")
+            worksheet_infos.write(13, 1, vehicles_nondrt['avg_speed'])
 
-        worksheet_infos.write(15, 0, "speed_pct_drt [1]")
-        worksheet_infos.write(15, 1, vehicles_drt['speed_pct'])
+            worksheet_infos.write(15, 0, "speed_pct_drt [1]")
+            worksheet_infos.write(15, 1, vehicles_drt['speed_pct'])
 
-        worksheet_infos.write(16, 0, "speed_pct_nondrt [1]")
-        worksheet_infos.write(16, 1, vehicles_nondrt['speed_pct'])
+            worksheet_infos.write(16, 0, "speed_pct_nondrt [1]")
+            worksheet_infos.write(16, 1, vehicles_nondrt['speed_pct'])
 
-        worksheet_infos.write(18, 0, "total_batteries_drt [1]")
-        worksheet_infos.write(18, 1, vehicles_drt['total_batteries'])
+            worksheet_infos.write(18, 0, "total_batteries_drt [1]")
+            worksheet_infos.write(18, 1, vehicles_drt['total_batteries'])
 
-        worksheet_infos.write(20, 0, "avg_passengers_drt [1]")
-        worksheet_infos.write(20, 1, vehicles_drt['avg_passengers'])
+            worksheet_infos.write(20, 0, "avg_passengers_drt [1]")
+            worksheet_infos.write(20, 1, vehicles_drt['avg_passengers'])
+
+        else:
+            worksheet_infos.write(1, 0, "totalkm [km]")
+            worksheet_infos.write(1, 1, "=SUM(B3+B4)")
+
+            worksheet_infos.write(2, 0, "totalkm_drt [km]")
+            worksheet_infos.write(2, 1, 0)
+
+            worksheet_infos.write(3, 0, "totalkm_nondrt [km]")
+            worksheet_infos.write(3, 1, vehicles_nondrt['totalkm'])
+
+            worksheet_infos.write(5, 0, "totalpkm [km]")
+            worksheet_infos.write(5, 1, "=SUM(B7+B8)")
+
+            worksheet_infos.write(6, 0, "totalpkm_drt [km]")
+            worksheet_infos.write(6, 1, 0)
+
+            worksheet_infos.write(7, 0, "totalpkm_nondrt [km]")
+            worksheet_infos.write(7, 1, vehicles_nondrt['totalpkm'])
+
+            worksheet_infos.write(9, 0, "number_vehicles_drt [1]")
+            worksheet_infos.write(9, 1, 0)
+
+            worksheet_infos.write(10, 0, "number_vehicles_nondrt [1]")
+            worksheet_infos.write(10, 1, vehicles_nondrt['total_vehicles'])
+
+            worksheet_infos.write(12, 0, "avg_speed_drt [km/h]")
+            worksheet_infos.write(12, 1, 0)
+
+            worksheet_infos.write(13, 0, "avg_speed_nondrt [km/h]")
+            worksheet_infos.write(13, 1, vehicles_nondrt['avg_speed'])
+
+            worksheet_infos.write(15, 0, "speed_pct_drt [1]")
+            worksheet_infos.write(15, 1, 0)
+
+            worksheet_infos.write(16, 0, "speed_pct_nondrt [1]")
+            worksheet_infos.write(16, 1, vehicles_nondrt['speed_pct'])
+
+            worksheet_infos.write(18, 0, "total_batteries_drt [1]")
+            worksheet_infos.write(18, 1, 0)
+
+            worksheet_infos.write(20, 0, "avg_passengers_drt [1]")
+            worksheet_infos.write(20, 1, 0)
 
         width= len("number_vehicles_nondrt [1]")
         worksheet_infos.set_column(0,0, width)
 
         workbook.close()
 
-    def lifecycleassessment_reference(self):
+    # def lifecycleassessment_reference(self):
 
-        # set name for production product system
-        production_name = "passenger car production, " + drive + ", " + size + " size passenger car | Cutoff, U"
+    #     # set name for production product system
+    #     production_name = "passenger car production, " + drive + ", " + size + " size passenger car | Cutoff, U"
 
-        # set name for transport product system
-        transport_name = "transport only, passenger car, " + size + " size, " + drive + " | Cutoff, U"
+    #     # set name for transport product system
+    #     transport_name = "transport only, passenger car, " + size + " size, " + drive + " | Cutoff, U"

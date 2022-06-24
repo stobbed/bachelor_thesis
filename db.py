@@ -20,7 +20,7 @@ class LinksForEvent:
 
 
 class Db:
-    def __init__(self):
+    def __init__(self) -> sqlite3.Connection:
         try:
             # connects to sqlite database file - if path is faulty, creates a new and empty database
             self._sqliteConnection = sqlite3.connect("file:memdb1?mode=memory", isolation_level=None)
@@ -38,6 +38,8 @@ class Db:
         self.link_information_dict = {}
 
     def setup(path):
+        """ clones the database from file into memory, for rocket speeds 
+            input: path from simulation outputs """
         xmlpath_nw, xmlpath_evts, xmlpath_vehicles, dbpath = setpaths(path)
         if not os.path.exists(dbpath):
             create_database(dbpath, xmlpath_nw, xmlpath_evts, xmlpath_vehicles)
@@ -46,15 +48,33 @@ class Db:
         conn_file.backup(sqliteConnection)
         sqliteConnection.close()
 
+    def localcursor(self, path) -> sqlite3.Cursor:
+        """ returns the sqlite cursor to execute queries on for the local file database, for small queries """
+        xmlpath_nw, xmlpath_evts, xmlpath_vehicles, dbpath = setpaths(path)
+        try:
+            self.local_conn = sqlite3.connect(dbpath)
+            self.local_cursor = self.local_conn.cursor()
+        except sqlite3.Error as error:
+            print('SQLite error: ', error)
+        return self.local_cursor
+
+    def localdisconnect(self):
+        """ disconnects and closes the local database """
+        self.local_cursor.close()
+        self.local_conn.close()
+
     def disconnect(self):
+        """ disconnects and closes the memory database """
         self._cursor.close()
         self._sqliteConnection.close()
         # print('The SQLite connection is closed')
     
-    def create_vehicle_list(self):
+    def create_vehicle_list(self) -> list:
+        """ creates a list of vehicle ids from the database"""
         return create_vehicleids_list(self._cursor)
 
-    def fetchcursor(self):
+    def fetchcursor(self) -> sqlite3.Cursor:
+        """ fetches cursor for memory database"""
         return self._cursor
 
     def get_drtvehicles(self) -> "list[str]":

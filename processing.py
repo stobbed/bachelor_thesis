@@ -485,36 +485,36 @@ def calculate_avg_vehicle(path):
                 intown_pct += line[2]; countryroad_pct += line[3]; highway_pct += line[4]
                 avg_speed += line[12]; speed_pct += line[13]; speed_length += line[14]; speed_above_90 += line[15]; speed_below_70 += line[16]; speed_below_50 += line[17]; speed_below_30 += line[18]; speed_below_10 += line[19]
             if totalkm > 0:
-                print(totalkm)
                 pass
             else: 
-                print(line[1])
-                print(type(line[1]))
+                # print(line[1])
+                # print(type(line[1]))
                 break
     info = {}
     info['drt_vehicleamount'] = drt_vehicleamount
-    info['drt_avg_totalkm_region'] = drt_totalkm_region / drt_vehicleamount
-    info['drt_avg_totalkm_notregion'] = drt_totalkm_notregion / drt_vehicleamount
-    info['drt_totalkm'] = drt_totalkm
-    info['drt_avg_totalkm'] = (drt_totalkm_region + drt_totalkm_notregion) / drt_vehicleamount
-    info['drt_avg_totalpkm'] = drt_totalpkm / drt_vehicleamount
-    info['drt_avg_intown_pct'] = drt_intown_pct / drt_vehicleamount
-    info['drt_avg_countryroad_pct'] = drt_countryroad_pct / drt_vehicleamount
-    info['drt_avg_highway_pct'] = drt_highway_pct / drt_vehicleamount
-    info['drt_avg_pkm_intown'] = drt_pkm_intown / drt_vehicleamount
-    info['drt_avg_pkm_countryroad'] = drt_pkm_countryroad / drt_vehicleamount
-    info['drt_avg_pkm_highway'] = drt_pkm_highway / drt_vehicleamount
-    info['drt_avg_speed_pervehicle'] = drt_avg_speed / drt_vehicleamount
-    info['drt_avg_speed_overlength'] = drt_speed_length / drt_totalkm_region
-    info['drt_avg_speed_pct'] = drt_speed_pct / drt_vehicleamount
-    info['drt_avg_speed_above_90'] = drt_speed_above_90 / (drt_totalkm_region + drt_totalkm_notregion)
-    info['drt_avg_speed_below_70'] = drt_speed_below_70 / (drt_totalkm_region + drt_totalkm_notregion)
-    info['drt_avg_speed_below_50'] = drt_speed_below_50 / (drt_totalkm_region + drt_totalkm_notregion)
-    info['drt_avg_speed_below_30'] = drt_speed_below_30 / (drt_totalkm_region + drt_totalkm_notregion)
-    info['drt_avg_speed_below_10'] = drt_speed_below_10 / (drt_totalkm_region + drt_totalkm_notregion)
-    info['drt_avg_passenger_amount'] = drt_avgpassenger_amount / drt_vehicleamount
-    info['drt_avgpassenger_without_empty'] = drt_avgpassenger_without_empty / drt_vehicleamount
-    info['drt_pkm_without_empty'] = drt_pkm_without_empty / drt_vehicleamount
+    if drt_vehicleamount > 0:
+        info['drt_avg_totalkm_region'] = drt_totalkm_region / drt_vehicleamount
+        info['drt_avg_totalkm_notregion'] = drt_totalkm_notregion / drt_vehicleamount
+        info['drt_totalkm'] = drt_totalkm
+        info['drt_avg_totalkm'] = (drt_totalkm_region + drt_totalkm_notregion) / drt_vehicleamount
+        info['drt_avg_totalpkm'] = drt_totalpkm / drt_vehicleamount
+        info['drt_avg_intown_pct'] = drt_intown_pct / drt_vehicleamount
+        info['drt_avg_countryroad_pct'] = drt_countryroad_pct / drt_vehicleamount
+        info['drt_avg_highway_pct'] = drt_highway_pct / drt_vehicleamount
+        info['drt_avg_pkm_intown'] = drt_pkm_intown / drt_vehicleamount
+        info['drt_avg_pkm_countryroad'] = drt_pkm_countryroad / drt_vehicleamount
+        info['drt_avg_pkm_highway'] = drt_pkm_highway / drt_vehicleamount
+        info['drt_avg_speed_pervehicle'] = drt_avg_speed / drt_vehicleamount
+        info['drt_avg_speed_overlength'] = drt_speed_length / drt_totalkm_region
+        info['drt_avg_speed_pct'] = drt_speed_pct / drt_vehicleamount
+        info['drt_avg_speed_above_90'] = drt_speed_above_90 / (drt_totalkm_region + drt_totalkm_notregion)
+        info['drt_avg_speed_below_70'] = drt_speed_below_70 / (drt_totalkm_region + drt_totalkm_notregion)
+        info['drt_avg_speed_below_50'] = drt_speed_below_50 / (drt_totalkm_region + drt_totalkm_notregion)
+        info['drt_avg_speed_below_30'] = drt_speed_below_30 / (drt_totalkm_region + drt_totalkm_notregion)
+        info['drt_avg_speed_below_10'] = drt_speed_below_10 / (drt_totalkm_region + drt_totalkm_notregion)
+        info['drt_avg_passenger_amount'] = drt_avgpassenger_amount / drt_vehicleamount
+        info['drt_avgpassenger_without_empty'] = drt_avgpassenger_without_empty / drt_vehicleamount
+        info['drt_pkm_without_empty'] = drt_pkm_without_empty / drt_vehicleamount
 
     info['vehicleamount'] = vehicleamount
     info['totalkm'] = totalkm

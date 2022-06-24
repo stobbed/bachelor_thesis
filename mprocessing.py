@@ -19,7 +19,6 @@ def batching_drt(path):
         db = Db()
         link_information_dict = db.create_dict_link_info()
         vehicleslist = db.get_drtvehicles()
-        db.disconnect()
         listofagents = create_personlist(path, simulationname)
         create_results_dir(path)
 
@@ -41,6 +40,7 @@ def batching_drt(path):
         # for any other trips from Berlin people
         drt = False
         vehicles = db.create_vehicle_list()
+        db.disconnect()
         vehicleslist = match_passengers_and_cars(listofagents, vehicles)
 
         pbar.reset()
