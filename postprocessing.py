@@ -1,3 +1,4 @@
+from sympy import rotations
 from configuration import *
 from database_operations import *
 from processing import *
@@ -28,6 +29,8 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
     highwaypct_factor = 1.3
     countryroad_factor = 1
     intown_factor = 1.2
+
+    drt_vehicleamount_scaled = 0
     
     vehicles_drt = {}
 
@@ -260,28 +263,51 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
 
 def compare_scnearios(path_drt, path_reference):
     
-    drt_scneario = getsimulationname(path_drt)
-    referece_scneario = getsimulationname(path_reference)
+    drt_scenario = getsimulationname(path_drt)
+    reference_scenario = getsimulationname(path_reference)
 
-    drt_excel = os.path.join("lca","results_" + drt_scneario + ".xlsx")
-    reference_excel = os.path.join("lca","results_" +  referece_scneario + ".xlsx")
+    drt_excel = os.path.join("lca","results_" + drt_scenario + ".xlsx")
+    reference_excel = os.path.join("lca","results_" +  reference_scenario + ".xlsx")
 
     drtsc_lcatotal = pd.read_excel(os.path.join(drt_excel), sheet_name="LCA_results_total")
+    referencesc_lcatotal = pd.read_excel(os.path.join(reference_excel), sheet_name="LCA_results_total")
+
+    drtsc_infos = pd.read_excel(os.path.join(drt_excel), sheet_name="vehicle_infos")
+    referencesc_infos = pd.read_excel(os.path.join(reference_excel), sheet_name="vehicle_infos")
+
+    # ------------------- vehicle amount comparison -------------------- #
+
+    drtsc_drtvehicles = drtsc_infos._values[8][1]
+    drtsc_nondrtvehicles = drtsc_infos._values[9][1]
+
+    referencesc_drtvehicles = referencesc_infos._values[8][1]
+    referencesc_nondrtvehicles = referencesc_infos._values[9][1]
+
+    names = (drt_scenario, reference_scenario)
+    data={"drt_vehicles_electric":[drtsc_drtvehicles, referencesc_drtvehicles], "non_drt_vehicles_combustion":(drtsc_nondrtvehicles * (float(getfromvehicleconfig('vehicle_distribution', 'share_petrol', True)) + float(getfromvehicleconfig('vehicle_distribution', 'share_diesel', True)) + (1/2) * float(getfromvehicleconfig('vehicle_distribution', 'share_plugin', True))), referencesc_nondrtvehicles * (float(getfromvehicleconfig('vehicle_distribution', 'share_petrol', True)) + float(getfromvehicleconfig('vehicle_distribution', 'share_diesel', True)) + (1/2) * float(getfromvehicleconfig('vehicle_distribution', 'share_plugin', True)))), "non_drt_vehicles_electric":(drtsc_nondrtvehicles * (float(getfromvehicleconfig('vehicle_distribution', 'share_electric', True)) + float(getfromvehicleconfig('vehicle_distribution', 'share_plugin', True))), referencesc_nondrtvehicles * (float(getfromvehicleconfig('vehicle_distribution', 'share_electric', True)) + float(getfromvehicleconfig('vehicle_distribution', 'share_plugin', True))))}
+    #gestacktes Balkendiagramm aus DF
+    va=pd.DataFrame(data,index=names)
+    va.plot(kind="bar",stacked=True,figsize=(10,8), ylabel="in t $C0_{2}$ äq")
+
+    plt.title("vehicle amount")
+    plt.legend(loc="upper right",bbox_to_anchor=(0.8,1.0))
+    plt.yticks([drtsc_drtvehicles + drtsc_nondrtvehicles, referencesc_drtvehicles + referencesc_nondrtvehicles])
+    fig1 = plt.gcf()
+    # plt.show()
+
+    # ------------------- total CO2 comparison -------------------- #
+
     drtsc_totalco2 = drtsc_lcatotal._values[0][1]
     drtsc_production = drtsc_lcatotal._values[2][1]
     drtsc_batteries = drtsc_lcatotal._values[3][1]
     drtsc_use = drtsc_lcatotal._values[4][1] + drtsc_lcatotal._values[5][1]
 
-
-    referencesc_lcatotal = pd.read_excel(os.path.join(reference_excel), sheet_name="LCA_results_total")
     referencesc_totalco2 = referencesc_lcatotal._values[0][1]
     referencesc_production = referencesc_lcatotal._values[2][1]
     referencesc_batteries = referencesc_lcatotal._values[3][1]
     referencesc_use = referencesc_lcatotal._values[4][1] + referencesc_lcatotal._values[5][1]
 
-    # ------------------- total CO2 comparison -------------------- #
-
-    names = (drt_scneario, referece_scneario)
+    names = (drt_scenario, reference_scenario)
     data={"production vehicles":[drtsc_production, referencesc_production], "additional batteries":(drtsc_batteries, referencesc_batteries), "use phase":(drtsc_use, referencesc_use)}
     #gestacktes Balkendiagramm aus DF
     df=pd.DataFrame(data,index=names)
@@ -289,10 +315,47 @@ def compare_scnearios(path_drt, path_reference):
 
     plt.title("GHG comparison")
     plt.legend(loc="upper right",bbox_to_anchor=(0.8,1.0))
-    plt.yticks(np.arange(0, referencesc_totalco2, 1000000000))
+    # plt.yticks(np.arange(0, referencesc_totalco2, 1000000000))
+    plt.yticks([drtsc_totalco2, referencesc_totalco2])
     fig1 = plt.gcf()
-    plt.show()
+    # plt.show()
 
     # ------------------- CO2 per year comparison ----#------------ #
 
+    plt.rcParams["figure.figsize"] = (16,10)
+    plt.figure(3)
     
+    drtsc_co2year = drtsc_lcatotal._values[7][1]
+    referencesc_co2year = referencesc_lcatotal._values[7][1]
+
+    style = dict(size=20, color='black')
+
+    drt_co2values = []
+    drt_years = []
+    for x in range(0,11,1):
+        drt_co2values.append(drtsc_production + (drtsc_co2year * x))
+        drt_years.append(x)
+
+    reference_co2values = []
+    reference_years = []
+    for x in range(0,11,1):
+        reference_co2values.append(referencesc_production + (referencesc_co2year * x))
+        reference_years.append(x)
+
+    plt.plot(drt_years, drt_co2values, label="DRT", color="green")
+    plt.plot(reference_years, reference_co2values, label="reference", color="black")
+
+    plt.title("GHG", style)
+    plt.legend(loc="lower left",bbox_to_anchor=(0.8,1.0), fontsize=17)
+    plt.xlabel("time in years", style)
+    plt.ylabel("in t $C0_{2}$ äq", style)
+    plt.tick_params(axis='both', labelsize = 17)
+    plt.xticks(np.arange(0, max(reference_years), 1))
+    plt.yticks(np.arange(0, max(reference_co2values), 1000000))
+    plt.ylim(bottom=0, top=max(reference_co2values))
+    plt.xlim(left=0, right=max(reference_years))
+    plt.grid(visible=True)
+    # fig2 = plt.gcf()
+    # fig2.savefig(os.path.join('lca', 'co2peryearcomparison.png'), dpi=300)
+
+    plt.show()

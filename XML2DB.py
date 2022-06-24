@@ -28,6 +28,7 @@ def create_database(dbpath, xmlpath_nw, xmlpath_evts, xmlpath_vehicles):
     print('connecting to database...')
     try:
         sqliteConnection = sqlite3.connect(dbpath)
+        sqliteConnection.execute('PRAGMA CACHE_SIZE = 2000000')
     except sqlite3.error as error:
         sys.exit('Failed to connect to database: ', error, '...Quitting.')
     print('connection established!')
@@ -550,6 +551,8 @@ def create_database(dbpath, xmlpath_nw, xmlpath_evts, xmlpath_vehicles):
             elif elem.attrib['type'] == 'PassengerRequest scheduled':
                 single_row.append(elem.attrib['vehicle'])
             elif elem.attrib['type'] == 'PersonLeavesVehicle':
+                single_row.append(elem.attrib['vehicle'])
+            elif elem.attrib['type'] == 'passenger picked up' or elem.attrib['type'] == 'passenger dropped off':
                 single_row.append(elem.attrib['vehicle'])
             else:
                 single_row.append('None')

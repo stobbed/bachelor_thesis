@@ -203,6 +203,7 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
         if not (str(vehicle).startswith("drt") or str(vehicle).startswith("taxi")):
             # if vehicle in listofagents:
             passengerfromregion = 1
+            passengers = 1
         event_id = db_output[index][0]
         time = db_output[index][1]
         type_id = db_output[index][2]
@@ -235,7 +236,7 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
                     driven_links[entered_index].actual_speed = driven_links[entered_index].link_length/(time - driven_links[entered_index].entered_time)
                     driven_links[entered_index].speed_pct = driven_links[entered_index].actual_speed/driven_links[entered_index].link_freespeed
         # type_id == 4 means vehicle enters traffic, therefore further calculation is required
-        elif type_id == 3:  # eventuell auch lieber über passenger picked up / dropped of events machen
+        elif type_id == 24:  # eventuell auch lieber über passenger picked up / dropped of events machen
             passengers += 1
         elif type_id == 4 and db_output[index+1][2] == 7 and index > 0:
             stop1 = False
@@ -278,13 +279,14 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
                     driven_links[index_entered_link_corrected].speed_pct = driven_links[index_entered_link_corrected].actual_speed/driven_links[index_entered_link_corrected].link_freespeed
                     driven_links[index_entered_link_corrected].corrected = True
         elif type_id == 10:
-            passengers -= 1     # eventuell auch lieber über passenger picked up / dropped of events machen
             if (str(vehicle).startswith("drt") or str(vehicle).startswith("taxi")):
                 db_output_vehicleevent = query_db(query_passengervehicle, cursor, event_id)
                 if db_output_vehicleevent[0][0] in listofagents:
                     passengerfromregion -= 1
                 elif not (str(db_output_vehicleevent[0][0]).startswith("drt") or str(db_output_vehicleevent[0][0]).startswith("taxi")):
                     passengernotfromregion -=1
+        elif type_id == 25:
+            passengers -= 1
     # print("...succesfully created entered_link_dict!", str(gettime()))
     return driven_links
 

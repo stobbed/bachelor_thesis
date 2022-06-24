@@ -24,6 +24,8 @@ class Db:
         try:
             # connects to sqlite database file - if path is faulty, creates a new and empty database
             self._sqliteConnection = sqlite3.connect("file:memdb1?mode=memory", isolation_level=None)
+            self._sqliteConnection.execute('PRAGMA synchronous = OFF')
+            self._sqliteConnection.execute('PRAGMA CACHE_SIZE = 250000')
             self._cursor = self._sqliteConnection.cursor()
             # print('Connection to SQLite-File',dbpath,'>> SUCCESS!')
         except sqlite3.Error as error:

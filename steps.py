@@ -4,6 +4,11 @@ from lca import *
 from configurationgui import *
 
 
+test = {}
+test['h'] = {}
+test['h']['test'] = 1
+
+print(test.get('h').get('test'))
 
 drt_excel = os.path.join("lca","drt_hundekopf.xlsx")
 

@@ -110,6 +110,8 @@ class olcaclient():
 
         kWh_to_kg = 1000 / int(getfromvehicleconfig('battery_specs', 'energy_density', True))
 
+        totaldrivenkm = 0
+        totaldrivenpkm = 0
         drt_batteries_kwh = 0
         batteries_kwh = 0
         drt_electric_production_vehicle = 0
@@ -129,7 +131,8 @@ class olcaclient():
         diesel_combined_density = ((0.9085 * 832.5) + ((1-0.9085) * 879))
 
         if vehicles_drt != {}:
-            # alternativ: for size, vehiclesize in vehicles_drt.items():
+            totaldrivenkm += vehicles_drt['totalkm']
+            totaldrivenpkm += vehicles_drt['totalpkm']
             for size, vehiclesize in vehicles_drt.items():
                 if size == 'small' or size == 'medium' or size == 'large':
                     electric_production_name = "drt production, electric, " + self.charging + ", " + size +  " size passenger car | Cutoff, U"
@@ -176,6 +179,8 @@ class olcaclient():
             drt_electric_consumption = vehicles_drt['consumption'] * electricity_use_kWh
 
         if vehicles_nondrt != {}:
+            totaldrivenkm += vehicles_nondrt['totalkm']
+            totaldrivenpkm += vehicles_nondrt['totalpkm']
             for fuel, vehiclesizes in vehicles_nondrt.items():
                 if fuel == 'electric':
                     for size, vehiclesize in vehiclesizes.items():
@@ -263,6 +268,7 @@ class olcaclient():
         workbook = xlsxwriter.Workbook(os.path.join(self._resultspath, "results_" + str(simulationname) + ".xlsx"))
 
         kgtotonnes = 1/1000
+        years = int(getfromconfig("vehicle_parameters", "timespan_in_years"))
 
         worksheet_tot = workbook.add_worksheet(name = "LCA_results_total")
 
@@ -281,7 +287,46 @@ class olcaclient():
         worksheet_tot.write(6, 0, "total emissions, use phase [t CO2-Eq]")
         worksheet_tot.write(6, 1, totalemissions_use * kgtotonnes)
 
-        width= len("total emissions, production [kg CO2-Eq]")
+
+        worksheet_tot.write(8, 0, "emissions per year, total wo production [t CO2-Eq]")
+        worksheet_tot.write(8, 1, ((totalemissions - totalemissions_production) * kgtotonnes) / years)
+
+        worksheet_tot.write(9, 0, "emissions per year, batteries [t CO2-Eq]")
+        worksheet_tot.write(9, 1, (totalemissions_batteries * kgtotonnes) / years)
+
+        worksheet_tot.write(10, 0, "emissions per year, transport [t CO2-Eq]")
+        worksheet_tot.write(10, 1, (totalemissions_transport * kgtotonnes) / years)
+
+        worksheet_tot.write(11, 0, "emissions per year, use phase [t CO2-Eq]")
+        worksheet_tot.write(11, 1, (totalemissions_use * kgtotonnes) / years)
+
+
+        worksheet_tot.write(13, 0, "emissions per averaged km, total wo production [g CO2-Eq]")
+        worksheet_tot.write(13, 1, ((totalemissions - totalemissions_production) / kgtotonnes) / (years * totaldrivenkm))
+
+        worksheet_tot.write(14, 0, "emissions per averaged km, batteries [g CO2-Eq]")
+        worksheet_tot.write(14, 1, (totalemissions_batteries / kgtotonnes) / (years * totaldrivenkm))
+
+        worksheet_tot.write(15, 0, "emissions per averaged km, transport [g CO2-Eq]")
+        worksheet_tot.write(15, 1, (totalemissions_transport / kgtotonnes) / (years * totaldrivenkm))
+
+        worksheet_tot.write(16, 0, "emissions per averaged km, use phase [g CO2-Eq]")
+        worksheet_tot.write(16, 1, (totalemissions_use / kgtotonnes) / (years * totaldrivenkm))
+
+
+        worksheet_tot.write(18, 0, "emissions per averaged pkm, total wo production [g CO2-Eq]")
+        worksheet_tot.write(18, 1, ((totalemissions - totalemissions_production) / kgtotonnes) / (years * totaldrivenpkm))
+
+        worksheet_tot.write(19, 0, "emissions per averaged pkm, batteries [g CO2-Eq]")
+        worksheet_tot.write(19, 1, (totalemissions_batteries / kgtotonnes) / (years * totaldrivenpkm))
+
+        worksheet_tot.write(20, 0, "emissions per averaged pkm, transport [g CO2-Eq]")
+        worksheet_tot.write(20, 1, (totalemissions_transport / kgtotonnes) / (years * totaldrivenpkm))
+
+        worksheet_tot.write(21, 0, "emissions per averaged pkm, use phase [g CO2-Eq]")
+        worksheet_tot.write(21, 1, (totalemissions_use / kgtotonnes) / (years * totaldrivenpkm))
+
+        width= len("emissions per averaged pkm, batteries [t CO2-Eq]")
         worksheet_tot.set_column(0,0, width)
 
         worksheet_drt = workbook.add_worksheet(name= "LCA_results_DRT")
@@ -346,6 +391,26 @@ class olcaclient():
             worksheet_infos.write(9, 0, "number_vehicles_drt [1]")
             worksheet_infos.write(9, 1, vehicles_drt['total_vehicles'])
 
+            if vehicles_drt.get('small') != None:
+                small_vehicles = vehicles_drt.get('small').get('amount')
+            else:
+                small_vehicles = 0
+            if vehicles_drt.get('medium') != None:
+                medium_vehicles = vehicles_drt.get('medium').get('amount')
+            else:
+                medium_vehicles = 0
+            if vehicles_drt.get('large') != None:
+                large_vehicles = vehicles_drt.get('large').get('amount')
+            else:
+                large_vehicles = 0
+
+            worksheet_infos.write(10, 0, "number_small_vehicles_drt [1]")
+            worksheet_infos.write(10, 1, small_vehicles)
+            worksheet_infos.write(10, 0, "number_medium_vehicles_drt [1]")
+            worksheet_infos.write(10, 1, medium_vehicles)
+            worksheet_infos.write(10, 0, "number_large_vehicles_drt [1]")
+            worksheet_infos.write(10, 1, large_vehicles)
+
             worksheet_infos.write(10, 0, "number_vehicles_nondrt [1]")
             worksheet_infos.write(10, 1, vehicles_nondrt['total_vehicles'])
 
@@ -366,6 +431,7 @@ class olcaclient():
 
             worksheet_infos.write(20, 0, "avg_passengers_drt [1]")
             worksheet_infos.write(20, 1, vehicles_drt['avg_passengers'])
+
 
         else:
             worksheet_infos.write(1, 0, "totalkm [km]")
