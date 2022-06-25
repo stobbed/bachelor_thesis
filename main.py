@@ -9,11 +9,11 @@ import time
 
 if __name__ == "__main__":
     # ppening GUI to configure paths
-    # gui = configgui()
+    gui = configgui()
 
-    # if gui.success == False:
-    #     print("\naborted program, due to failure or closing the window, you need to press the button 'Start Script'!\n")
-    #     quit()
+    if gui.success == False:
+        print("\naborted program, due to failure or closing the window, you need to press the button 'Start Script'!\n")
+        quit()
 
     tic = time.perf_counter()
 
@@ -30,12 +30,12 @@ if __name__ == "__main__":
     drt_info = calculate_avg_vehicle(path_drt)
     reference_info = calculate_avg_vehicle(path_reference)
 
-    db = Db()
-    cursor = db.localcursor(path_drt)
-    drt_vehicles_drt, drt_vehicles_nondrt = scale_scenario(drt_info, cursor)
-    vehicles_drt, vehicles_nondrt = scale_scenario(reference_info, cursor)
-    db.disconnect()
-    db.localdisconnect()
+    # db = Db()
+    # cursor = db.localcursor(path_drt)
+    drt_vehicles_drt, drt_vehicles_nondrt = scale_scenario(drt_info)
+    vehicles_drt, vehicles_nondrt = scale_scenario(reference_info)
+    # db.disconnect()
+    # db.localdisconnect()
 
     openlca = olcaclient()
     openlca.lifecycleassessment(drt_vehicles_drt, drt_vehicles_nondrt, getsimulationname(path_drt))

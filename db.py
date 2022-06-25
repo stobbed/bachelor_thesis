@@ -89,6 +89,7 @@ class Db:
         # return self.link_information_dict
 
     def calculate_vehicle_information(self, vehicle, link_information_dict, path, listofagents, drt):
+        """ function add cursor and opens get vehicle information to calculate all information for vehicle and stores it in the .csv file """
         return get_vehicle_information(self._cursor, vehicle, link_information_dict, path, listofagents, drt)
 
     # def create_dict_event_id_links(self) -> "dict":

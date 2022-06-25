@@ -110,7 +110,7 @@ class configgui(tk.Tk, object):
         else:
             self.charging_combo.current(1)
 
-        # definition of charging strategy, which ultimately determines the battery capacity
+        # choose whether to ignore publictransport or not.. speeds up the process
         self.publictransport_note = ttk.Label(self, text="choose whether to ignore public transport during DB creation or not (saves a bit of space if True)")
         self.publictransport_note.grid(column=0, row=9, columnspan=3, pady=5)
         self.publictransport_note.configure(font=description)
@@ -125,20 +125,20 @@ class configgui(tk.Tk, object):
         else:
             self.publictransport_combo.current(1)
 
-        # definition of charging strategy, which ultimately determines the battery capacity
-        self.publictransport_note = ttk.Label(self, text="choose whether to ignore public transport during DB creation or not (saves a bit of space if True)")
-        self.publictransport_note.grid(column=0, row=11, columnspan=3, pady=5)
-        self.publictransport_note.configure(font=description)
+        # # use of existing csv files
+        # self.publictransport_note = ttk.Label(self, text="choose whether to ignore public transport during DB creation or not (saves a bit of space if True)")
+        # self.publictransport_note.grid(column=0, row=11, columnspan=3, pady=5)
+        # self.publictransport_note.configure(font=description)
 
-        self.publictransport_label = ttk.Label(self, text="use csv")
-        self.publictransport_label.grid(column=0, row=12, sticky=tk.E)
+        # self.publictransport_label = ttk.Label(self, text="use csv")
+        # self.publictransport_label.grid(column=0, row=12, sticky=tk.E)
 
-        self.publictransport_combo = ttk.Combobox(self, textvariable=tk.StringVar(), values=['True', 'False'], width = 10, justify=tk.CENTER)
-        self.publictransport_combo.grid(column=1, row=12, sticky=tk.W, pady=10)
-        if self.publictransport == 'True':
-            self.publictransport_combo.current(0)
-        else:
-            self.publictransport_combo.current(1)
+        # self.publictransport_combo = ttk.Combobox(self, textvariable=tk.StringVar(), values=['True', 'False'], width = 10, justify=tk.CENTER)
+        # self.publictransport_combo.grid(column=1, row=12, sticky=tk.W, pady=10)
+        # if self.publictransport == 'True':
+        #     self.publictransport_combo.current(0)
+        # else:
+        #     self.publictransport_combo.current(1)
 
         # button that triggers the storing of the chosen specs and closes this GUI
         self.startbutton = ttk.Button(self, text="Start Script", command=lambda:[f() for f in [self.startscript, self.destroy]])
@@ -151,6 +151,7 @@ class configgui(tk.Tk, object):
 
     def startscript(self):
         ''' retrieve paths from GUI and store them in the config.ini '''
+
         edit = configparser.ConfigParser()
         edit.read("config.ini")
         paths = edit['paths']
@@ -171,7 +172,8 @@ class configgui(tk.Tk, object):
         self.success = True
 
     def opendirectorywindow(self):
-        ''' opens a directory browser window and returns the chose direcotry'''
+        ''' opens a directory browser window and returns the chosen directory'''
+
         root = tk.Tk()
         root.withdraw()
         file_path = filedialog.askdirectory()
@@ -180,6 +182,7 @@ class configgui(tk.Tk, object):
 
     def setdrtpath(self):
         ''' calls the function that opens the browser window and updates the chosen directory in the GUI'''
+
         path = self.opendirectorywindow()
         if str(path).startswith("//"):
             path = path[1:]
@@ -188,6 +191,7 @@ class configgui(tk.Tk, object):
 
     def setreferencepath(self):
         ''' calls the function that opens the browser window and updates the chosen directory in the GUI'''
+
         path = self.opendirectorywindow()
         if str(path).startswith("//"):
             path = path[1:]
@@ -195,6 +199,8 @@ class configgui(tk.Tk, object):
         self.path_reference_box.insert(0, path)
 
     def changevehicles(self):
+        """ triggers another window where the user can change vehicle parameters """
+
         self.vehicleparams = vehicleparams()
         
 class vehicleparams(tk.Tk, object):
@@ -393,6 +399,8 @@ class vehicleparams(tk.Tk, object):
         self.mainloop()
 
     def saveparameters(self):
+        """ action that gets triggered when the save button is pushed, and stores all data from the GUI into the .ini file """
+
         edit = configparser.ConfigParser()
         edit.read("vehicle.ini")
         mass_wo_battery = edit['mass_wo_battery']
@@ -423,6 +431,8 @@ class vehicleparams(tk.Tk, object):
             edit.write(file)
 
     def restorestandards(self):
+        """ retrieves all data from vehiclestandards.ini and puts it into the boxes in the GUI.. like a reset button """
+
         self.mass_small = getfromvehicleconfig('mass_wo_battery','mass_electric_small', True)
         self.mass_small_box.delete(0, tk.END)
         self.mass_small_box.insert(0, self.mass_small)

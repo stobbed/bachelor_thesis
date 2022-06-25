@@ -9,7 +9,7 @@ import numpy as np
 import warnings
 warnings.simplefilter("ignore")
 
-def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
+def scale_scenario(vehicleinfo: dict, pct_scenario: int = 10):
 
     # scalingfactor for non linear scaling
     scalingfactor = 100/pct_scenario
@@ -65,28 +65,31 @@ def scale_scenario(vehicleinfo: dict, cursor, pct_scenario: int = 10):
         #     drt_size = "medium"
         # elif int(drt_vehiclesize) == 7:
         #     drt_size = "large"
-        drt_vehicleslist = create_drtvehicleids_list(cursor)
-        query_capacity = ''' SELECT capacity from vehicles WHERE vehicle_id = ?'''
-        vehicles_2 = 0; vehicles_4 = 0; vehicles_7 = 0
-        for vehicle in drt_vehicleslist:
-            db_output = query_db(query_capacity, cursor, vehicle)
-            capacity = db_output[0][0]
-            if int(capacity) == 2:
-                vehicles_2 += 1
-            if int(capacity) == 4:
-                vehicles_4 += 1
-            if int(capacity) == 7:
-                vehicles_7 += 1
+        # drt_vehicleslist = create_drtvehicleids_list(cursor)
+        # query_capacity = ''' SELECT capacity from vehicles WHERE vehicle_id = ?'''
+        # vehicles_2 = 0; vehicles_4 = 0; vehicles_7 = 0
+        # for vehicle in drt_vehicleslist:
+        #     db_output = query_db(query_capacity, cursor, vehicle)
+        #     capacity = db_output[0][0]
+        #     if int(capacity) == 2:
+        #         vehicles_2 += 1
+        #     if int(capacity) == 4:
+        #         vehicles_4 += 1
+        #     if int(capacity) == 7:
+        #         vehicles_7 += 1
 
-        if vehicles_2 > 0:
-            vehicles_drt['small'] = {}
-            vehicles_drt['small']['amount'] = int(vehicles_2 * drt_scalingfactor_vehicles)
-        if vehicles_4 > 0:
-            vehicles_drt['medium'] = {}
-            vehicles_drt['medium']['amount'] = int(vehicles_4 * drt_scalingfactor_vehicles)
-        if vehicles_7 > 0:
-            vehicles_drt['large'] = {}
-            vehicles_drt['large']['amount'] = int(vehicles_7 * drt_scalingfactor_vehicles)
+        # if vehicles_2 > 0:
+        vehicles_drt['small'] = {}
+            # vehicles_drt['small']['amount'] = int(vehicles_2 * drt_scalingfactor_vehicles)
+        vehicles_drt['small']['amount'] = int(vehicleinfo['small_vehicles'] * drt_scalingfactor_vehicles)
+        # if vehicles_4 > 0:
+        vehicles_drt['medium'] = {}
+            # vehicles_drt['medium']['amount'] = int(vehicles_4 * drt_scalingfactor_vehicles)
+        vehicles_drt['medium']['amount'] = int(vehicleinfo['medium_vehicles'] * drt_scalingfactor_vehicles)
+        # if vehicles_7 > 0:
+        vehicles_drt['large'] = {}
+            # vehicles_drt['large']['amount'] = int(vehicles_7 * drt_scalingfactor_vehicles)
+        vehicles_drt['large']['amount'] = int(vehicleinfo['large_vehicles'] * drt_scalingfactor_vehicles)
 
         if drt_avg_speed_pct < .5:
             drt_speed_pct_factor = 1.2

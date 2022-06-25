@@ -468,11 +468,19 @@ def calculate_avg_vehicle(path):
     totalkm = 0
     intown_pct = 0; countryroad_pct = 0; highway_pct = 0
     avg_speed = 0; speed_pct = 0; speed_length = 0; speed_above_90 = 0; speed_below_70 = 0; speed_below_50 = 0; speed_below_30 = 0; speed_below_10 = 0
+    
+    small_vehicles = 0; medium_vehicles = 0; large_vehicles = 0
     # avgpassenger_without_empty = 0
     # data = pd.read_csv("/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats/hundekopf-rebalancing-1000vehicles-2seats_vehicleinfo.csv")
     data = pd.read_csv(os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo_finished.csv'), low_memory=False, header=0, skip_blank_lines=True)
     # vehicleamount = data._values.shape[0]
     for line in data._values:
+        if line[22] == 2:
+            small_vehicles += 1
+        elif line[22] == 4:
+            medium_vehicles += 1
+        elif line[22] == 7:
+            large_vehicles += 1
         if str(line[0]).startswith("drt") or str(line[0]).startswith("taxi"):
             drt_vehicleamount += 1
             drt_totalkm += line[1]; drt_totalkm_region += line[21]; drt_totalkm_notregion += line[20]; drt_totalpkm += line[8]
@@ -517,6 +525,10 @@ def calculate_avg_vehicle(path):
         info['drt_avg_passenger_amount'] = drt_avgpassenger_amount / drt_vehicleamount
         info['drt_avgpassenger_without_empty'] = drt_avgpassenger_without_empty / drt_vehicleamount
         info['drt_pkm_without_empty'] = drt_pkm_without_empty / drt_vehicleamount
+
+        info['small_vehicles'] = small_vehicles
+        info['medium_vehicles'] = medium_vehicles
+        info['large_vehicles'] = large_vehicles
 
     info['vehicleamount'] = vehicleamount
     info['totalkm'] = totalkm

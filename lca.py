@@ -10,6 +10,8 @@ warnings.simplefilter("ignore")
 
 class olcaclient():
     def __init__(self) -> None:
+        """ opens the connection to the OLCA client and also reads gridmix and charging strategy from config """
+
         # setting up IPC connection (port may have to be adjusted)
         self._client = olca.Client(8080)
         self._setup = olca.CalculationSetup()
@@ -27,6 +29,8 @@ class olcaclient():
         self.redefinemultiple(self.parameterdict)
 
     def redefinition(self, paramatername, value):
+        """ redefines parameters, by adding it to the olca.parameterredef object """
+
         self._setup.parameter_redefs = []
         redef_Parameter = olca.ParameterRedef()
         redef_Parameter.name = paramatername
@@ -34,6 +38,8 @@ class olcaclient():
         self._setup.parameter_redefs.append(redef_Parameter)
 
     def redefinemultiple(self, parameterdict: dict):
+        """ redefines multiple parameters contained in the parameterdict dictionary by adding it to the olca.parameterredef object """
+        
         self._setup.parameter_redefs = []
         for key, value in parameterdict.items():
             redef_Parameter = olca.ParameterRedef()
