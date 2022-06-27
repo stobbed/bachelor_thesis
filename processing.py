@@ -1,7 +1,6 @@
 # this python file contains all sort of functions needed to analyze the MATSIM outputs
 # in order to return the vehicleinfo.csv
 
-from cmath import e
 from collections import defaultdict
 import pickle
 import os.path
@@ -9,14 +8,14 @@ import os
 from datetime import datetime
 import csv
 import pandas as pd
-import gzip
 import xml.etree.cElementTree as ET
+import sqlite3
 
 from configuration import *
 from database_operations import query_db
 from vtypes import *
 
-def create_drtvehicleids_list(cursor):
+def create_drtvehicleids_list(cursor: sqlite3.Cursor) -> list:
     """ creates a list containing the drtvehicleids that entered traffic
         input: cursor
         output: drtvehicleids (list of ids) """
@@ -45,7 +44,7 @@ def create_drtvehicleids_list(cursor):
     # print("...Vehicle IDS sucessfully stored")
     return drtvehicleids
 
-def create_vehicleids_list(cursor):
+def create_vehicleids_list(cursor: sqlite3.Cursor) -> list:
     """ creates a list containing the vehicleids that entered traffic
         input: cursor
         output: vehicleids (list of ids) """
@@ -74,30 +73,16 @@ def create_vehicleids_list(cursor):
     # print("...Vehicle IDS sucessfully stored")
     return vehicleids
 
-# def create_vehicle_list(path):
-#     xmlpath = os.path.join(path, getsimulationname(path) + '.output_allVehicles.xml.gz')
-#     if os.path.exists(xmlpath):
-#         print('opening xml.gz file...')
-#         file = gzip.open(xmlpath, mode='rt', encoding='UTF-8')
-#         print('file opened!')
-#     else:
-#         raise FileNotFoundError('Invalid path (xmlpath): '+xmlpath+' - *.xml.gz file doesn\'t exist.')
-
-#     tree = ET.parse(file)
-#     root = tree.getroot()
-
-#     vehicles = []
-#     for child in root:
-#         if len(child.attrib) > 1:
-#             if child.attrib['type'] == "car":
-#                 vehicles.append(child.attrib['id'])
-#     return vehicles
-
-def create_personlist(path, simulationname):
+def create_personlist(path: str, simulationname: str) -> list:
+    """ creates a list with passengers from the in the config specified region by reading and filtering from the output_persons.csv.gz in the MATSIM output folder"""
+    # read in compressed csv file
     data = pd.read_csv(os.path.join(path, simulationname + '.output_persons.csv.gz'), compression='gzip')
+    # retrieve region to filte for from config.ini
     region = getfromconfig('settings', 'region')
     listofagents = []
+    # parse through contents of read in csv
     for line in data._values:
+        # extracting the home regioon information from csv row
         text = str(line).split(";")
         agent = text[0].replace("['","")
         homeregion = text[-1].replace("']","")
@@ -105,14 +90,18 @@ def create_personlist(path, simulationname):
             listofagents.append(int(agent))
     return listofagents
 
-def match_passengers_and_cars(listofagents, vehiclesllist):
+def match_passengers_and_cars(listofagents: list, vehiclesllist: list) -> list:
+    """ compares the two lists, containg the list of agents and the vehicleslist.. since currently each vehicle for a passenger is named exactly the same
+        if this however changes this part should be adapted accordingly """
+    
     agents = set(listofagents)
     vehicles = set(vehiclesllist)
 
+    # calculate the intersection of the two sets thereby reducing the number of vehicles to parse through drastically
     usedvehicles = agents & vehicles
     return usedvehicles
 
-def create_link_information_dict(cursor, link_information_dict: dict) -> "dict":
+def create_link_information_dict(cursor: sqlite3.Cursor, link_information_dict: dict) -> "dict":
     """ creates a dictionary with every link id, length and freespeed """
     # print("creating link_information_dict..." + str(gettime()))
     query = ''' SELECT link_id, length, freespeed
@@ -124,14 +113,14 @@ def create_link_information_dict(cursor, link_information_dict: dict) -> "dict":
     # print("...succesfully created link_information_dict!" + str(gettime()))
     return link_information_dict
 
-def create_results_dir(path):
+def create_results_dir(path: str):
     ''' creates a direcotry called results in the MATSIM outputs folder for each scenario '''
     if not os.path.exists(os.path.join(path,'results')):
         os.mkdir(os.path.join(path,'results'))
     # if os.path.exists(os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo.csv')):
     #     os.remove(os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo.csv'))
 
-def get_vehicle_information(cursor, vehicle, link_information_dict: dict, path, listofagents, drt_status = True):
+def get_vehicle_information(cursor: sqlite3.Cursor, vehicle: str, link_information_dict: dict, path: str, listofagents: list, drt_status = True):
     ''' primary function that gets called for every vehicle inside the multiprocessing 
         first gets the driven links and if drt_status = True goes through all events
         and adds the information how many passengers where present in the car on which link'''
@@ -158,7 +147,7 @@ def get_vehicle_information(cursor, vehicle, link_information_dict: dict, path, 
             file.close()   
 
 
-def get_links_for_vehicleid(cursor, vehicle, link_information_dict: dict) -> "dict":
+def get_links_for_vehicleid(cursor: sqlite3.Cursor, vehicle: str, link_information_dict: dict) -> "dict":
     """ reads all vehicle_link_events from DB and stores this information with the event_id as key in a dictionary"""
     # print("creating event_id_link_dict... ", str(gettime()))
     query = ''' SELECT event_id, link, left_entered
@@ -178,8 +167,8 @@ def get_links_for_vehicleid(cursor, vehicle, link_information_dict: dict) -> "di
     # print("...succesfully created event_id_link_dict! ", str(gettime()))
     return event_id_link_dict
 
-def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofagents) -> dict:
-    """ creates a dictionary with vehicle id as key for a list of trips as content. 
+def create_entered_link_list(vehicle: str, event_id_link_dict: dict, cursor: sqlite3.Cursor, listofagents: list) -> list:
+    """ creates a list of trips as content. 
         each trip contains the necessary informtion, when the vehicle entered and left the link, the length and freespeed
         this script als calculates the actual speeed, as well as the percentual speed it therefore reached"""
     # print("creating entered_link_dict... ", str(gettime()))
@@ -192,22 +181,23 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
     query_passengervehicle = ''' SELECT person
                                  FROM person_vehicle_events
                                  WHERE event_id = ?'''
+    # retrieve all events for given vehicle from DB
     db_output = query_db(query, cursor, vehicle)
     driven_links = []
     tripindex = 0
-    # iterate through db_output with an index
     passengerfromregion = 0
     passengernotfromregion = 0
     passengers = 0
+    # iterate through db_output with an index
     for index in range(0, len(db_output)):
         if not (str(vehicle).startswith("drt") or str(vehicle).startswith("taxi")):
-            # if vehicle in listofagents:
             passengerfromregion = 1
             passengers = 1
         event_id = db_output[index][0]
         time = db_output[index][1]
         type_id = db_output[index][2]
         vehicle = db_output[index][3]
+        # type_id = 23, PassengerRequest scheduled event, by counting upp passengerfromregion/ notregion allocates distance driven empty to passenger to passenger
         if type_id == 23:
             db_output_request = query_db(query_passengerequest, cursor, event_id)
             if (str(vehicle).startswith("drt") or str(vehicle).startswith("taxi")):
@@ -215,9 +205,7 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
                     passengerfromregion += 1
                 else:
                     passengernotfromregion += 1
-                    # passengerfromregion -= 1
-                    # print('passenger ', db_output_request[0][0], 'not from region')
-        # type_id == 8 means entered link and therefore appends the dictionary with the Class trip and its information
+        # type_id = 8 means entered link and therefore appends the dictionary with the Class trip and its information
         if type_id == 8:
             trip = event_id_link_dict[event_id]
             link = trip.link
@@ -225,7 +213,7 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
             freespeed = trip.freespeed
             driven_links.append(Trip(link, event_id, time, length, freespeed, passengerfromregion, passengernotfromregion, passengers))
             tripindex += 1
-        # type_id == 7 means left link
+        # type_id = 7 means left link
         elif type_id == 7:
             # checks if its the first interaction of the car, since then there could be no entered link before that
             if tripindex != 0:
@@ -235,9 +223,10 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
                     driven_links[entered_index].left_time = time
                     driven_links[entered_index].actual_speed = driven_links[entered_index].link_length/(time - driven_links[entered_index].entered_time)
                     driven_links[entered_index].speed_pct = driven_links[entered_index].actual_speed/driven_links[entered_index].link_freespeed
-        # type_id == 4 means vehicle enters traffic, therefore further calculation is required
-        elif type_id == 24:  # eventuell auch lieber über passenger picked up / dropped of events machen
+        # type_id = 24 means passenger picked up, and therefore counts up the passenger count
+        elif type_id == 24:
             passengers += 1
+        # type_id == 4 means vehicle enters traffic, therefore further calculation is required
         elif type_id == 4 and db_output[index+1][2] == 7 and index > 0:
             stop1 = False
             stop2 = False
@@ -278,6 +267,7 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
                     driven_links[index_entered_link_corrected].actual_speed = driven_links[index_entered_link_corrected].link_length/(left_time_corrected - driven_links[index_entered_link_corrected].entered_time)
                     driven_links[index_entered_link_corrected].speed_pct = driven_links[index_entered_link_corrected].actual_speed/driven_links[index_entered_link_corrected].link_freespeed
                     driven_links[index_entered_link_corrected].corrected = True
+        # type_id = 10 means persons leaves vehicle and therefore removes the allocation of driven distance for passengerfromregion / notregion except the vehicle is not empty
         elif type_id == 10:
             if (str(vehicle).startswith("drt") or str(vehicle).startswith("taxi")):
                 db_output_vehicleevent = query_db(query_passengervehicle, cursor, event_id)
@@ -285,27 +275,25 @@ def create_entered_link_list(vehicle, event_id_link_dict: dict, cursor, listofag
                     passengerfromregion -= 1
                 elif not (str(db_output_vehicleevent[0][0]).startswith("drt") or str(db_output_vehicleevent[0][0]).startswith("taxi")):
                     passengernotfromregion -=1
+        # type_id = 25 means passenger dropped off and therefore subtracts 1 passenger from the passenger amount
         elif type_id == 25:
             passengers -= 1
     # print("...succesfully created entered_link_dict!", str(gettime()))
     return driven_links
 
 
-def create_vehicle_info(vehicle, driven_links: list) -> "dict":
-    """ creates a dictionary for each vehicle in vehicleids containing travelleddistance, road percentages as well as pkm and avgpassenger amounts"""
-    # print("Creating vehicle dictionary... ", str(gettime()))
-    # vehicledict[id] = calculate_distance_roadpct(vehicle, driven_links)
+def create_vehicle_info(vehicle: str, driven_links: list) -> Vehicle:
+    """ calls another function that calculates travelleddistance, road percentages as well as pkm and avgpassenger amounts and much more"""
     vehicleinfo = calculate_distance_roadpct(vehicle, driven_links)
-    # print("..succesfully created vehicle dictionary ", str(gettime()))
-    # return vehicledict
     return vehicleinfo
 
-def calculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Vehicle":
-    """ calculates total driven distance, checks road type and stores road percentages as well as person kilometers and returns Vehicle Class with information for vehicle id"""
+def calculate_distance_roadpct(vehicle: str, enteredlinks_for_vehicle: list) -> Vehicle:
+    """ calculates total driven distance, checks road type and stores road percentages as well as person kilometers (and much more) and returns Vehicle Class with information for vehicle id"""
     # evtl. speeds anpassen
     in_town_max = 51 / 3.6
     out_town_max = 101 / 3.6
 
+    # assigning of variables to add up
     totaldistance = 0
     intown = 0
     pkm_intown = 0
@@ -385,8 +373,8 @@ def calculate_distance_roadpct(vehicle, enteredlinks_for_vehicle: dict) -> "Vehi
     return vehicleinfo
 
 
-def get_passenger_occupancy(vehicle, cursor) -> "dict":
-    """ retrieves information about pickup_dropoff events from DB and stores the passenger amount for each event_id where such an event happened in a dictionary"""
+def get_passenger_occupancy(vehicle: str, cursor: sqlite3.Cursor) -> "list":
+    """ retrieves information about pickup_dropoff events from DB and stores the passenger amount for each event_id where such an event happened in a list"""
     # print("creating dictionary with occupancy for event_ids... ", str(gettime()))
     occupancy_query = '''SELECT event_id, person, request, pickup_dropoff FROM PassengerPickedUpDropOff_events WHERE vehicle = ?'''
     # drivenlinks_query = '''SELECT event_id, link, vehicle FROM enteredlink_events'''
@@ -407,7 +395,7 @@ def get_passenger_occupancy(vehicle, cursor) -> "dict":
     # print("...created occupancy dictionary! ", str(gettime()))
     return passengeroccupancy
 
-def get_capacity(vehicle, cursor):
+def get_capacity(vehicle: str, cursor: sqlite3.Cursor):
     """ looks up capacity for each vehicle id in vehicleids in DB and returns capacity """
     # print("adding capacity to each vehicle in vehicledict...")
     query = ''' SELECT capacity FROM vehicles WHERE vehicle_id = ?'''
@@ -415,48 +403,25 @@ def get_capacity(vehicle, cursor):
     capacity = db_output[0][0]
     return capacity
 
-def get_passengers_for_link(vehicle, passengeroccupancy: list, driven_links: list, cursor) -> "dict":
-    """ uses the previously created dictionary dictofPassengerOccupancy to retrieve how many passengers where in the car and stores that information based on the links (connected by the event_id) in a dictionary"""
-    # print("adding passengers to each trip in driven_links_dict...")
-    for index in range(0, len(passengeroccupancy)):
-        link_for_task = get_link_for_dvrpTask_event(passengeroccupancy[index], vehicle, cursor)
-        if index != len(passengeroccupancy)-1:
-            link_for_next_task = get_link_for_dvrpTask_event(passengeroccupancy[index+1], vehicle, cursor)
-        else:
-            link_for_next_task = None
-        # if db_output == []:
-        #     db_output = query_db(query, cursor, id, time[0][0]+1)
-        start = False
-        stop = False
-        for tripindex in range(0, len(driven_links)):
-            trip = driven_links[tripindex]
-            if trip.link == link_for_task and start == False and stop == False:
-                # print(id, db_output[0][0])
-                start = True
-            if link_for_next_task != None:
-                if trip.link == link_for_next_task and stop == False:
-                    stop = True
-            if start == True and stop == False:
-                driven_links[tripindex].passengers = passengeroccupancy[index][1]
-    # print("...succesfully added passengers to all trips!")
-    return driven_links
-
-def get_link_for_dvrpTask_event(passenger_event: tuple, id, cursor) -> "int":
+def get_link_for_dvrpTask_event(passenger_event: tuple, vehicle: str, cursor: sqlite3.Cursor) -> "int":
     """ requires a passenger_pickup_dropffoff_event as input and a vehicle id and returns the link where this event happened"""
     query = ''' SELECT d.link FROM dvrpTask_events d INNER JOIN events e ON e.event_id == d.event_id WHERE d.dvrpVehicle = ? AND e.time = ?'''
     time = get_time_for_event_id(passenger_event[0], cursor)
     passengers = passenger_event[1]
     drt_request = passenger_event[2]
-    db_output = query_db(query, cursor, id, time)
+    db_output = query_db(query, cursor, vehicle, time)
     return db_output[0][0]
 
-def get_time_for_event_id (event_id: int, cursor) -> "float":
+def get_time_for_event_id (event_id: int, cursor: sqlite3.Cursor) -> "float":
     """ issues a DB query and returns the matching time to event_id that was entered """
     query = ''' SELECT time FROM events WHERE event_id = ?'''
     time = query_db(query, cursor, event_id)
     return time[0][0]
 
-def calculate_avg_vehicle(path):
+def calculate_avg_vehicle(path: str) -> dict:
+    """ reads the vehicleinfo_finished_csv from the given path (only to the MATSIM output folder in general), calculates averages and returns that information in a dictionary"""
+    
+    # assin empty variables to count up
     drt_vehicleamount = 0
     drt_totalkm = 0; drt_totalkm_region = 0; drt_totalkm_notregion = 0; drt_totalpkm = 0
     drt_intown_pct = 0; drt_countryroad_pct = 0; drt_highway_pct = 0
@@ -470,36 +435,39 @@ def calculate_avg_vehicle(path):
     avg_speed = 0; speed_pct = 0; speed_length = 0; speed_above_90 = 0; speed_below_70 = 0; speed_below_50 = 0; speed_below_30 = 0; speed_below_10 = 0
     
     small_vehicles = 0; medium_vehicles = 0; large_vehicles = 0
-    # avgpassenger_without_empty = 0
-    # data = pd.read_csv("/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats/hundekopf-rebalancing-1000vehicles-2seats_vehicleinfo.csv")
+    
     data = pd.read_csv(os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo_finished.csv'), low_memory=False, header=0, skip_blank_lines=True)
-    # vehicleamount = data._values.shape[0]
+    vehicles = []
     for line in data._values:
-        if line[22] == 2:
-            small_vehicles += 1
-        elif line[22] == 4:
-            medium_vehicles += 1
-        elif line[22] == 7:
-            large_vehicles += 1
-        if str(line[0]).startswith("drt") or str(line[0]).startswith("taxi"):
-            drt_vehicleamount += 1
-            drt_totalkm += line[1]; drt_totalkm_region += line[21]; drt_totalkm_notregion += line[20]; drt_totalpkm += line[8]
-            drt_intown_pct += line[2]; drt_countryroad_pct += line[3]; drt_highway_pct += line[4]
-            drt_pkm_intown += line[5]; drt_pkm_countryroad += line[6]; drt_pkm_highway += line[7]
-            drt_avg_speed += line[12]; drt_speed_pct += line[13]; drt_speed_length += line[14]; drt_speed_above_90 += line[15]; drt_speed_below_70 += line[16]; drt_speed_below_50 += line[17]; drt_speed_below_30 += line[18]; drt_speed_below_10 += line[19]
-            drt_avgpassenger_amount += line[9]; drt_avgpassenger_without_empty += line[10]; drt_pkm_without_empty += line[11]
+        # additionally checks for duplicates in the vehicleinfo csv
+        checknew = []
+        checknew.append(line[0])
+        check = set(vehicles) & set(checknew)
+        if check == set():
+            vehicles.append(line[0])
+            if line[22] == 2:
+                small_vehicles += 1
+            elif line[22] == 4:
+                medium_vehicles += 1
+            elif line[22] == 7:
+                large_vehicles += 1
+            if str(line[0]).startswith("drt") or str(line[0]).startswith("taxi"):
+                drt_vehicleamount += 1
+                drt_totalkm += line[1]; drt_totalkm_region += line[21]; drt_totalkm_notregion += line[20]; drt_totalpkm += line[8]
+                drt_intown_pct += line[2]; drt_countryroad_pct += line[3]; drt_highway_pct += line[4]
+                drt_pkm_intown += line[5]; drt_pkm_countryroad += line[6]; drt_pkm_highway += line[7]
+                drt_avg_speed += line[12]; drt_speed_pct += line[13]; drt_speed_length += line[14]; drt_speed_above_90 += line[15]; drt_speed_below_70 += line[16]; drt_speed_below_50 += line[17]; drt_speed_below_30 += line[18]; drt_speed_below_10 += line[19]
+                drt_avgpassenger_amount += line[9]; drt_avgpassenger_without_empty += line[10]; drt_pkm_without_empty += line[11]
+            else:
+                if line[1] > 0:
+                    vehicleamount += 1
+                    totalkm += line[1]
+                    intown_pct += line[2]; countryroad_pct += line[3]; highway_pct += line[4]
+                    avg_speed += line[12]; speed_pct += line[13]; speed_length += line[14]; speed_above_90 += line[15]; speed_below_70 += line[16]; speed_below_50 += line[17]; speed_below_30 += line[18]; speed_below_10 += line[19]
         else:
-            if line[1] > 0:
-                vehicleamount += 1
-                totalkm += line[1]
-                intown_pct += line[2]; countryroad_pct += line[3]; highway_pct += line[4]
-                avg_speed += line[12]; speed_pct += line[13]; speed_length += line[14]; speed_above_90 += line[15]; speed_below_70 += line[16]; speed_below_50 += line[17]; speed_below_30 += line[18]; speed_below_10 += line[19]
-            if totalkm > 0:
-                pass
-            else: 
-                # print(line[1])
-                # print(type(line[1]))
-                break
+            print("found duplicate vehicle in csv", line[0])
+    
+    # stores all retrieved information the dictionary
     info = {}
     info['drt_vehicleamount'] = drt_vehicleamount
     if drt_vehicleamount > 0:
@@ -546,13 +514,15 @@ def calculate_avg_vehicle(path):
     info['avg_speed_below_10'] = speed_below_10 / totalkm
     return info
 
-def gettime():
+def gettime() -> datetime.datetime:
+    """ pretty self explanatory, gets the current time and fomats it into HH/MM/SS format """
     now = datetime.datetime.now()
     current_time = now.strftime("%H:%M:%S")
     return current_time
 
 # ------------------------------ not needed atm --------------------------------------------------
 
+# mainly for debug purposes creation of pickle files and reading them
 def picklefile_write(filename: str, content) -> "None":
     """ creates a pickle file with filename (complete path if not in the same directory as the script) and the contents, especially useful for debugging"""
     #file = os.path.join(path_drt, 'pickle', filename)
@@ -570,6 +540,32 @@ def picklefile_read(filename: str):
     else:
         print(str(filename) + ' does not exist, if the file is not in the same folder as the script make sure to enter the complete directory')
     return content
+
+# def get_passengers_for_link(vehicle: str, passengeroccupancy: list, driven_links: list, cursor: sqlite3.Cursor) -> "dict":
+#     """ uses the previously created dictionary dictofPassengerOccupancy to retrieve how many passengers where in the car and stores that information based on the links (connected by the event_id) in a dictionary"""
+#     # print("adding passengers to each trip in driven_links_dict...")
+#     for index in range(0, len(passengeroccupancy)):
+#         link_for_task = get_link_for_dvrpTask_event(passengeroccupancy[index], vehicle, cursor)
+#         if index != len(passengeroccupancy)-1:
+#             link_for_next_task = get_link_for_dvrpTask_event(passengeroccupancy[index+1], vehicle, cursor)
+#         else:
+#             link_for_next_task = None
+#         # if db_output == []:
+#         #     db_output = query_db(query, cursor, id, time[0][0]+1)
+#         start = False
+#         stop = False
+#         for tripindex in range(0, len(driven_links)):
+#             trip = driven_links[tripindex]
+#             if trip.link == link_for_task and start == False and stop == False:
+#                 # print(id, db_output[0][0])
+#                 start = True
+#             if link_for_next_task != None:
+#                 if trip.link == link_for_next_task and stop == False:
+#                     stop = True
+#             if start == True and stop == False:
+#                 driven_links[tripindex].passengers = passengeroccupancy[index][1]
+#     # print("...succesfully added passengers to all trips!")
+#     return driven_links
 
 # def create_dict_vid_distance_roadpct(dictofVIDandLinks, dictofLinks_Length, dictofLinks_Freespeed, drtvehicleids):
 #     print("creating dictionaries with VID and distance, as well as roadpct...")
@@ -996,3 +992,112 @@ def picklefile_read(filename: str):
 #     avg_distance = fleetdistance / len(vehiclelist)
 #     print("...created fleet information")
 #     return Fleet(vehicledict, fleetdistance, total_pkm, avg_distance, distance_intown, pkm_intown, distance_countryroad, pkm_countryroad, distance_highway, pkm_highway, maximum_distance, roadpct)
+
+# def calculate_avg_vehicle(path):
+#     drt_vehicleamount = 0
+#     drt_totalkm = 0; drt_totalkm_region = 0; drt_totalkm_notregion = 0; drt_totalpkm = 0
+#     drt_intown_pct = 0; drt_countryroad_pct = 0; drt_highway_pct = 0
+#     drt_pkm_intown = 0; drt_pkm_countryroad = 0; drt_pkm_highway = 0
+#     drt_avg_speed = 0; drt_speed_pct = 0; drt_speed_length = 0; drt_speed_above_90 = 0; drt_speed_below_70 = 0; drt_speed_below_50 = 0; drt_speed_below_30 = 0; drt_speed_below_10 = 0
+#     drt_avgpassenger_amount = 0; drt_avgpassenger_without_empty = 0; drt_pkm_without_empty = 0
+
+#     vehicleamount = 0
+#     totalkm = 0
+#     intown_pct = 0; countryroad_pct = 0; highway_pct = 0
+#     avg_speed = 0; speed_pct = 0; speed_length = 0; speed_above_90 = 0; speed_below_70 = 0; speed_below_50 = 0; speed_below_30 = 0; speed_below_10 = 0
+    
+#     small_vehicles = 0; medium_vehicles = 0; large_vehicles = 0
+#     # avgpassenger_without_empty = 0
+#     # data = pd.read_csv("/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats/hundekopf-rebalancing-1000vehicles-2seats_vehicleinfo.csv")
+#     data = pd.read_csv(os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo_finished.csv'), low_memory=False, header=0, skip_blank_lines=True)
+#     # vehicleamount = data._values.shape[0]
+#     for line in data._values:
+#         if line[22] == 2:
+#             small_vehicles += 1
+#         elif line[22] == 4:
+#             medium_vehicles += 1
+#         elif line[22] == 7:
+#             large_vehicles += 1
+#         if str(line[0]).startswith("drt") or str(line[0]).startswith("taxi"):
+#             drt_vehicleamount += 1
+#             drt_totalkm += line[1]; drt_totalkm_region += line[21]; drt_totalkm_notregion += line[20]; drt_totalpkm += line[8]
+#             drt_intown_pct += line[2]; drt_countryroad_pct += line[3]; drt_highway_pct += line[4]
+#             drt_pkm_intown += line[5]; drt_pkm_countryroad += line[6]; drt_pkm_highway += line[7]
+#             drt_avg_speed += line[12]; drt_speed_pct += line[13]; drt_speed_length += line[14]; drt_speed_above_90 += line[15]; drt_speed_below_70 += line[16]; drt_speed_below_50 += line[17]; drt_speed_below_30 += line[18]; drt_speed_below_10 += line[19]
+#             drt_avgpassenger_amount += line[9]; drt_avgpassenger_without_empty += line[10]; drt_pkm_without_empty += line[11]
+#         else:
+#             if line[1] > 0:
+#                 vehicleamount += 1
+#                 totalkm += line[1]
+#                 intown_pct += line[2]; countryroad_pct += line[3]; highway_pct += line[4]
+#                 avg_speed += line[12]; speed_pct += line[13]; speed_length += line[14]; speed_above_90 += line[15]; speed_below_70 += line[16]; speed_below_50 += line[17]; speed_below_30 += line[18]; speed_below_10 += line[19]
+#             if totalkm > 0:
+#                 pass
+#             else: 
+#                 # print(line[1])
+#                 # print(type(line[1]))
+#                 break
+#     info = {}
+#     info['drt_vehicleamount'] = drt_vehicleamount
+#     if drt_vehicleamount > 0:
+#         info['drt_avg_totalkm_region'] = drt_totalkm_region / drt_vehicleamount
+#         info['drt_avg_totalkm_notregion'] = drt_totalkm_notregion / drt_vehicleamount
+#         info['drt_totalkm'] = drt_totalkm
+#         info['drt_avg_totalkm'] = (drt_totalkm_region + drt_totalkm_notregion) / drt_vehicleamount
+#         info['drt_avg_totalpkm'] = drt_totalpkm / drt_vehicleamount
+#         info['drt_avg_intown_pct'] = drt_intown_pct / drt_vehicleamount
+#         info['drt_avg_countryroad_pct'] = drt_countryroad_pct / drt_vehicleamount
+#         info['drt_avg_highway_pct'] = drt_highway_pct / drt_vehicleamount
+#         info['drt_avg_pkm_intown'] = drt_pkm_intown / drt_vehicleamount
+#         info['drt_avg_pkm_countryroad'] = drt_pkm_countryroad / drt_vehicleamount
+#         info['drt_avg_pkm_highway'] = drt_pkm_highway / drt_vehicleamount
+#         info['drt_avg_speed_pervehicle'] = drt_avg_speed / drt_vehicleamount
+#         info['drt_avg_speed_overlength'] = drt_speed_length / drt_totalkm_region
+#         info['drt_avg_speed_pct'] = drt_speed_pct / drt_vehicleamount
+#         info['drt_avg_speed_above_90'] = drt_speed_above_90 / (drt_totalkm_region + drt_totalkm_notregion)
+#         info['drt_avg_speed_below_70'] = drt_speed_below_70 / (drt_totalkm_region + drt_totalkm_notregion)
+#         info['drt_avg_speed_below_50'] = drt_speed_below_50 / (drt_totalkm_region + drt_totalkm_notregion)
+#         info['drt_avg_speed_below_30'] = drt_speed_below_30 / (drt_totalkm_region + drt_totalkm_notregion)
+#         info['drt_avg_speed_below_10'] = drt_speed_below_10 / (drt_totalkm_region + drt_totalkm_notregion)
+#         info['drt_avg_passenger_amount'] = drt_avgpassenger_amount / drt_vehicleamount
+#         info['drt_avgpassenger_without_empty'] = drt_avgpassenger_without_empty / drt_vehicleamount
+#         info['drt_pkm_without_empty'] = drt_pkm_without_empty / drt_vehicleamount
+
+#         info['small_vehicles'] = small_vehicles
+#         info['medium_vehicles'] = medium_vehicles
+#         info['large_vehicles'] = large_vehicles
+
+#     info['vehicleamount'] = vehicleamount
+#     info['totalkm'] = totalkm
+#     info['avg_totalkm'] = totalkm / vehicleamount
+#     info['avg_intown_pct'] = intown_pct / vehicleamount
+#     info['avg_countryroad_pct'] = countryroad_pct / vehicleamount
+#     info['avg_highway_pct'] = highway_pct / vehicleamount
+#     info['avg_speed_pervehicle'] = avg_speed / vehicleamount
+#     info['avg_speed_overlength'] = speed_length / totalkm
+#     info['avg_speed_pct'] = speed_pct / vehicleamount
+#     info['avg_speed_above_90'] = speed_above_90 / totalkm
+#     info['avg_speed_below_70'] = speed_below_70 / totalkm
+#     info['avg_speed_below_50'] = speed_below_50 / totalkm
+#     info['avg_speed_below_30'] = speed_below_30 / totalkm
+#     info['avg_speed_below_10'] = speed_below_10 / totalkm
+#     return info
+
+# def create_vehicle_list(path):
+#     xmlpath = os.path.join(path, getsimulationname(path) + '.output_allVehicles.xml.gz')
+#     if os.path.exists(xmlpath):
+#         print('opening xml.gz file...')
+#         file = gzip.open(xmlpath, mode='rt', encoding='UTF-8')
+#         print('file opened!')
+#     else:
+#         raise FileNotFoundError('Invalid path (xmlpath): '+xmlpath+' - *.xml.gz file doesn\'t exist.')
+
+#     tree = ET.parse(file)
+#     root = tree.getroot()
+
+#     vehicles = []
+#     for child in root:
+#         if len(child.attrib) > 1:
+#             if child.attrib['type'] == "car":
+#                 vehicles.append(child.attrib['id'])
+#     return vehicles

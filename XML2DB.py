@@ -28,7 +28,7 @@ def create_database(dbpath, xmlpath_nw, xmlpath_evts, xmlpath_vehicles):
     print('connecting to database...')
     try:
         sqliteConnection = sqlite3.connect(dbpath)
-        sqliteConnection.execute('PRAGMA CACHE_SIZE = 2000000')
+        # sqliteConnection.execute('PRAGMA CACHE_SIZE = 2000000')
     except sqlite3.error as error:
         sys.exit('Failed to connect to database: ', error, '...Quitting.')
     print('connection established!')
