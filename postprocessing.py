@@ -151,10 +151,14 @@ def scale_scenario(vehicleinfo: dict, pct_scenario: int = 10):
                 vehicles_drt['consumption'] += drt_consumption_km * vehicles_drt[drt_size]['km']
         vehicles_drt['totalkm'] = drt_km_lifespan_fleet_scaled
         vehicles_drt['totalpkm'] = drt_pkm_lifespan_fleet_scaled
+        vehicles_drt['km_per_vehicle_day'] = (drt_avg_totalkm_region / m_to_km) * drt_scalingfactor_km_pervehicle
+        vehicles_drt['pkm_per_vehicle_day'] = ((drt_avg_totalkm_region / m_to_km) * drt_scalingfactor_km_pervehicle) * drt_avg_passenger_scaled
+        vehicles_drt['km_per_vehicle_year'] = drt_km_year_vehicle_scaled
+        vehicles_drt['pkm_per_vehicle_year'] = drt_km_year_vehicle_scaled * drt_avg_passenger_scaled
         vehicles_drt['total_batteries'] = drt_add_batteries_lifespan_vehicle * drt_vehicleamount_scaled
         vehicles_drt['avg_speed'] = vehicleinfo['drt_avg_speed_pervehicle']
         vehicles_drt['speed_pct'] = vehicleinfo['drt_avg_speed_pct']
-        vehicles_drt['avg_passengers'] = vehicleinfo['drt_avg_passenger_amount']
+        vehicles_drt['avg_passengers'] = vehicleinfo['drt_avg_passenger_amount'] * drt_scalingfactor_persons
         vehicles_drt['total_vehicles'] = drt_vehicleamount_scaled
 
         # vehicles_drt['consumption'] = drt_consumption_km_amount
@@ -257,6 +261,10 @@ def scale_scenario(vehicleinfo: dict, pct_scenario: int = 10):
 
     vehicles_nondrt['totalkm'] = km_lifespan_fleet_scaled
     vehicles_nondrt['totalpkm'] = pkm_lifespan_fleet_scaled
+    vehicles_nondrt['km_per_vehicle_day'] = avg_totalkm / m_to_km
+    vehicles_nondrt['pkm_per_vehicle_day'] = (avg_totalkm / m_to_km) * avg_passengers
+    vehicles_nondrt['km_per_vehicle_year'] = km_year_vehicle
+    vehicles_nondrt['pkm_per_vehicle_year'] = (km_year_vehicle) * avg_passengers
     vehicles_nondrt['avg_speed'] = vehicleinfo['avg_speed_pervehicle']
     vehicles_nondrt['speed_pct'] = vehicleinfo['avg_speed_pct']
     vehicles_nondrt['total_vehicles'] = vehicleamount_scaled
@@ -278,6 +286,10 @@ def compare_scnearios(path_drt, path_reference):
     drtsc_infos = pd.read_excel(os.path.join(drt_excel), sheet_name="vehicle_infos")
     referencesc_infos = pd.read_excel(os.path.join(reference_excel), sheet_name="vehicle_infos")
 
+    style = dict(size=20, color='black')
+
+    millionfactor = 1/1000000
+
     # ------------------- vehicle amount comparison -------------------- #
 
     drtsc_drtvehicles = drtsc_infos._values[8][1]
@@ -293,8 +305,28 @@ def compare_scnearios(path_drt, path_reference):
     va.plot(kind="bar",stacked=True,figsize=(10,8), ylabel="in t $C0_{2}$ äq")
 
     plt.title("vehicle amount")
-    plt.legend(loc="upper right",bbox_to_anchor=(0.8,1.0))
+    plt.legend(loc="upper right", bbox_to_anchor=(1, 1.15))
+    plt.ylabel("number of vehicles")
     plt.yticks([drtsc_drtvehicles + drtsc_nondrtvehicles, referencesc_drtvehicles + referencesc_nondrtvehicles])
+    fig1 = plt.gcf()
+    # plt.show()
+
+    # ------------------- km comparison -------------------- #
+
+    drtsc_km = drtsc_infos._values[0][1]
+    drtsc_pkm = drtsc_infos._values[4][1]
+
+    referencesc_km = referencesc_infos._values[0][1]
+    referencesc_pkm = referencesc_infos._values[4][1]
+
+    data={"km":[drtsc_km * millionfactor, referencesc_km * millionfactor], "pkm":(drtsc_pkm * millionfactor, referencesc_pkm * millionfactor)}
+    #gestacktes Balkendiagramm aus DF
+    km=pd.DataFrame(data,index=names)
+    km.plot(kind="bar",stacked=False,figsize=(10,8), ylabel="vehicle km and pkm in millions")
+
+    plt.title("km compariosn")
+    plt.legend(loc="upper right",bbox_to_anchor=(1, 1.15))
+    plt.yticks([drtsc_km * millionfactor, drtsc_pkm * millionfactor, referencesc_km * millionfactor, referencesc_pkm * millionfactor])
     fig1 = plt.gcf()
     # plt.show()
 
@@ -308,57 +340,87 @@ def compare_scnearios(path_drt, path_reference):
     referencesc_totalco2 = referencesc_lcatotal._values[0][1]
     referencesc_production = referencesc_lcatotal._values[2][1]
     referencesc_batteries = referencesc_lcatotal._values[3][1]
-    referencesc_use = referencesc_lcatotal._values[4][1] + referencesc_lcatotal._values[5][1]
+    referencesc_use = (referencesc_lcatotal._values[4][1] + referencesc_lcatotal._values[5][1])
 
     names = (drt_scenario, reference_scenario)
-    data={"production vehicles":[drtsc_production, referencesc_production], "additional batteries":(drtsc_batteries, referencesc_batteries), "use phase":(drtsc_use, referencesc_use)}
+    data={"production vehicles":[drtsc_production * millionfactor, referencesc_production * millionfactor], "additional batteries":(drtsc_batteries * millionfactor, referencesc_batteries * millionfactor), "use phase":(drtsc_use * millionfactor, referencesc_use * millionfactor)}
     #gestacktes Balkendiagramm aus DF
     df=pd.DataFrame(data,index=names)
-    df.plot(kind="bar",stacked=True,figsize=(10,8), ylabel="in t $C0_{2}$ äq")
+    df.plot(kind="bar",stacked=True,figsize=(10,8), ylabel="in million tonnes $C0_{2}$ äq")
 
     plt.title("GHG comparison")
-    plt.legend(loc="upper right",bbox_to_anchor=(0.8,1.0))
+    plt.legend(loc="upper right",bbox_to_anchor=(1, 1.15))
     # plt.yticks(np.arange(0, referencesc_totalco2, 1000000000))
-    plt.yticks([drtsc_totalco2, referencesc_totalco2])
+    plt.yticks([drtsc_totalco2 * millionfactor, referencesc_totalco2 * millionfactor])
     fig1 = plt.gcf()
     # plt.show()
 
     # ------------------- CO2 per year comparison ----#------------ #
 
     plt.rcParams["figure.figsize"] = (16,10)
-    plt.figure(3)
+    plt.figure(4)
     
     drtsc_co2year = drtsc_lcatotal._values[7][1]
     referencesc_co2year = referencesc_lcatotal._values[7][1]
 
-    style = dict(size=20, color='black')
+    drtsc_kmperyear = drtsc_infos._values[21][1] + drtsc_infos._values[22][1]
+    drtsc_pkmperyear = drtsc_infos._values[24][1] + drtsc_infos._values[25][1]
+
+    referencesc_drtvehicles = referencesc_infos._values[8][1]
+    referencesc_nondrtvehicles = referencesc_infos._values[9][1]
+
+    referencesc_kmperyear = referencesc_infos._values[21][1] + referencesc_infos._values[22][1]
+    referencesc_pkmperyear = referencesc_infos._values[24][1] + referencesc_infos._values[25][1]
+
+    years = []
 
     drt_co2values = []
-    drt_years = []
-    for x in range(0,11,1):
-        drt_co2values.append(drtsc_production + (drtsc_co2year * x))
-        drt_years.append(x)
+    drt_km = []
+    drt_pkm = []
 
     reference_co2values = []
-    reference_years = []
+    reference_km = []
+    reference_pkm = []
+
+    billion_factor = 1 / 1000000000
+
     for x in range(0,11,1):
-        reference_co2values.append(referencesc_production + (referencesc_co2year * x))
-        reference_years.append(x)
+        drt_co2values.append((drtsc_production + (drtsc_co2year * x)) * millionfactor)
+        years.append(x)
 
-    plt.plot(drt_years, drt_co2values, label="DRT", color="green")
-    plt.plot(reference_years, reference_co2values, label="reference", color="black")
+        reference_co2values.append((referencesc_production + (referencesc_co2year * x)) * millionfactor)
 
-    plt.title("GHG", style)
-    plt.legend(loc="lower left",bbox_to_anchor=(0.8,1.0), fontsize=17)
-    plt.xlabel("time in years", style)
-    plt.ylabel("in t $C0_{2}$ äq", style)
-    plt.tick_params(axis='both', labelsize = 17)
-    plt.xticks(np.arange(0, max(reference_years), 1))
-    plt.yticks(np.arange(0, max(reference_co2values), 1000000))
-    plt.ylim(bottom=0, top=max(reference_co2values))
-    plt.xlim(left=0, right=max(reference_years))
+        drt_km.append(drtsc_kmperyear * x * billion_factor)
+        reference_km.append(referencesc_kmperyear * x * billion_factor)
+
+        drt_pkm.append(drtsc_pkmperyear * x)
+        reference_pkm.append(referencesc_pkmperyear * x)
+
+
     plt.grid(visible=True)
+    plt.plot(years, drt_co2values, label="DRT", color="green")
+    plt.plot(years, reference_co2values, label="reference", color="black")
+    plt.ylabel("in million tonnes $C0_{2}$ äq", style)
+    plt.tick_params(axis='both', labelsize = 17)
+    plt.legend(loc="lower left",bbox_to_anchor=(0, 1.0), fontsize=17)
+    plt.xticks(np.arange(0, max(years), 1))
+    # plt.yticks(np.arange(0, max(reference_co2values), 2))
+
+    secondy = plt.twinx()
+    secondy.plot(years, drt_km, label="DRT", color="purple")
+    secondy.plot(years, reference_km, label="reference", color="blue")
+    secondy.legend(loc="lower left",bbox_to_anchor=(0.8, 1.0), fontsize=17)
+    secondy.set_ylim(bottom=0)
+    # # secondy.set_yticks(np.arange(0, max(reference_km)))
+
+
+    plt.title("GHG and km", style)
+    plt.xlabel("time in years", style)
+    # plt.ylim(bottom=0, top=max(reference_co2values))
+    plt.xlim(left=0, right=max(years))
     # fig2 = plt.gcf()
     # fig2.savefig(os.path.join('lca', 'co2peryearcomparison.png'), dpi=300)
 
     plt.show()
+
+    print("test")

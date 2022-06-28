@@ -10,6 +10,7 @@ import csv
 import pandas as pd
 import xml.etree.cElementTree as ET
 import sqlite3
+import numpy
 
 from configuration import *
 from database_operations import query_db
@@ -443,7 +444,8 @@ def calculate_avg_vehicle(path: str) -> dict:
         checknew = []
         checknew.append(line[0])
         check = set(vehicles) & set(checknew)
-        if check == set():
+        # if check == set() and str(line[0]) != str(-1.0) and str(line[0]) != str(0.0):
+        if check == set() and len(str(line[0]))>4:
             vehicles.append(line[0])
             if line[22] == 2:
                 small_vehicles += 1
@@ -465,7 +467,8 @@ def calculate_avg_vehicle(path: str) -> dict:
                     intown_pct += line[2]; countryroad_pct += line[3]; highway_pct += line[4]
                     avg_speed += line[12]; speed_pct += line[13]; speed_length += line[14]; speed_above_90 += line[15]; speed_below_70 += line[16]; speed_below_50 += line[17]; speed_below_30 += line[18]; speed_below_10 += line[19]
         else:
-            print("found duplicate vehicle in csv", line[0])
+            # print("found duplicate vehicle in csv", line[0])
+            pass
     
     # stores all retrieved information the dictionary
     info = {}

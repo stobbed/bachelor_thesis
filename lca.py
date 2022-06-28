@@ -338,7 +338,7 @@ class olcaclient():
         worksheet_drt = workbook.add_worksheet(name= "LCA_results_DRT")
 
         worksheet_drt.write(1, 0, "total CO2 emissions [t CO2-Eq]")
-        worksheet_drt.write(1, 1, "=SUM(B4:B7)")
+        worksheet_drt.write(1, 1, (drt_electric_production_vehicle + drt_electric_production_batteries + drt_electric_transport + drt_electric_consumption) * kgtotonnes)
 
         worksheet_drt.write(3, 0, "total emissions, production [t CO2-Eq]")
         worksheet_drt.write(3, 1, drt_electric_production_vehicle * kgtotonnes)
@@ -357,7 +357,7 @@ class olcaclient():
         worksheet_nondrt = workbook.add_worksheet(name= "LCA_results_non_DRT")
 
         worksheet_nondrt.write(1, 0, "total CO2 emissions [t CO2-Eq]")
-        worksheet_nondrt.write(1, 1, "=SUM(B4:B7)")
+        worksheet_nondrt.write(1, 1, ((electric_production_vehicle + combustion_production) + electric_production_batteries + (electric_transport + combustion_transport) + (electric_consumption + combustion_emissions)) * kgtotonnes)
 
         worksheet_nondrt.write(3, 0, "total emissions, production [t CO2-Eq]")
         worksheet_nondrt.write(3, 1, ((electric_production_vehicle + combustion_production) * kgtotonnes))
@@ -377,7 +377,7 @@ class olcaclient():
 
         if vehicles_drt != {}:
             worksheet_infos.write(1, 0, "totalkm [km]")
-            worksheet_infos.write(1, 1, "=SUM(B3+B4)")
+            worksheet_infos.write(1, 1, vehicles_drt['totalkm'] + vehicles_nondrt['totalkm'])
 
             worksheet_infos.write(2, 0, "totalkm_drt [km]")
             worksheet_infos.write(2, 1, vehicles_drt['totalkm'])
@@ -386,7 +386,7 @@ class olcaclient():
             worksheet_infos.write(3, 1, vehicles_nondrt['totalkm'])
 
             worksheet_infos.write(5, 0, "totalpkm [km]")
-            worksheet_infos.write(5, 1, "=SUM(B7+B8)")
+            worksheet_infos.write(5, 1, vehicles_drt['totalpkm'] + vehicles_nondrt['totalpkm'])
 
             worksheet_infos.write(6, 0, "totalpkm_drt [km]")
             worksheet_infos.write(6, 1, vehicles_drt['totalpkm'])
@@ -438,10 +438,45 @@ class olcaclient():
             worksheet_infos.write(20, 0, "avg_passengers_drt [1]")
             worksheet_infos.write(20, 1, vehicles_drt['avg_passengers'])
 
+            worksheet_infos.write(22, 0, "km_peryear_fleet_drt [km]")
+            worksheet_infos.write(22, 1, vehicles_drt['totalkm'] / years)
+
+            worksheet_infos.write(23, 0, "km_peryear_fleet_nondrt [km]")
+            worksheet_infos.write(23, 1, vehicles_nondrt['totalkm'] / years)
+
+            worksheet_infos.write(25, 0, "pkm_peryear_fleet_drt [km]")
+            worksheet_infos.write(25, 1, vehicles_drt['totalpkm'] / years)
+
+            worksheet_infos.write(26, 0, "pkm_peryear_fleet_nondrt [km]")
+            worksheet_infos.write(26, 1, vehicles_nondrt['totalpkm'] / years)
+
+            worksheet_infos.write(28, 0, "averaged_km_per_year_per_vehicle_drt [km]")
+            worksheet_infos.write(28, 1, vehicles_drt['km_per_vehicle_year'])
+
+            worksheet_infos.write(29, 0, "averaged_km_per_year_per_vehicle_nondrt [km]")
+            worksheet_infos.write(29, 1, vehicles_nondrt['km_per_vehicle_year'])
+
+            worksheet_infos.write(31, 0, "averaged_pkm_per_year_per_vehicle_drt [km]")
+            worksheet_infos.write(31, 1, vehicles_drt['pkm_per_vehicle_year'])
+
+            worksheet_infos.write(32, 0, "averaged_pkm_per_year_per_vehicle_nondrt [km]")
+            worksheet_infos.write(32, 1, vehicles_nondrt['pkm_per_vehicle_year'])
+
+            worksheet_infos.write(34, 0, "averaged_km_per_day_per_vehicle_drt [km]")
+            worksheet_infos.write(34, 1, vehicles_drt['km_per_vehicle_day'])
+
+            worksheet_infos.write(35, 0, "averaged_km_per_day_per_vehicle_nondrt [km]")
+            worksheet_infos.write(35, 1, vehicles_nondrt['km_per_vehicle_day'])
+
+            worksheet_infos.write(37, 0, "averaged_pkm_per_day_per_vehicle_drt [km]")
+            worksheet_infos.write(37, 1, vehicles_drt['pkm_per_vehicle_day'])
+
+            worksheet_infos.write(38, 0, "averaged_pkm_per_day_per_vehicle_nondrt [km]")
+            worksheet_infos.write(38, 1, vehicles_nondrt['pkm_per_vehicle_day'])
 
         else:
             worksheet_infos.write(1, 0, "totalkm [km]")
-            worksheet_infos.write(1, 1, "=SUM(B3+B4)")
+            worksheet_infos.write(1, 1, vehicles_nondrt['totalkm'])
 
             worksheet_infos.write(2, 0, "totalkm_drt [km]")
             worksheet_infos.write(2, 1, 0)
@@ -450,7 +485,7 @@ class olcaclient():
             worksheet_infos.write(3, 1, vehicles_nondrt['totalkm'])
 
             worksheet_infos.write(5, 0, "totalpkm [km]")
-            worksheet_infos.write(5, 1, "=SUM(B7+B8)")
+            worksheet_infos.write(5, 1, vehicles_nondrt['totalpkm'])
 
             worksheet_infos.write(6, 0, "totalpkm_drt [km]")
             worksheet_infos.write(6, 1, 0)
@@ -482,15 +517,43 @@ class olcaclient():
             worksheet_infos.write(20, 0, "avg_passengers_drt [1]")
             worksheet_infos.write(20, 1, 0)
 
-        width= len("number_vehicles_nondrt [1]")
+            worksheet_infos.write(22, 0, "km_peryear_fleet_drt [km]")
+            worksheet_infos.write(22, 1, 0)
+
+            worksheet_infos.write(23, 0, "km_peryear_fleet_nondrt [km]")
+            worksheet_infos.write(23, 1, vehicles_nondrt['totalkm'] / years)
+
+            worksheet_infos.write(25, 0, "pkm_peryear_fleet_drt [km]")
+            worksheet_infos.write(25, 1, 0)
+
+            worksheet_infos.write(26, 0, "pkm_peryear_fleet_nondrt [km]")
+            worksheet_infos.write(26, 1, vehicles_nondrt['totalpkm'] / years)
+
+            worksheet_infos.write(28, 0, "averaged_km_per_year_per_vehicle_drt [km]")
+            worksheet_infos.write(28, 1, 0)
+
+            worksheet_infos.write(29, 0, "averaged_km_per_year_per_vehicle_nondrt [km]")
+            worksheet_infos.write(29, 1, vehicles_nondrt['km_per_vehicle_year'])
+
+            worksheet_infos.write(31, 0, "averaged_pkm_per_year_per_vehicle_drt [km]")
+            worksheet_infos.write(31, 1, 0)
+
+            worksheet_infos.write(32, 0, "averaged_pkm_per_year_per_vehicle_nondrt [km]")
+            worksheet_infos.write(32, 1, vehicles_nondrt['pkm_per_vehicle_year'])
+
+            worksheet_infos.write(34, 0, "averaged_km_per_day_per_vehicle_drt [km]")
+            worksheet_infos.write(34, 1, 0)
+
+            worksheet_infos.write(35, 0, "averaged_km_per_day_per_vehicle_nondrt [km]")
+            worksheet_infos.write(35, 1, vehicles_nondrt['km_per_vehicle_day'])
+
+            worksheet_infos.write(37, 0, "averaged_pkm_per_day_per_vehicle_drt [km]")
+            worksheet_infos.write(37, 1, 0)
+
+            worksheet_infos.write(38, 0, "averaged_pkm_per_day_per_vehicle_nondrt [km]")
+            worksheet_infos.write(38, 1, vehicles_nondrt['pkm_per_vehicle_day'])
+
+        width= len("averaged_km_per_year_per_vehicle_nondrt [km]")
         worksheet_infos.set_column(0,0, width)
 
         workbook.close()
-
-    # def lifecycleassessment_reference(self):
-
-    #     # set name for production product system
-    #     production_name = "passenger car production, " + drive + ", " + size + " size passenger car | Cutoff, U"
-
-    #     # set name for transport product system
-    #     transport_name = "transport only, passenger car, " + size + " size, " + drive + " | Cutoff, U"
