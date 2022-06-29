@@ -77,7 +77,7 @@ class configgui(tk.Tk, object):
         self.path_reference_button.grid(column=2, row=4)
 
 
-        # vehicle size note, label and box
+        # Energymix note, label and box
         self.energymix_note = ttk.Label(self, text="Select the grid mix that is to be used for the use phase of BEVs")
         self.energymix_note.grid(column=0, row=5, columnspan=3, pady=5)
         self.energymix_note.configure(font=description)
@@ -150,7 +150,7 @@ class configgui(tk.Tk, object):
         self.mainloop()
 
     def startscript(self):
-        ''' retrieve paths from GUI and store them in the config.ini '''
+        ''' retrieve paths from GUI and stores them in the config.ini '''
 
         edit = configparser.ConfigParser()
         edit.read("config.ini")
@@ -161,7 +161,7 @@ class configgui(tk.Tk, object):
         paths['path_drt'] = self.path_drt_box.get()
         paths['path_reference'] = self.path_reference_box.get()
 
-        vehicleparameters['drt_vehiclesize'] = self.energymix_combo.get()
+        vehicleparameters['energymix'] = self.energymix_combo.get()
         vehicleparameters['charging'] = self.charging_combo.get()
         
         settings['publictransport_ignore'] = self.publictransport_combo.get()
@@ -255,6 +255,7 @@ class vehicleparams(tk.Tk, object):
         self.columnconfigure(4, weight=1)
         self.columnconfigure(5, weight=3)
 
+        # headers
         self.small_label = ttk.Label(self, text="small")
         self.small_label.grid(column= 0, row=0, columnspan=2)
         self.small_label.configure(font=title)
@@ -267,6 +268,7 @@ class vehicleparams(tk.Tk, object):
         self.large_label.grid(column= 4, row=0, columnspan=2)
         self.large_label.configure(font=title)
 
+        # masses
         self.mass_small_label = ttk.Label(self, text="mass [kg]:")
         self.mass_small_label.grid(column=0, row=1, sticky=tk.E)
         self.mass_small_label.configure(font=description)
@@ -291,7 +293,7 @@ class vehicleparams(tk.Tk, object):
         self.mass_large_box.grid(column=5, row=1, sticky=tk.E, pady=10)
         self.mass_large_box.insert(0, self.mass_large)
 
-
+        # bettery sizes
         self.battery_small_label = ttk.Label(self, text="battery size [kWh]:")
         self.battery_small_label.grid(column=0, row=2, sticky=tk.E)
         self.battery_small_label.configure(font=description)
@@ -316,7 +318,7 @@ class vehicleparams(tk.Tk, object):
         self.battery_large_box.grid(column=5, row=2, sticky=tk.E, pady=10)
         self.battery_large_box.insert(0, self.battery_large)
 
-
+        # battery sizes opportunity 
         self.battery_small_opportunity_label = ttk.Label(self, text="battery size opportunity [kWh]:")
         self.battery_small_opportunity_label.grid(column=0, row=3, sticky=tk.E)
         self.battery_small_opportunity_label.configure(font=description)
@@ -341,7 +343,7 @@ class vehicleparams(tk.Tk, object):
         self.battery_large_opportunity_box.grid(column=5, row=3, sticky=tk.E, pady=10)
         self.battery_large_opportunity_box.insert(0, self.battery_large_opportunity)
 
-
+        # consumptions
         self.consumption_small_label = ttk.Label(self, text="consumption [kWh/100km]:")
         self.consumption_small_label.grid(column=0, row=4, sticky=tk.E)
         self.consumption_small_label.configure(font=description)
@@ -366,7 +368,7 @@ class vehicleparams(tk.Tk, object):
         self.consumption_large_box.grid(column=5, row=4, sticky=tk.E, pady=10)
         self.consumption_large_box.insert(0, self.consumption_large)
 
-
+        # consumption if chosen opportunity charging strategy
         self.consumption_small_opportunity_label = ttk.Label(self, text="consumption opportunity [kWh/100km]:")
         self.consumption_small_opportunity_label.grid(column=0, row=5, sticky=tk.E)
         self.consumption_small_opportunity_label.configure(font=description)
@@ -391,9 +393,11 @@ class vehicleparams(tk.Tk, object):
         self.consumption_large_opportunity_box.grid(column=5, row=5, sticky=tk.E, pady=10)
         self.consumption_large_opportunity_box.insert(0, self.consumption_large_opportunity)
 
+        # restores values from vehiclestandards.ini
         self.restorestandards_button = ttk.Button(self, text="restore standards", command=self.restorestandards)
         self.restorestandards_button.grid(column=1, row=6, sticky=tk.W, columnspan=4)
 
+        # saves paramters and closes the window
         self.saveparameters_button = ttk.Button(self, text="save parameters and close", command=lambda:[f() for f in [self.saveparameters, self.destroy]])
         self.saveparameters_button.grid(column=1, row=6, sticky=tk.E, columnspan=4)
         self.mainloop()

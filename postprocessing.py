@@ -5,6 +5,7 @@ from processing import *
 
 import matplotlib.pyplot as plt
 import numpy as np
+from datetime import datetime
 
 import warnings
 warnings.simplefilter("ignore")
@@ -101,7 +102,7 @@ def scale_scenario(vehicleinfo: dict, pct_scenario: int = 10):
             drt_speed_factor = 1
 
         drt_vehicleamount_scaled = drt_vehicleamount * drt_scalingfactor_vehicles
-        drt_vehicleamount_scaled = int(drt_vehicleamount_scaled) + 1
+        drt_vehicleamount_scaled = int(drt_vehicleamount_scaled)
 
         drt_avg_passenger_scaled = drt_avg_passenger * drt_scalingfactor_persons
 
@@ -277,8 +278,8 @@ def compare_scnearios(path_drt, path_reference):
     drt_scenario = getsimulationname(path_drt)
     reference_scenario = getsimulationname(path_reference)
 
-    drt_excel = os.path.join("lca","results_" + drt_scenario + ".xlsx")
-    reference_excel = os.path.join("lca","results_" +  reference_scenario + ".xlsx")
+    drt_excel = os.path.join("lca",str(drt_scenario), "results_" + drt_scenario + ".xlsx")
+    reference_excel = os.path.join("lca",str(reference_scenario), "results_" +  reference_scenario + ".xlsx")
 
     drtsc_lcatotal = pd.read_excel(os.path.join(drt_excel), sheet_name="LCA_results_total")
     referencesc_lcatotal = pd.read_excel(os.path.join(reference_excel), sheet_name="LCA_results_total")
@@ -290,25 +291,31 @@ def compare_scnearios(path_drt, path_reference):
 
     millionfactor = 1/1000000
 
+    imagefolder = os.path.join("lca", datetime.today().strftime('%Y-%m-%d_%H-%M-%S'))
+    if not os.path.exists(imagefolder):
+        os.mkdir(imagefolder)
+
     # ------------------- vehicle amount comparison -------------------- #
 
     drtsc_drtvehicles = drtsc_infos._values[8][1]
-    drtsc_nondrtvehicles = drtsc_infos._values[9][1]
+    drtsc_nondrtvehicles = drtsc_infos._values[12][1]
 
     referencesc_drtvehicles = referencesc_infos._values[8][1]
-    referencesc_nondrtvehicles = referencesc_infos._values[9][1]
+    referencesc_nondrtvehicles = referencesc_infos._values[12][1]
 
     names = (drt_scenario, reference_scenario)
     data={"drt_vehicles_electric":[drtsc_drtvehicles, referencesc_drtvehicles], "non_drt_vehicles_combustion":(drtsc_nondrtvehicles * (float(getfromvehicleconfig('vehicle_distribution', 'share_petrol', True)) + float(getfromvehicleconfig('vehicle_distribution', 'share_diesel', True)) + (1/2) * float(getfromvehicleconfig('vehicle_distribution', 'share_plugin', True))), referencesc_nondrtvehicles * (float(getfromvehicleconfig('vehicle_distribution', 'share_petrol', True)) + float(getfromvehicleconfig('vehicle_distribution', 'share_diesel', True)) + (1/2) * float(getfromvehicleconfig('vehicle_distribution', 'share_plugin', True)))), "non_drt_vehicles_electric":(drtsc_nondrtvehicles * (float(getfromvehicleconfig('vehicle_distribution', 'share_electric', True)) + float(getfromvehicleconfig('vehicle_distribution', 'share_plugin', True))), referencesc_nondrtvehicles * (float(getfromvehicleconfig('vehicle_distribution', 'share_electric', True)) + float(getfromvehicleconfig('vehicle_distribution', 'share_plugin', True))))}
     #gestacktes Balkendiagramm aus DF
     va=pd.DataFrame(data,index=names)
-    va.plot(kind="bar",stacked=True,figsize=(10,8), ylabel="in t $C0_{2}$ äq")
+    va.plot(kind="bar",stacked=True,figsize=(10,8), ylabel="in t $C0_{2}$ eq", rot=0)
 
     plt.title("vehicle amount")
     plt.legend(loc="upper right", bbox_to_anchor=(1, 1.15))
     plt.ylabel("number of vehicles")
     plt.yticks([drtsc_drtvehicles + drtsc_nondrtvehicles, referencesc_drtvehicles + referencesc_nondrtvehicles])
     fig1 = plt.gcf()
+
+    fig1.savefig(os.path.join(imagefolder, 'vehicleamount_comparison.png'), dpi=300)
     # plt.show()
 
     # ------------------- km comparison -------------------- #
@@ -322,12 +329,13 @@ def compare_scnearios(path_drt, path_reference):
     data={"km":[drtsc_km * millionfactor, referencesc_km * millionfactor], "pkm":(drtsc_pkm * millionfactor, referencesc_pkm * millionfactor)}
     #gestacktes Balkendiagramm aus DF
     km=pd.DataFrame(data,index=names)
-    km.plot(kind="bar",stacked=False,figsize=(10,8), ylabel="vehicle km and pkm in millions")
+    km.plot(kind="bar",stacked=False,figsize=(10,8), ylabel="vehicle km and pkm in millions", rot=0)
 
     plt.title("km compariosn")
     plt.legend(loc="upper right",bbox_to_anchor=(1, 1.15))
     plt.yticks([drtsc_km * millionfactor, drtsc_pkm * millionfactor, referencesc_km * millionfactor, referencesc_pkm * millionfactor])
-    fig1 = plt.gcf()
+    fig2 = plt.gcf()
+    fig2.savefig(os.path.join(imagefolder, 'km and pkm_comparison.png'), dpi=300)
     # plt.show()
 
     # ------------------- total CO2 comparison -------------------- #
@@ -346,13 +354,14 @@ def compare_scnearios(path_drt, path_reference):
     data={"production vehicles":[drtsc_production * millionfactor, referencesc_production * millionfactor], "additional batteries":(drtsc_batteries * millionfactor, referencesc_batteries * millionfactor), "use phase":(drtsc_use * millionfactor, referencesc_use * millionfactor)}
     #gestacktes Balkendiagramm aus DF
     df=pd.DataFrame(data,index=names)
-    df.plot(kind="bar",stacked=True,figsize=(10,8), ylabel="in million tonnes $C0_{2}$ äq")
+    df.plot(kind="bar",stacked=True,figsize=(10,8), ylabel="in million tonnes $C0_{2}$ eq", rot=0)
 
     plt.title("GHG comparison")
     plt.legend(loc="upper right",bbox_to_anchor=(1, 1.15))
     # plt.yticks(np.arange(0, referencesc_totalco2, 1000000000))
     plt.yticks([drtsc_totalco2 * millionfactor, referencesc_totalco2 * millionfactor])
-    fig1 = plt.gcf()
+    fig3 = plt.gcf()
+    fig3.savefig(os.path.join(imagefolder, 'totalco2_comparison.png'), dpi=300)
     # plt.show()
 
     # ------------------- CO2 per year comparison ----#------------ #
@@ -363,14 +372,14 @@ def compare_scnearios(path_drt, path_reference):
     drtsc_co2year = drtsc_lcatotal._values[7][1]
     referencesc_co2year = referencesc_lcatotal._values[7][1]
 
-    drtsc_kmperyear = drtsc_infos._values[21][1] + drtsc_infos._values[22][1]
-    drtsc_pkmperyear = drtsc_infos._values[24][1] + drtsc_infos._values[25][1]
+    drtsc_kmperyear = drtsc_infos._values[24][1] + drtsc_infos._values[25][1]
+    drtsc_pkmperyear = drtsc_infos._values[27][1] + drtsc_infos._values[28][1]
 
     referencesc_drtvehicles = referencesc_infos._values[8][1]
     referencesc_nondrtvehicles = referencesc_infos._values[9][1]
 
-    referencesc_kmperyear = referencesc_infos._values[21][1] + referencesc_infos._values[22][1]
-    referencesc_pkmperyear = referencesc_infos._values[24][1] + referencesc_infos._values[25][1]
+    referencesc_kmperyear = referencesc_infos._values[24][1] + referencesc_infos._values[25][1]
+    referencesc_pkmperyear = referencesc_infos._values[27][1] + referencesc_infos._values[28][1]
 
     years = []
 
@@ -400,7 +409,7 @@ def compare_scnearios(path_drt, path_reference):
     plt.grid(visible=True)
     plt.plot(years, drt_co2values, label="DRT", color="green")
     plt.plot(years, reference_co2values, label="reference", color="black")
-    plt.ylabel("in million tonnes $C0_{2}$ äq", style)
+    plt.ylabel("GHG in million tonnes $C0_{2}$ eq", style)
     plt.tick_params(axis='both', labelsize = 17)
     plt.legend(loc="lower left",bbox_to_anchor=(0, 1.0), fontsize=17)
     plt.xticks(np.arange(0, max(years), 1))
@@ -410,17 +419,17 @@ def compare_scnearios(path_drt, path_reference):
     secondy.plot(years, drt_km, label="DRT", color="purple")
     secondy.plot(years, reference_km, label="reference", color="blue")
     secondy.legend(loc="lower left",bbox_to_anchor=(0.8, 1.0), fontsize=17)
-    secondy.set_ylim(bottom=0)
-    # # secondy.set_yticks(np.arange(0, max(reference_km)))
+    secondy.set_ylim(bottom=0, top=max(reference_km))
+    secondy.set_ylabel("total km in billion km for scenario [km]", style)
+    secondy.tick_params(axis='both', labelsize = 17)
+    # secondy.set_yticks(np.arange(0, max(reference_km), 5), style)
 
 
     plt.title("GHG and km", style)
     plt.xlabel("time in years", style)
     # plt.ylim(bottom=0, top=max(reference_co2values))
     plt.xlim(left=0, right=max(years))
-    # fig2 = plt.gcf()
-    # fig2.savefig(os.path.join('lca', 'co2peryearcomparison.png'), dpi=300)
+    fig4 = plt.gcf()
+    fig4.savefig(os.path.join(imagefolder, 'co2_peryear_comparison.png'), dpi=300)
 
     plt.show()
-
-    print("test")

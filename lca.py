@@ -22,7 +22,7 @@ class olcaclient():
         if not os.path.exists('lca'):
             os.mkdir('lca')
         self._resultspath = 'lca'
-        self.gridmix = getfromconfig('vehicle_parameters', 'gridmix')
+        self.gridmix = getfromconfig('vehicle_parameters', 'energymix')
         self.charging = getfromconfig('vehicle_parameters', 'charging')
         self.parameterdict = {}
         self.readparameters_from_config()
@@ -48,6 +48,7 @@ class olcaclient():
             self._setup.parameter_redefs.append(redef_Parameter)
     
     def readparameters_from_config(self):
+        """ reads (adjusted) paramters from vehicle.ini and stores them in the redefinition dict to redefine the parameters inside OLCA """
         self.mass_electric_small = float(getfromvehicleconfig('mass_wo_battery','mass_electric_small'))
         self.mass_electric_medium = float(getfromvehicleconfig('mass_wo_battery','mass_electric_medium'))
         self.mass_electric_large = float(getfromvehicleconfig('mass_wo_battery','mass_electric_large'))
@@ -76,6 +77,7 @@ class olcaclient():
         self.mass_diesel_medium = float(getfromvehicleconfig('combustion_mass','mass_diesel_medium', True))
         self.mass_diesel_large = float(getfromvehicleconfig('combustion_mass','mass_diesel_large', True))
 
+        # storing inside dictionary for redefinition purposes
         self.parameterdict['mass_electric_small_wo_battery'] = self.mass_electric_small
         self.parameterdict['mass_electric_medium_wo_battery'] = self.mass_electric_medium
         self.parameterdict['mass_electric_large_wo_battery'] = self.mass_electric_large
@@ -89,7 +91,8 @@ class olcaclient():
         self.parameterdict['battery_size_large_opportunity'] = self.battery_large_opportunity
 
 
-    def calculate_and_save(self, productname):
+    def calculate_and_save(self, productname: str):
+        """ calculating the in the input productname specified productsystem and saving its results in an excel file """
         productsystem = self._client.find(olca.ProductSystem, productname)
         self._setup.product_system = productsystem
         excelname = os.path.join(self._resultspath, productname + '.xlsx')
@@ -102,7 +105,9 @@ class olcaclient():
             print('Berechnung hat nicht stattgefunden'+ e) 
         
 
-    def lifecycleassessment(self, vehicles_drt, vehicles_nondrt, simulationname):
+    def lifecycleassessment(self, vehicles_drt: dict, vehicles_nondrt: dict, simulationname: str):
+        """ creates the lifecycle asssessment for one scenario when given the vehicles drt and vehicles non drt file after scaling """
+        
         electricity_use = "electric use"
         battery_production = "battery production, Li-ion, rechargeable, prismatic | battery, Li-ion, rechargeable, prismatic | Cutoff, U"
         
@@ -113,7 +118,7 @@ class olcaclient():
             self.calculate_and_save(electricity_use)
         electricity_use_kWh = pd.read_excel(os.path.join(self._resultspath, electricity_use + '.xlsx'), skiprows=3, nrows=1, sheet_name="Impacts", usecols="E", header=None, names=["Nutzung"]).iloc[0]["Nutzung"]
         
-
+        # converison factor for battery capacity to battery weight
         kWh_to_kg = 1000 / int(getfromvehicleconfig('battery_specs', 'energy_density', True))
 
         totaldrivenkm = 0
@@ -133,12 +138,15 @@ class olcaclient():
         combustion_consumption = 0
         combustion_emissions = 0
 
+        # conversion factor for combustion fuels to weight
         petrol_combined_density = ((0.9478 * 747.5) + ((1-0.9478) * 782))       # nach Florian Heining
         diesel_combined_density = ((0.9085 * 832.5) + ((1-0.9085) * 879))
 
+        # if there are any DRT vehicles in the scenario this condition is true and the following is executed
         if vehicles_drt != {}:
             totaldrivenkm += vehicles_drt['totalkm']
             totaldrivenpkm += vehicles_drt['totalpkm']
+            # loops through dictionary since the information is stored for each size in the dictionary
             for size, vehiclesize in vehicles_drt.items():
                 if size == 'small' or size == 'medium' or size == 'large':
                     electric_production_name = "drt production, electric, " + self.charging + ", " + size +  " size passenger car | Cutoff, U"
@@ -184,11 +192,14 @@ class olcaclient():
             drt_electric_production_batteries = (drt_batteries_kwh * kWh_to_kg) * electric_production_battery_kg
             drt_electric_consumption = vehicles_drt['consumption'] * electricity_use_kWh
 
+        # if there are any DRT vehicles in the scenario this condition is true and the following is executed
         if vehicles_nondrt != {}:
             totaldrivenkm += vehicles_nondrt['totalkm']
             totaldrivenpkm += vehicles_nondrt['totalpkm']
+            # vehicle contains fuels as the first level
             for fuel, vehiclesizes in vehicles_nondrt.items():
                 if fuel == 'electric':
+                    # the second level is again size 
                     for size, vehiclesize in vehiclesizes.items():
                         if size == 'small' or size == 'medium' or size == 'large':
                             electric_production_name = "drt production, electric, " + self.charging + ", " + size +  " size passenger car | Cutoff, U"
@@ -270,8 +281,12 @@ class olcaclient():
 
         totalemissions = totalemissions_production + totalemissions_transport + totalemissions_use + totalemissions_batteries
 
-        # create excel file
-        workbook = xlsxwriter.Workbook(os.path.join(self._resultspath, "results_" + str(simulationname) + ".xlsx"))
+        # -------------------------------------- results creation ------------------------------------------ #
+
+        # create excel results file
+        if not os.path.exists(os.path.join(self._resultspath, str(simulationname))):
+            os.mkdir(os.path.join(self._resultspath, str(simulationname)))
+        workbook = xlsxwriter.Workbook(os.path.join(self._resultspath, str(simulationname), "results_" + str(simulationname) + ".xlsx"))
 
         kgtotonnes = 1/1000
         years = int(getfromconfig("vehicle_parameters", "timespan_in_years"))
@@ -335,6 +350,7 @@ class olcaclient():
         width= len("emissions per averaged pkm, batteries [t CO2-Eq]")
         worksheet_tot.set_column(0,0, width)
 
+
         worksheet_drt = workbook.add_worksheet(name= "LCA_results_DRT")
 
         worksheet_drt.write(1, 0, "total CO2 emissions [t CO2-Eq]")
@@ -353,6 +369,7 @@ class olcaclient():
         worksheet_drt.write(6, 1, drt_electric_consumption * kgtotonnes)
 
         worksheet_drt.set_column(0,0, width)
+
 
         worksheet_nondrt = workbook.add_worksheet(name= "LCA_results_non_DRT")
 
@@ -385,6 +402,7 @@ class olcaclient():
             worksheet_infos.write(3, 0, "totalkm_nondrt [km]")
             worksheet_infos.write(3, 1, vehicles_nondrt['totalkm'])
 
+
             worksheet_infos.write(5, 0, "totalpkm [km]")
             worksheet_infos.write(5, 1, vehicles_drt['totalpkm'] + vehicles_nondrt['totalpkm'])
 
@@ -393,6 +411,7 @@ class olcaclient():
 
             worksheet_infos.write(7, 0, "totalpkm_nondrt [km]")
             worksheet_infos.write(7, 1, vehicles_nondrt['totalpkm'])
+
 
             worksheet_infos.write(9, 0, "number_vehicles_drt [1]")
             worksheet_infos.write(9, 1, vehicles_drt['total_vehicles'])
@@ -412,67 +431,67 @@ class olcaclient():
 
             worksheet_infos.write(10, 0, "number_small_vehicles_drt [1]")
             worksheet_infos.write(10, 1, small_vehicles)
-            worksheet_infos.write(10, 0, "number_medium_vehicles_drt [1]")
-            worksheet_infos.write(10, 1, medium_vehicles)
-            worksheet_infos.write(10, 0, "number_large_vehicles_drt [1]")
-            worksheet_infos.write(10, 1, large_vehicles)
+            worksheet_infos.write(11, 0, "number_medium_vehicles_drt [1]")
+            worksheet_infos.write(11, 1, medium_vehicles)
+            worksheet_infos.write(12, 0, "number_large_vehicles_drt [1]")
+            worksheet_infos.write(12, 1, large_vehicles)
 
-            worksheet_infos.write(10, 0, "number_vehicles_nondrt [1]")
-            worksheet_infos.write(10, 1, vehicles_nondrt['total_vehicles'])
+            worksheet_infos.write(13, 0, "number_vehicles_nondrt [1]")
+            worksheet_infos.write(13, 1, vehicles_nondrt['total_vehicles'])
 
-            worksheet_infos.write(12, 0, "avg_speed_drt [km/h]")
-            worksheet_infos.write(12, 1, vehicles_drt['avg_speed'])
+            worksheet_infos.write(15, 0, "avg_speed_drt [km/h]")
+            worksheet_infos.write(15, 1, vehicles_drt['avg_speed'])
 
-            worksheet_infos.write(13, 0, "avg_speed_nondrt [km/h]")
-            worksheet_infos.write(13, 1, vehicles_nondrt['avg_speed'])
+            worksheet_infos.write(16, 0, "avg_speed_nondrt [km/h]")
+            worksheet_infos.write(16, 1, vehicles_nondrt['avg_speed'])
 
-            worksheet_infos.write(15, 0, "speed_pct_drt [1]")
-            worksheet_infos.write(15, 1, vehicles_drt['speed_pct'])
+            worksheet_infos.write(18, 0, "speed_pct_drt [1]")
+            worksheet_infos.write(18, 1, vehicles_drt['speed_pct'])
 
-            worksheet_infos.write(16, 0, "speed_pct_nondrt [1]")
-            worksheet_infos.write(16, 1, vehicles_nondrt['speed_pct'])
+            worksheet_infos.write(19, 0, "speed_pct_nondrt [1]")
+            worksheet_infos.write(19, 1, vehicles_nondrt['speed_pct'])
 
-            worksheet_infos.write(18, 0, "total_batteries_drt [1]")
-            worksheet_infos.write(18, 1, vehicles_drt['total_batteries'])
+            worksheet_infos.write(21, 0, "total_batteries_drt [1]")
+            worksheet_infos.write(21, 1, vehicles_drt['total_batteries'])
 
-            worksheet_infos.write(20, 0, "avg_passengers_drt [1]")
-            worksheet_infos.write(20, 1, vehicles_drt['avg_passengers'])
+            worksheet_infos.write(23, 0, "avg_passengers_drt [1]")
+            worksheet_infos.write(23, 1, vehicles_drt['avg_passengers'])
 
-            worksheet_infos.write(22, 0, "km_peryear_fleet_drt [km]")
-            worksheet_infos.write(22, 1, vehicles_drt['totalkm'] / years)
+            worksheet_infos.write(25, 0, "km_peryear_fleet_drt [km]")
+            worksheet_infos.write(25, 1, vehicles_drt['totalkm'] / years)
 
-            worksheet_infos.write(23, 0, "km_peryear_fleet_nondrt [km]")
-            worksheet_infos.write(23, 1, vehicles_nondrt['totalkm'] / years)
+            worksheet_infos.write(26, 0, "km_peryear_fleet_nondrt [km]")
+            worksheet_infos.write(26, 1, vehicles_nondrt['totalkm'] / years)
 
-            worksheet_infos.write(25, 0, "pkm_peryear_fleet_drt [km]")
-            worksheet_infos.write(25, 1, vehicles_drt['totalpkm'] / years)
+            worksheet_infos.write(28, 0, "pkm_peryear_fleet_drt [km]")
+            worksheet_infos.write(28, 1, vehicles_drt['totalpkm'] / years)
 
-            worksheet_infos.write(26, 0, "pkm_peryear_fleet_nondrt [km]")
-            worksheet_infos.write(26, 1, vehicles_nondrt['totalpkm'] / years)
+            worksheet_infos.write(29, 0, "pkm_peryear_fleet_nondrt [km]")
+            worksheet_infos.write(29, 1, vehicles_nondrt['totalpkm'] / years)
 
-            worksheet_infos.write(28, 0, "averaged_km_per_year_per_vehicle_drt [km]")
-            worksheet_infos.write(28, 1, vehicles_drt['km_per_vehicle_year'])
+            worksheet_infos.write(31, 0, "averaged_km_per_year_per_vehicle_drt [km]")
+            worksheet_infos.write(31, 1, vehicles_drt['km_per_vehicle_year'])
 
-            worksheet_infos.write(29, 0, "averaged_km_per_year_per_vehicle_nondrt [km]")
-            worksheet_infos.write(29, 1, vehicles_nondrt['km_per_vehicle_year'])
+            worksheet_infos.write(32, 0, "averaged_km_per_year_per_vehicle_nondrt [km]")
+            worksheet_infos.write(32, 1, vehicles_nondrt['km_per_vehicle_year'])
 
-            worksheet_infos.write(31, 0, "averaged_pkm_per_year_per_vehicle_drt [km]")
-            worksheet_infos.write(31, 1, vehicles_drt['pkm_per_vehicle_year'])
+            worksheet_infos.write(34, 0, "averaged_pkm_per_year_per_vehicle_drt [km]")
+            worksheet_infos.write(34, 1, vehicles_drt['pkm_per_vehicle_year'])
 
-            worksheet_infos.write(32, 0, "averaged_pkm_per_year_per_vehicle_nondrt [km]")
-            worksheet_infos.write(32, 1, vehicles_nondrt['pkm_per_vehicle_year'])
+            worksheet_infos.write(35, 0, "averaged_pkm_per_year_per_vehicle_nondrt [km]")
+            worksheet_infos.write(35, 1, vehicles_nondrt['pkm_per_vehicle_year'])
 
-            worksheet_infos.write(34, 0, "averaged_km_per_day_per_vehicle_drt [km]")
-            worksheet_infos.write(34, 1, vehicles_drt['km_per_vehicle_day'])
+            worksheet_infos.write(37, 0, "averaged_km_per_day_per_vehicle_drt [km]")
+            worksheet_infos.write(37, 1, vehicles_drt['km_per_vehicle_day'])
 
-            worksheet_infos.write(35, 0, "averaged_km_per_day_per_vehicle_nondrt [km]")
-            worksheet_infos.write(35, 1, vehicles_nondrt['km_per_vehicle_day'])
+            worksheet_infos.write(38, 0, "averaged_km_per_day_per_vehicle_nondrt [km]")
+            worksheet_infos.write(38, 1, vehicles_nondrt['km_per_vehicle_day'])
 
-            worksheet_infos.write(37, 0, "averaged_pkm_per_day_per_vehicle_drt [km]")
-            worksheet_infos.write(37, 1, vehicles_drt['pkm_per_vehicle_day'])
+            worksheet_infos.write(40, 0, "averaged_pkm_per_day_per_vehicle_drt [km]")
+            worksheet_infos.write(40, 1, vehicles_drt['pkm_per_vehicle_day'])
 
-            worksheet_infos.write(38, 0, "averaged_pkm_per_day_per_vehicle_nondrt [km]")
-            worksheet_infos.write(38, 1, vehicles_nondrt['pkm_per_vehicle_day'])
+            worksheet_infos.write(41, 0, "averaged_pkm_per_day_per_vehicle_nondrt [km]")
+            worksheet_infos.write(41, 1, vehicles_nondrt['pkm_per_vehicle_day'])
 
         else:
             worksheet_infos.write(1, 0, "totalkm [km]")
@@ -496,62 +515,69 @@ class olcaclient():
             worksheet_infos.write(9, 0, "number_vehicles_drt [1]")
             worksheet_infos.write(9, 1, 0)
 
-            worksheet_infos.write(10, 0, "number_vehicles_nondrt [1]")
-            worksheet_infos.write(10, 1, vehicles_nondrt['total_vehicles'])
-
-            worksheet_infos.write(12, 0, "avg_speed_drt [km/h]")
+            worksheet_infos.write(10, 0, "number_small_vehicles_drt [1]")
+            worksheet_infos.write(10, 1, 0)
+            worksheet_infos.write(11, 0, "number_medium_vehicles_drt [1]")
+            worksheet_infos.write(11, 1, 0)
+            worksheet_infos.write(12, 0, "number_large_vehicles_drt [1]")
             worksheet_infos.write(12, 1, 0)
 
-            worksheet_infos.write(13, 0, "avg_speed_nondrt [km/h]")
-            worksheet_infos.write(13, 1, vehicles_nondrt['avg_speed'])
+            worksheet_infos.write(13, 0, "number_vehicles_nondrt [1]")
+            worksheet_infos.write(13, 1, vehicles_nondrt['total_vehicles'])
 
-            worksheet_infos.write(15, 0, "speed_pct_drt [1]")
+            worksheet_infos.write(15, 0, "avg_speed_drt [km/h]")
             worksheet_infos.write(15, 1, 0)
 
-            worksheet_infos.write(16, 0, "speed_pct_nondrt [1]")
-            worksheet_infos.write(16, 1, vehicles_nondrt['speed_pct'])
+            worksheet_infos.write(16, 0, "avg_speed_nondrt [km/h]")
+            worksheet_infos.write(16, 1, vehicles_nondrt['avg_speed'])
 
-            worksheet_infos.write(18, 0, "total_batteries_drt [1]")
+            worksheet_infos.write(18, 0, "speed_pct_drt [1]")
             worksheet_infos.write(18, 1, 0)
 
-            worksheet_infos.write(20, 0, "avg_passengers_drt [1]")
-            worksheet_infos.write(20, 1, 0)
+            worksheet_infos.write(19, 0, "speed_pct_nondrt [1]")
+            worksheet_infos.write(19, 1, vehicles_nondrt['speed_pct'])
 
-            worksheet_infos.write(22, 0, "km_peryear_fleet_drt [km]")
-            worksheet_infos.write(22, 1, 0)
+            worksheet_infos.write(21, 0, "total_batteries_drt [1]")
+            worksheet_infos.write(21, 1, 0)
 
-            worksheet_infos.write(23, 0, "km_peryear_fleet_nondrt [km]")
-            worksheet_infos.write(23, 1, vehicles_nondrt['totalkm'] / years)
+            worksheet_infos.write(23, 0, "avg_passengers_drt [1]")
+            worksheet_infos.write(23, 1, 0)
 
-            worksheet_infos.write(25, 0, "pkm_peryear_fleet_drt [km]")
+            worksheet_infos.write(25, 0, "km_peryear_fleet_drt [km]")
             worksheet_infos.write(25, 1, 0)
 
-            worksheet_infos.write(26, 0, "pkm_peryear_fleet_nondrt [km]")
-            worksheet_infos.write(26, 1, vehicles_nondrt['totalpkm'] / years)
+            worksheet_infos.write(26, 0, "km_peryear_fleet_nondrt [km]")
+            worksheet_infos.write(26, 1, vehicles_nondrt['totalkm'] / years)
 
-            worksheet_infos.write(28, 0, "averaged_km_per_year_per_vehicle_drt [km]")
+            worksheet_infos.write(28, 0, "pkm_peryear_fleet_drt [km]")
             worksheet_infos.write(28, 1, 0)
 
-            worksheet_infos.write(29, 0, "averaged_km_per_year_per_vehicle_nondrt [km]")
-            worksheet_infos.write(29, 1, vehicles_nondrt['km_per_vehicle_year'])
+            worksheet_infos.write(29, 0, "pkm_peryear_fleet_nondrt [km]")
+            worksheet_infos.write(29, 1, vehicles_nondrt['totalpkm'] / years)
 
-            worksheet_infos.write(31, 0, "averaged_pkm_per_year_per_vehicle_drt [km]")
+            worksheet_infos.write(31, 0, "averaged_km_per_year_per_vehicle_drt [km]")
             worksheet_infos.write(31, 1, 0)
 
-            worksheet_infos.write(32, 0, "averaged_pkm_per_year_per_vehicle_nondrt [km]")
-            worksheet_infos.write(32, 1, vehicles_nondrt['pkm_per_vehicle_year'])
+            worksheet_infos.write(32, 0, "averaged_km_per_year_per_vehicle_nondrt [km]")
+            worksheet_infos.write(32, 1, vehicles_nondrt['km_per_vehicle_year'])
 
-            worksheet_infos.write(34, 0, "averaged_km_per_day_per_vehicle_drt [km]")
+            worksheet_infos.write(34, 0, "averaged_pkm_per_year_per_vehicle_drt [km]")
             worksheet_infos.write(34, 1, 0)
 
-            worksheet_infos.write(35, 0, "averaged_km_per_day_per_vehicle_nondrt [km]")
-            worksheet_infos.write(35, 1, vehicles_nondrt['km_per_vehicle_day'])
+            worksheet_infos.write(35, 0, "averaged_pkm_per_year_per_vehicle_nondrt [km]")
+            worksheet_infos.write(35, 1, vehicles_nondrt['pkm_per_vehicle_year'])
 
-            worksheet_infos.write(37, 0, "averaged_pkm_per_day_per_vehicle_drt [km]")
+            worksheet_infos.write(37, 0, "averaged_km_per_day_per_vehicle_drt [km]")
             worksheet_infos.write(37, 1, 0)
 
-            worksheet_infos.write(38, 0, "averaged_pkm_per_day_per_vehicle_nondrt [km]")
-            worksheet_infos.write(38, 1, vehicles_nondrt['pkm_per_vehicle_day'])
+            worksheet_infos.write(38, 0, "averaged_km_per_day_per_vehicle_nondrt [km]")
+            worksheet_infos.write(38, 1, vehicles_nondrt['km_per_vehicle_day'])
+
+            worksheet_infos.write(40, 0, "averaged_pkm_per_day_per_vehicle_drt [km]")
+            worksheet_infos.write(40, 1, 0)
+
+            worksheet_infos.write(41, 0, "averaged_pkm_per_day_per_vehicle_nondrt [km]")
+            worksheet_infos.write(41, 1, vehicles_nondrt['pkm_per_vehicle_day'])
 
         width= len("averaged_km_per_year_per_vehicle_nondrt [km]")
         worksheet_infos.set_column(0,0, width)
