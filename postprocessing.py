@@ -93,7 +93,7 @@ def scale_scenario(vehicleinfo: dict, pct_scenario: int = 10):
         vehicles_drt['large']['amount'] = int(vehicleinfo['large_vehicles'] * drt_scalingfactor_vehicles)
 
         if drt_avg_speed_pct < .5:
-            drt_speed_pct_factor = 1.2
+            drt_speed_factor = 1.2
         elif drt_avg_speed_pct >= .5 and drt_avg_speed_pct < .7:
             drt_speed_factor = 1.1
         elif drt_avg_speed_pct >= .7 and drt_avg_speed_pct < .9:

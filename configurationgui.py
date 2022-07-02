@@ -181,7 +181,7 @@ class configgui(tk.Tk, object):
         return file_path
 
     def setdrtpath(self):
-        ''' calls the function that opens the browser window and updates the chosen directory in the GUI'''
+        ''' calls the function that opens the browser window and updates the chosen directory in the GUI '''
 
         path = self.opendirectorywindow()
         if str(path).startswith("//"):
@@ -190,7 +190,7 @@ class configgui(tk.Tk, object):
         self.path_drt_box.insert(0, path)
 
     def setreferencepath(self):
-        ''' calls the function that opens the browser window and updates the chosen directory in the GUI'''
+        ''' calls the function that opens the browser window and updates the chosen directory in the GUI '''
 
         path = self.opendirectorywindow()
         if str(path).startswith("//"):
