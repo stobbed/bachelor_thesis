@@ -7,7 +7,10 @@ afterwards the program automatically compares the 2 scenarios which one another 
 first you need to install all required packages, which you can do by executing the command:
 "pip install -r requirements.txt"
 
-establish an openLCA connection via the IPC server connection for port 8080 if you want to completly run the program, otherwise the program will calculate the scenarios, store the results and
+![openLCA setup](openlca.png)
+
+start the openLCA software and open the olca file linked with this particular project, then establish the openLCA connection via the IPC server connection for port 8080,
+if you want to completly run the program, otherwise the program will calculate the scenarios, store the results and
 throw an error message that no connection to openLCA could be established.
 
 ## using the program
@@ -25,3 +28,5 @@ afterwards averages for each scenario for DRT cars as well as normal passenger c
 before that happens, the results are scaled accordingly to the type of scenario which was put in.
 
 after finishing the calculations comparing diagrams are created and saved into a new folder called lca/"current date".
+
+![finished_diagrams](diagrams.png)

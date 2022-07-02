@@ -367,7 +367,7 @@ def compare_scnearios(path_drt, path_reference):
     # ------------------- CO2 per year comparison ----#------------ #
 
     plt.rcParams["figure.figsize"] = (16,10)
-    plt.figure(4)
+    fig4 , (ax1, ax2) = plt.subplots(2, sharex=True)
     
     drtsc_co2year = drtsc_lcatotal._values[7][1]
     referencesc_co2year = referencesc_lcatotal._values[7][1]
@@ -406,30 +406,31 @@ def compare_scnearios(path_drt, path_reference):
         reference_pkm.append(referencesc_pkmperyear * x)
 
 
-    plt.grid(visible=True)
-    plt.plot(years, drt_co2values, label="DRT", color="green")
-    plt.plot(years, reference_co2values, label="reference", color="black")
-    plt.ylabel("GHG in million tonnes $C0_{2}$ eq", style)
-    plt.tick_params(axis='both', labelsize = 17)
-    plt.legend(loc="lower left",bbox_to_anchor=(0, 1.0), fontsize=17)
-    plt.xticks(np.arange(0, max(years), 1))
-    # plt.yticks(np.arange(0, max(reference_co2values), 2))
+    ax1.grid(visible=True)
+    ax1.set_title("GHG [$C0_{2}$ eq]", style)
+    ax1.plot(years, drt_co2values, label="DRT", color="green")
+    ax1.plot(years, reference_co2values, label="reference", color="black")
+    ax1.set_ylabel("GHG in million tonnes $C0_{2}$ eq", fontsize=17)
+    ax1.tick_params(axis='both', labelsize = 17)
+    ax1.legend(loc="lower left",bbox_to_anchor=(0.8, 0), fontsize=17)
+    ax1.set_xticks(np.arange(0, max(years), 1))
+    ax1.set_yticks(np.arange(0, max(reference_co2values)+2, 2))
 
-    secondy = plt.twinx()
-    secondy.plot(years, drt_km, label="DRT", color="purple")
-    secondy.plot(years, reference_km, label="reference", color="blue")
-    secondy.legend(loc="lower left",bbox_to_anchor=(0.8, 1.0), fontsize=17)
-    secondy.set_ylim(bottom=0, top=max(reference_km))
-    secondy.set_ylabel("total km in billion km for scenario [km]", style)
-    secondy.tick_params(axis='both', labelsize = 17)
+    # secondy = plt.twinx()a
+    ax2.set_title("total km [km]", style)
+    ax2.grid(visible=True)
+    ax2.plot(years, drt_km, label="DRT", color="purple")
+    ax2.plot(years, reference_km, label="reference", color="blue")
+    ax2.legend(loc="lower left",bbox_to_anchor=(0.8, 0), fontsize=17)
+    ax2.set_ylabel("total km in billion km for scenario [km]", fontsize=17)
+    # secondy.set_ylim(bottom=0, top=max(reference_km))
+    # secondy.set_ylabel("total km in billion km for scenario [km]", style)
+    ax2.tick_params(axis='both', labelsize = 17)
     # secondy.set_yticks(np.arange(0, max(reference_km), 5), style)
 
-
-    plt.title("GHG and km", style)
     plt.xlabel("time in years", style)
     # plt.ylim(bottom=0, top=max(reference_co2values))
     plt.xlim(left=0, right=max(years))
-    fig4 = plt.gcf()
     fig4.savefig(os.path.join(imagefolder, 'co2_peryear_comparison.png'), dpi=300)
 
     plt.show()
