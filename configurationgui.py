@@ -22,13 +22,15 @@ class configgui(tk.Tk, object):
         self.energymix = getfromconfig('vehicle_parameters', 'energymix')
         self.charging = getfromconfig('vehicle_parameters', 'charging')
         self.publictransport = getfromconfig('settings', 'publictransport_ignore')
+        self.timespan = getfromconfig('vehicle_parameters', 'timespan_in_years')
+        self.batterylifetime = getfromconfig('vehicle_parameters', 'battery_exchange_after_km')
 
         # get the screen dimension
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
 
-        window_width = int(screen_width/2)
-        window_height = int(screen_height/2)
+        window_width = int(screen_width/1.8)
+        window_height = int(screen_height/1.5)
 
         # find the center point
         center_x = int(screen_width/2 - window_width / 2)
@@ -53,7 +55,7 @@ class configgui(tk.Tk, object):
         self.path_drt_label = ttk.Label(self, text="DRT path:")
         self.path_drt_label.grid(column=0, row=2, sticky=tk.E)
 
-        self.path_drt_box = ttk.Entry(self, textvariable=tk.StringVar(), width=65, **entry_font)
+        self.path_drt_box = ttk.Entry(self, textvariable=tk.StringVar(), width=75, **entry_font)
         self.path_drt_box.grid(column=1, row=2, sticky=tk.W, pady=10)
         self.path_drt_box.insert(0, self.path_drt)
 
@@ -69,7 +71,7 @@ class configgui(tk.Tk, object):
         self.path_reference_label = ttk.Label(self, text="Reference path:")
         self.path_reference_label.grid(column=0, row=4, sticky=tk.E)        
 
-        self.path_reference_box = ttk.Entry(self, textvariable=tk.StringVar(), width=65, **entry_font)
+        self.path_reference_box = ttk.Entry(self, textvariable=tk.StringVar(), width=75, **entry_font)
         self.path_reference_box.grid(column=1, row=4, sticky=tk.W, pady=10)
         self.path_reference_box.insert(0, self.path_reference)
 
@@ -82,7 +84,7 @@ class configgui(tk.Tk, object):
         self.energymix_note.grid(column=0, row=5, columnspan=3, pady=5)
         self.energymix_note.configure(font=description)
 
-        self.energymix_label = ttk.Label(self, text="grid mix")
+        self.energymix_label = ttk.Label(self, text="grid mix: ")
         self.energymix_label.grid(column=0, row=6, sticky=tk.E)
 
         self.energymix_combo = ttk.Combobox(self, textvariable=tk.IntVar(), values=["Greenmix", "today", "2030"], width = 10, justify=tk.CENTER)
@@ -125,6 +127,32 @@ class configgui(tk.Tk, object):
         else:
             self.publictransport_combo.current(1)
 
+        # choose the amount of years for lifecycle assessment
+        # self.timespan_slider = ttk.Scale(self, from_=1, to=20, orient='horizontal')
+        # self.timespan_slider.grid(column=0, row=11)
+        self.timespan_note = ttk.Label(self, text="Choose the amount of years that the lifecycle assessment should be calculated for")
+        self.timespan_note.grid(column=0, row=11, columnspan=3, pady=5)
+        self.timespan_note.configure(font=description)
+
+        self.timespan_label = ttk.Label(self, text="years: ")
+        self.timespan_label.grid(column=0, row=12, sticky=tk.E)        
+
+        self.timespan_box = ttk.Entry(self, textvariable=tk.StringVar(), width=5, **entry_font)
+        self.timespan_box.grid(column=1, row=12, sticky=tk.W, pady=10)
+        self.timespan_box.insert(0, self.timespan)
+
+        # battery exchange
+        self.batterylifetime_note = ttk.Label(self, text="Choose the amount of kilometers after which the batteries are exchanged")
+        self.batterylifetime_note.grid(column=0, row=13, columnspan=3, pady=5)
+        self.batterylifetime_note.configure(font=description)
+
+        self.batterylifetime_label = ttk.Label(self, text="batterylifetime [km]: ")
+        self.batterylifetime_label.grid(column=0, row=14, sticky=tk.E)        
+
+        self.batterylifetime_box = ttk.Entry(self, textvariable=tk.StringVar(), width=5, **entry_font)
+        self.batterylifetime_box.grid(column=1, row=14, sticky=tk.W, pady=10)
+        self.batterylifetime_box.insert(0, self.batterylifetime)
+
         # # use of existing csv files
         # self.publictransport_note = ttk.Label(self, text="choose whether to ignore public transport during DB creation or not (saves a bit of space if True)")
         # self.publictransport_note.grid(column=0, row=11, columnspan=3, pady=5)
@@ -142,10 +170,10 @@ class configgui(tk.Tk, object):
 
         # button that triggers the storing of the chosen specs and closes this GUI
         self.startbutton = ttk.Button(self, text="Start Script", command=lambda:[f() for f in [self.startscript, self.destroy]])
-        self.startbutton.grid(column=1, row=14, sticky=tk.E, pady=10)
+        self.startbutton.grid(column=1, row=16, sticky=tk.E, pady=10)
 
         self.vehicleparams_button = ttk.Button(self, text="Edit Vehicle Parameters", command=self.changevehicles)
-        self.vehicleparams_button.grid(column=1, row=14, sticky=tk.W, pady=10)
+        self.vehicleparams_button.grid(column=1, row=16, sticky=tk.W, pady=10)
 
         self.mainloop()
 
