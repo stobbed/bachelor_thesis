@@ -12,8 +12,8 @@ throw an error message that no connection to openLCA could be established.
 
 ## using the program
 after starting the program by running the command "python main.py" in any given code workspace a GUI window opens up where the user can adjust the different parameters.
+![program.png]
 additionally the user has to select the path to the matsim output results folders, which can be done by clicking the "open browser" button next to the text boxes.
-program.png
 if the user wishes to adjust vehicle parameters such as battery capacity or mass, he can click the button "Edit Vehicle Parameters", which opens another window, where the user can
 specify mass, battery size and consumption for every vehicle size class.
 if the uses wishes to procede with the standard values specified in "vehiclestandards.ini", he can click the button "restore standards".
