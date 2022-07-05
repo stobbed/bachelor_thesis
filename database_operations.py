@@ -43,9 +43,3 @@ def query_db(sql_query: str, cursor, var = None, var2 = None, var3 = None) -> "t
         return record
     else:
         print("Database Connection not established, execute establish_db_connection prior to using this function")
-
-# def close_db_connection(sqliteConnection, cursor):
-#     if (sqliteConnection):
-#             cursor.close()
-#             sqliteConnection.close()
-#             print('The SQLite connection is closed')

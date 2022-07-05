@@ -6,35 +6,9 @@ import platform
 import sys
 import configparser
 
+# -------------------------------------------------------------------------------- #
+
 your_os = platform.system()
-
-# -------------------------------------------------------------------------------- #
-# adjust path to simulation data and paramters in here
-
-# path_drt = r'/Users/dstobbe/Downloads/MATSIM Output/hundekopf-rebalancing-1000vehicles-2seats'
-
-# region = 'berlin'
-# path_drt = r'/Users/dstobbe/Downloads/MATSIM Output/berlin-drt-v5.5-1pct'
-# # vehiclesize can either be 2 or 4 at the moment..
-# drt_vehiclesize = 2
-# path_reference = r'/Users/dstobbe/Downloads/MATSIM Output/berlin-v5.5.3-1pct'
-# # path_drt = r'G:\MATSIM Output\berlin-drt-v5.5-1pct'
-# # path_drt = r'G:\MATSIM Output\hundekopf-rebalancing-1000vehicles-2seats'
-
-# # xmlpath_nw = '/Users/dstobbe/Desktop/Uni/Bachelorarbeit/MATSIM Output/output-b-drt-mpm-1pct/berlin-drt-v5.5-1pct.output_network.xml.gz'
-# # xmlpath_evts = '/Users/dstobbe/Desktop/Uni/Bachelorarbeit/MATSIM Output/output-b-drt-mpm-1pct/berlin-drt-v5.5-1pct.output_events.xml.gz'
-# # xmlpath_vehicles = '/Users/dstobbe/Desktop/Uni/Bachelorarbeit/MATSIM Output/output-b-drt-mpm-1pct/berlin-drt-v5.5-1pct.drt__vehicles.xml.gz'
-# # publictransport_ignore = True
-# debugging = False
-
-# -------------------------------------------------------------------------------- #
-
-# def adjustpaths(drt, reference):
-#     global path_drt
-#     global path_reference
-#     path_drt = drt
-#     path_reference = reference
-
 def getsimulationname(path):
     """ retrieves the simulationname from the given path, by splitting the directory and only retrieving the folder name """
     your_os = platform.system()

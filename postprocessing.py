@@ -49,6 +49,7 @@ def scale_scenario(vehicleinfo: dict, pct_scenario: int = 10):
         drt_avg_passenger_wihtout_empty = vehicleinfo['drt_avgpassenger_without_empty']
         
         charging = getfromconfig('vehicle_parameters', 'charging')
+        # source for scaling factors: https://pdf.sciencedirectassets.com/280203/1-s2.0-S1877050921X00075/1-s2.0-S1877050921007213/main.pdf?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEFIaCXVzLWVhc3QtMSJHMEUCIQCc6tYDCQfGro5Thl%2BQOaLcPNB4rTJhD2f3VSKt%2BN3M%2FAIgJ8j0oDkf3fDz%2Bc1RDQYXiXof9Y3U951%2FMOPCGv5yF5kq0gQIexAEGgwwNTkwMDM1NDY4NjUiDLj5Vj9YZjRQjcyCaiqvBBmZ2b%2FilIqT1McNkS7LuLkFYVPEeflzMQpVqULiDjsgoG%2B9XVhtbbLObcF9kpCLeVF5SEn5Nja2WUTC1o4d79qfsZNDKbApEHdJcm%2BNycjtcLFd3R3n0ggSrg46d6gYjl8okgaF6Zk9%2FzWnrERFmlWE2tVwp2dW5wgq5638PiV1z%2FW4KxF%2FDwtCXGtVeoFvqXaxglSQnGK0eSYybCkVddYDZLobFXo6h4ony%2BYJCSU4nl%2BioKh1acj1hEYvWArGFscpRsowyBa%2BzzLdf7Rf5RV80mpFrY7G%2F8SBFGvQz5TKom8g8Hpf0E4obexfPTW2VFpzRJYBgxEn2hL5JRad7r1m6EuqeEO9g1tXoqsUujj1jtr5Mibq5WvrELpb%2FNshy3h1apYoZTLWTN0iUKgu8ZlKqt1vFsM11oCyN1f69IwUmmGdkxOpiKNvSKx6J3CEcIsTGIC%2Bh1Zjvl1BcS8xpXfYqazE6LNeoreaK9Gd0mZHXy%2F7HZcjUawnhK6Gyed8ld7UarDMQzRYok4Ynq0KDXh81u3BCViRgSrQy4lou37oDK5w0FIwVIeJ1Vt%2BTZfOCK5Ao7cNpd15HKl%2Bcvs8uOX%2F2Ray4igdLXudZyaHUclKiP760RDLLPBw5D3RLrwqh0YFOhh1qLYmo%2FcVPjMv%2BhKWBGL6aOmwbbAcsT8uhWVwfaDXBWar1fl9dL9%2BbDI4gkTpIGMuIu2lN9Q5Wok5%2BGH%2FXAaJTXzRUohll5rAFhwwwqCHlgY6qQFGQ%2FSnlUn%2FJEVQz764OBLULlA6tvi45fMZvmdFOZl3mwXMB05q3Bt7y1k3LhgPg98dZzZIvK3aTU6vVkTUbqwfxQnt8gancp1f1i04ntoT%2FD%2BGTrd27x2Clk9NZgNAO7SBjSdbVl6Soe2wXW48PJAZwVuKMZGtXrytv5uWIbvrkkS1RTGcsl68i64T2JPkd6zcT9CWFUGgapyQINGafowXMqBikgRvZPuO&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20220703T182230Z&X-Amz-SignedHeaders=host&X-Amz-Expires=300&X-Amz-Credential=ASIAQ3PHCVTYZVDVRKFB%2F20220703%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=37ad71991320ec58879fed994ce1e008a73ff52fe739bca03f96ce94f9df8b4c&hash=dce5b8f4aea15b018abb70fe5c9b5e640eea2ea1ca54fad70c9c71bfb5945082&host=68042c943591013ac2b2430a89b270f6af2c76d8dfd086a07176afe7c76c2c61&pii=S1877050921007213&tid=spdf-481f00d8-9eea-47c1-8810-670f87b49dfb&sid=9f2a069b5d05b748bf99fb183bca2dbc680cgxrqb&type=client&ua=4d5c525304565f095905&rr=7251a59f6fccb395
         # upscaling factors where x is 0.1 for 10%
         # Berlin
         # x^−0.637 (R2 = 0.9954)
@@ -57,7 +58,7 @@ def scale_scenario(vehicleinfo: dict, pct_scenario: int = 10):
         drt_scalingfactor_vehicles = ((pct_scenario/100)**(-0.637))                     # = 4,335 for 10 pct
         drt_scalingfactor_km = ((pct_scenario/100)**(-0.928))                           # = 8,472 for 10 pct
         drt_scalingfactor_km_pervehicle = drt_scalingfactor_km / drt_scalingfactor_vehicles     # = 1,954 for 10 pct
-        drt_scalingfactor_persons = 1.3     # NEEDS TO BE ADJUSTED
+        drt_scalingfactor_persons = 1.33     # NEEDS TO BE ADJUSTED
 
         # drt_vehiclesize = getfromconfig('vehicle_parameters', 'drt_vehiclesize')
         # if int(drt_vehiclesize) == 2:
