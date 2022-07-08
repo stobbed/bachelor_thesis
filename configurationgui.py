@@ -137,7 +137,7 @@ class configgui(tk.Tk, object):
         self.timespan_label = ttk.Label(self, text="years: ")
         self.timespan_label.grid(column=0, row=12, sticky=tk.E)        
 
-        self.timespan_box = ttk.Entry(self, textvariable=tk.StringVar(), width=5, **entry_font)
+        self.timespan_box = ttk.Entry(self, textvariable=tk.StringVar(), width=8, **entry_font)
         self.timespan_box.grid(column=1, row=12, sticky=tk.W, pady=10)
         self.timespan_box.insert(0, self.timespan)
 
@@ -149,7 +149,7 @@ class configgui(tk.Tk, object):
         self.batterylifetime_label = ttk.Label(self, text="batterylifetime [km]: ")
         self.batterylifetime_label.grid(column=0, row=14, sticky=tk.E)        
 
-        self.batterylifetime_box = ttk.Entry(self, textvariable=tk.StringVar(), width=5, **entry_font)
+        self.batterylifetime_box = ttk.Entry(self, textvariable=tk.StringVar(), width=8, **entry_font)
         self.batterylifetime_box.grid(column=1, row=14, sticky=tk.W, pady=10)
         self.batterylifetime_box.insert(0, self.batterylifetime)
 
@@ -191,6 +191,9 @@ class configgui(tk.Tk, object):
 
         vehicleparameters['energymix'] = self.energymix_combo.get()
         vehicleparameters['charging'] = self.charging_combo.get()
+
+        vehicleparameters['battery_exchange_after_km'] = self.batterylifetime_box.get()
+        vehicleparameters['timespan_in_years'] = self.timespan_box.get()
         
         settings['publictransport_ignore'] = self.publictransport_combo.get()
 

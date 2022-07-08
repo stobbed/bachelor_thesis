@@ -439,6 +439,7 @@ def calculate_avg_vehicle(path: str) -> dict:
     
     data = pd.read_csv(os.path.join(path, 'results', getsimulationname(path) + '_vehicleinfo_finished.csv'), low_memory=False, header=0, skip_blank_lines=True)
     vehicles = []
+    # parsind through read in excel file and reading lines
     for line in data._values:
         # additionally checks for duplicates in the vehicleinfo csv
         checknew = []
@@ -447,10 +448,13 @@ def calculate_avg_vehicle(path: str) -> dict:
         # if check == set() and str(line[0]) != str(-1.0) and str(line[0]) != str(0.0):
         if check == set() and len(str(line[0]))>4:
             vehicles.append(line[0])
+            # passenger capacity 2 -> small vehicles
             if line[22] == 2:
                 small_vehicles += 1
+            # passenger capacity 4 -> medium vehicles
             elif line[22] == 4:
                 medium_vehicles += 1
+            # passenger capacity 7 -> large vehicles
             elif line[22] == 7:
                 large_vehicles += 1
             if str(line[0]).startswith("drt") or str(line[0]).startswith("taxi"):

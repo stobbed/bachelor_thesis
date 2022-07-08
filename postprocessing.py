@@ -26,10 +26,15 @@ def scale_scenario(vehicleinfo: dict, pct_scenario: int = 10):
     weekendfactor = 77.5 / 88.2       # = 0.85      http://www.mobilitaet-in-deutschland.de/pdf/MiD2017_Ergebnisbericht.pdf
 
     # consunption factor based on speed and road percentages
-    # factors need to be adjusted, maybe put into config
+    # based on [Öko-Institut 2009] ÖKO-INSTITUT: RENEWBILITY „Stoffstromanalyse nachhaltige Mobilität im Kontext erneuerbarer Energien bis 2030“. (2009). – Öko-Institut e.V. (Büros Darmstadt und Berlin) and DLR-Institut für Verkehrsforschung (Berlin). - Endbericht an das Bundesministerium für Umwelt, Naturschutz und Reaktorsicherheit (BMU)
+    # factors could be put into config
     highwaypct_factor = 1.3
     countryroad_factor = 1
-    intown_factor = 1.2
+    intown_factor = 1.4
+
+    electric_highwaypct_factor = 1.55
+    electric_countryroad_factor = 1
+    electric_intown_factor = 1.1
 
     drt_vehicleamount_scaled = 0
     
@@ -141,7 +146,7 @@ def scale_scenario(vehicleinfo: dict, pct_scenario: int = 10):
                     consumption_type = consumption_type + "_opportunity"
                 drt_consumption_100km = float(getfromvehicleconfig('energy_consumption', consumption_type))
 
-                drt_totalroad_factor = (drt_avg_intown_pct * intown_factor) + (drt_avg_countryroad_pct * countryroad_factor) + (drt_avg_highway_pct * highwaypct_factor)
+                drt_totalroad_factor = (drt_avg_intown_pct * electric_intown_factor) + (drt_avg_countryroad_pct * electric_countryroad_factor) + (drt_avg_highway_pct * electric_highwaypct_factor)
                 drt_consumption_km = (drt_consumption_100km * drt_speed_factor * drt_totalroad_factor) / 100
 
                 drt_consumption_km_amount += drt_consumption_km * vehicles_drt[drt_size]['amount']
@@ -180,6 +185,21 @@ def scale_scenario(vehicleinfo: dict, pct_scenario: int = 10):
     avg_speed = vehicleinfo['avg_speed_pervehicle']
     avg_speed_pct = vehicleinfo['avg_speed_pct']
 
+    totalroad_factor = (avg_intown_pct * intown_factor) + (avg_countryroad_pct * countryroad_factor) + (avg_highway_pct * highwaypct_factor)
+    electric_totalroad_factor = (avg_intown_pct * electric_intown_factor) + (avg_countryroad_pct * electric_countryroad_factor) + (avg_highway_pct * electric_highwaypct_factor)
+
+    if avg_speed_pct < .5:
+        electric_speed_factor = 1.2
+        speed_factor = 1.4
+    elif avg_speed_pct >= .5 and avg_speed_pct < .7:
+        electric_speed_factor = 1.1
+        speed_factor = 1.3
+    elif avg_speed_pct >= .7 and avg_speed_pct < .9:
+        electric_speed_factor = 1.05
+        speed_factor = 1.1
+    else:
+        electric_speed_factor = 1
+        speed_factor = 1
 
     share_small = float(getfromvehicleconfig('vehicle_distribution','share_small', True))
     share_medium = float(getfromvehicleconfig('vehicle_distribution','share_medium', True))
@@ -191,31 +211,33 @@ def scale_scenario(vehicleinfo: dict, pct_scenario: int = 10):
     avg_passengers = float(getfromconfig('vehicle_parameters', 'average_utilization_pkw'))
 
     vehicleamount_scaled = vehicleamount * scalingfactor
+    pct_standstill = float(getfromconfig('settings', 'pct_standstill'))
+    vehicleamount_w_standstill_scaled = vehicleamount_scaled / (1-pct_standstill)
 
     vehicles_nondrt = {}
     vehicles_nondrt['petrol'] = {}
     vehicles_nondrt['petrol']['small'] = {}
-    vehicles_nondrt['petrol']['small']['amount'] = int(vehicleamount_scaled * share_petrol * share_small)
+    vehicles_nondrt['petrol']['small']['amount'] = int(vehicleamount_w_standstill_scaled * share_petrol * share_small)
     vehicles_nondrt['petrol']['medium'] = {}
-    vehicles_nondrt['petrol']['medium']['amount'] = int(vehicleamount_scaled * share_petrol * share_medium)
+    vehicles_nondrt['petrol']['medium']['amount'] = int(vehicleamount_w_standstill_scaled * share_petrol * share_medium)
     vehicles_nondrt['petrol']['large'] = {}
-    vehicles_nondrt['petrol']['large']['amount'] = int(vehicleamount_scaled * share_petrol * share_large)
+    vehicles_nondrt['petrol']['large']['amount'] = int(vehicleamount_w_standstill_scaled * share_petrol * share_large)
     
     vehicles_nondrt['diesel'] = {}
     vehicles_nondrt['diesel']['small'] = {}
-    vehicles_nondrt['diesel']['small']['amount'] = int(vehicleamount_scaled * share_diesel * share_small)
+    vehicles_nondrt['diesel']['small']['amount'] = int(vehicleamount_w_standstill_scaled * share_diesel * share_small)
     vehicles_nondrt['diesel']['medium'] = {}
-    vehicles_nondrt['diesel']['medium']['amount'] = int(vehicleamount_scaled * share_diesel * share_medium)
+    vehicles_nondrt['diesel']['medium']['amount'] = int(vehicleamount_w_standstill_scaled * share_diesel * share_medium)
     vehicles_nondrt['diesel']['large'] = {}
-    vehicles_nondrt['diesel']['large']['amount'] = int(vehicleamount_scaled * share_diesel * share_large)
+    vehicles_nondrt['diesel']['large']['amount'] = int(vehicleamount_w_standstill_scaled * share_diesel * share_large)
     
     vehicles_nondrt['electric'] = {}
     vehicles_nondrt['electric']['small'] = {}
-    vehicles_nondrt['electric']['small']['amount'] = int(vehicleamount_scaled * share_electric * share_small)
+    vehicles_nondrt['electric']['small']['amount'] = int(vehicleamount_w_standstill_scaled * share_electric * share_small)
     vehicles_nondrt['electric']['medium'] = {}
-    vehicles_nondrt['electric']['medium']['amount'] = int(vehicleamount_scaled * share_electric * share_medium)
+    vehicles_nondrt['electric']['medium']['amount'] = int(vehicleamount_w_standstill_scaled * share_electric * share_medium)
     vehicles_nondrt['electric']['large'] = {}
-    vehicles_nondrt['electric']['large']['amount'] = int(vehicleamount_scaled * share_electric * share_large)
+    vehicles_nondrt['electric']['large']['amount'] = int(vehicleamount_w_standstill_scaled * share_electric * share_large)
 
     # per year
     km_year_vehicle = ((workdays * avg_totalkm) + (weekenddays * weekendfactor * avg_totalkm)) / m_to_km
@@ -253,9 +275,9 @@ def scale_scenario(vehicleinfo: dict, pct_scenario: int = 10):
     consumption_electric_medium = float(getfromvehicleconfig('energy_consumption', 'consumption_medium', True)) / 100
     consumption_electric_large = float(getfromvehicleconfig('energy_consumption', 'consumption_large', True)) / 100
 
-    consumption_petrol = km_lifespan_fleet_scaled * share_petrol * ((share_small * consumption_petrol_small) + (share_medium * consumption_petrol_medium) + (share_large * consumption_petrol_large))
-    consumption_diesel = km_lifespan_fleet_scaled * share_diesel * ((share_small * consumption_diesel_small) + (share_medium * consumption_diesel_medium) + (share_large * consumption_diesel_large))
-    consumption_electric = km_lifespan_fleet_scaled * share_electric * ((share_small * consumption_electric_small) + (share_medium * consumption_electric_medium) + (share_large * consumption_electric_large))
+    consumption_petrol = km_lifespan_fleet_scaled * share_petrol * speed_factor * totalroad_factor * ((share_small * consumption_petrol_small) + (share_medium * consumption_petrol_medium) + (share_large * consumption_petrol_large))
+    consumption_diesel = km_lifespan_fleet_scaled * share_diesel * speed_factor * totalroad_factor * ((share_small * consumption_diesel_small) + (share_medium * consumption_diesel_medium) + (share_large * consumption_diesel_large))
+    consumption_electric = km_lifespan_fleet_scaled * share_electric * electric_speed_factor * electric_totalroad_factor * ((share_small * consumption_electric_small) + (share_medium * consumption_electric_medium) + (share_large * consumption_electric_large))
 
     vehicles_nondrt['petrol']['consumption'] = consumption_petrol
     vehicles_nondrt['diesel']['consumption'] = consumption_diesel
@@ -269,7 +291,7 @@ def scale_scenario(vehicleinfo: dict, pct_scenario: int = 10):
     vehicles_nondrt['pkm_per_vehicle_year'] = (km_year_vehicle) * avg_passengers
     vehicles_nondrt['avg_speed'] = vehicleinfo['avg_speed_pervehicle']
     vehicles_nondrt['speed_pct'] = vehicleinfo['avg_speed_pct']
-    vehicles_nondrt['total_vehicles'] = vehicleamount_scaled
+    vehicles_nondrt['total_vehicles'] = vehicleamount_w_standstill_scaled
 
     return vehicles_drt, vehicles_nondrt
 
@@ -339,7 +361,7 @@ def compare_scnearios(path_drt, path_reference):
     fig2.savefig(os.path.join(imagefolder, 'km and pkm_comparison.png'), dpi=300)
     # plt.show()
 
-    # ------------------- total CO2 comparison -------------------- #
+    # ------------------- total GHG comparison -------------------- #
 
     drtsc_totalco2 = drtsc_lcatotal._values[0][1]
     drtsc_production = drtsc_lcatotal._values[2][1]
@@ -368,7 +390,11 @@ def compare_scnearios(path_drt, path_reference):
     # ------------------- CO2 per year comparison ----#------------ #
 
     plt.rcParams["figure.figsize"] = (16,10)
-    fig4 , (ax1, ax2) = plt.subplots(2, sharex=True)
+    # CO2 and km in one graph
+    # fig4 , (ax1, ax2) = plt.subplots(2, sharex=True)
+
+    # separated graphs
+    fig4 , (ax1, ax2) = plt.subplots(1, 2)
     
     drtsc_co2year = drtsc_lcatotal._values[7][1]
     referencesc_co2year = referencesc_lcatotal._values[7][1]
@@ -394,7 +420,7 @@ def compare_scnearios(path_drt, path_reference):
 
     billion_factor = 1 / 1000000000
 
-    for x in range(0,11,1):
+    for x in range(0,int(getfromconfig('vehicle_parameters', 'timespan_in_years')),1):
         drt_co2values.append((drtsc_production + (drtsc_co2year * x)) * millionfactor)
         years.append(x)
 
@@ -403,8 +429,8 @@ def compare_scnearios(path_drt, path_reference):
         drt_km.append(drtsc_kmperyear * x * billion_factor)
         reference_km.append(referencesc_kmperyear * x * billion_factor)
 
-        drt_pkm.append(drtsc_pkmperyear * x)
-        reference_pkm.append(referencesc_pkmperyear * x)
+        drt_pkm.append(drtsc_pkmperyear * x * billion_factor)
+        reference_pkm.append(referencesc_pkmperyear * x * billion_factor)
 
 
     ax1.grid(visible=True)
@@ -414,16 +440,21 @@ def compare_scnearios(path_drt, path_reference):
     ax1.set_ylabel("GHG in million tonnes $C0_{2}$ eq", fontsize=17)
     ax1.tick_params(axis='both', labelsize = 17)
     ax1.legend(loc="lower left",bbox_to_anchor=(0.8, 0), fontsize=17)
-    ax1.set_xticks(np.arange(0, max(years), 1))
+    ax1.set_xticks(np.arange(0, max(years)+1, 1))
     ax1.set_yticks(np.arange(0, max(reference_co2values)+2, 2))
+    ax1.set_xlim(left=0, right=max(years))
+    ax1.set_ylim(bottom=0)
 
     # secondy = plt.twinx()a
     ax2.set_title("total km [km]", style)
     ax2.grid(visible=True)
-    ax2.plot(years, drt_km, label="DRT", color="purple")
-    ax2.plot(years, reference_km, label="reference", color="blue")
+    ax2.plot(years, drt_pkm, label="DRT", color="purple")
+    ax2.plot(years, reference_pkm, label="reference", color="blue")
     ax2.legend(loc="lower left",bbox_to_anchor=(0.8, 0), fontsize=17)
-    ax2.set_ylabel("total km in billion km for scenario [km]", fontsize=17)
+    ax2.set_ylabel("total km in billion pkm for scenario [km]", fontsize=17)
+    ax2.set_xlim(left=0, right=max(years))
+    ax2.set_ylim(bottom=0)
+    ax2.set_xticks(np.arange(0, max(years)+1, 1))
     # secondy.set_ylim(bottom=0, top=max(reference_km))
     # secondy.set_ylabel("total km in billion km for scenario [km]", style)
     ax2.tick_params(axis='both', labelsize = 17)
@@ -431,7 +462,6 @@ def compare_scnearios(path_drt, path_reference):
 
     plt.xlabel("time in years", style)
     # plt.ylim(bottom=0, top=max(reference_co2values))
-    plt.xlim(left=0, right=max(years))
     fig4.savefig(os.path.join(imagefolder, 'co2_peryear_comparison.png'), dpi=300)
 
     plt.show()
