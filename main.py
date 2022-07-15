@@ -1,3 +1,5 @@
+# main function, that calculates and compares the LCA of the in the GUI entered 2 MATSim scenarios
+
 from configuration import *
 from db import *
 from configurationgui import *

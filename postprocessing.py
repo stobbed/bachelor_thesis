@@ -301,8 +301,8 @@ def compare_scnearios(path_drt, path_reference):
     drt_scenario = getsimulationname(path_drt)
     reference_scenario = getsimulationname(path_reference)
 
-    drt_excel = os.path.join("lca",str(drt_scenario), "results_" + drt_scenario + ".xlsx")
-    reference_excel = os.path.join("lca",str(reference_scenario), "results_" +  reference_scenario + ".xlsx")
+    drt_excel = os.path.join("lca",str(drt_scenario), "results_" + drt_scenario + "_" + str(getfromconfig('vehicle_parameters', 'energymix')) + "_" + str(getfromconfig('vehicle_parameters', 'charging')) + ".xlsx")
+    reference_excel = os.path.join("lca",str(reference_scenario), "results_" + reference_scenario + "_" + str(getfromconfig('vehicle_parameters', 'energymix')) + "_" + str(getfromconfig('vehicle_parameters', 'charging')) + ".xlsx")
 
     drtsc_lcatotal = pd.read_excel(os.path.join(drt_excel), sheet_name="LCA_results_total")
     referencesc_lcatotal = pd.read_excel(os.path.join(reference_excel), sheet_name="LCA_results_total")
@@ -314,7 +314,7 @@ def compare_scnearios(path_drt, path_reference):
 
     millionfactor = 1/1000000
 
-    imagefolder = os.path.join("lca", datetime.today().strftime('%Y-%m-%d_%H-%M-%S'))
+    imagefolder = os.path.join("lca", str(drt_scenario) + "_VS_" + str(reference_scenario))
     if not os.path.exists(imagefolder):
         os.mkdir(imagefolder)
 
@@ -327,18 +327,50 @@ def compare_scnearios(path_drt, path_reference):
     referencesc_nondrtvehicles = referencesc_infos._values[12][1]
 
     names = (drt_scenario, reference_scenario)
-    data={"drt_vehicles_electric":[drtsc_drtvehicles, referencesc_drtvehicles], "non_drt_vehicles_combustion":(drtsc_nondrtvehicles * (float(getfromvehicleconfig('vehicle_distribution', 'share_petrol', True)) + float(getfromvehicleconfig('vehicle_distribution', 'share_diesel', True)) + (1/2) * float(getfromvehicleconfig('vehicle_distribution', 'share_plugin', True))), referencesc_nondrtvehicles * (float(getfromvehicleconfig('vehicle_distribution', 'share_petrol', True)) + float(getfromvehicleconfig('vehicle_distribution', 'share_diesel', True)) + (1/2) * float(getfromvehicleconfig('vehicle_distribution', 'share_plugin', True)))), "non_drt_vehicles_electric":(drtsc_nondrtvehicles * (float(getfromvehicleconfig('vehicle_distribution', 'share_electric', True)) + float(getfromvehicleconfig('vehicle_distribution', 'share_plugin', True))), referencesc_nondrtvehicles * (float(getfromvehicleconfig('vehicle_distribution', 'share_electric', True)) + float(getfromvehicleconfig('vehicle_distribution', 'share_plugin', True))))}
+
+    drtsc_vehicles_combustion = (drtsc_nondrtvehicles * (float(getfromvehicleconfig('vehicle_distribution', 'share_petrol', True)) + float(getfromvehicleconfig('vehicle_distribution', 'share_diesel', True)) + (1/2) * float(getfromvehicleconfig('vehicle_distribution', 'share_plugin', True))))
+    referensc_vehicles_combustion = referencesc_nondrtvehicles * (float(getfromvehicleconfig('vehicle_distribution', 'share_petrol', True)) + float(getfromvehicleconfig('vehicle_distribution', 'share_diesel', True)) + (1/2) * float(getfromvehicleconfig('vehicle_distribution', 'share_plugin', True)))
+
+    drtsc_nondrt_vehicles_electric = drtsc_nondrtvehicles * (float(getfromvehicleconfig('vehicle_distribution', 'share_electric', True)) + float(getfromvehicleconfig('vehicle_distribution', 'share_plugin', True)))
+    referencesc_nondrt_vehicles_electric = referencesc_nondrtvehicles * (float(getfromvehicleconfig('vehicle_distribution', 'share_electric', True)) + float(getfromvehicleconfig('vehicle_distribution', 'share_plugin', True)))
+
+    data={"drt_vehicles_electric":[drtsc_drtvehicles, referencesc_drtvehicles], "non_drt_vehicles_combustion":(drtsc_vehicles_combustion, referensc_vehicles_combustion), "non_drt_vehicles_electric":(drtsc_nondrt_vehicles_electric, referencesc_nondrt_vehicles_electric)}
     #gestacktes Balkendiagramm aus DF
     va=pd.DataFrame(data,index=names)
-    va.plot(kind="bar",stacked=True,figsize=(10,8), ylabel="in t $C0_{2}$ eq", rot=0)
+    ax = va.plot(kind="bar",stacked=True,figsize=(10,8), ylabel="in t $CO_2$ eq", rot=0)
+
+    test1=False
+    test2=False
+    for bar in ax.patches:
+        if test1 == False:
+            ax.annotate(format((drtsc_drtvehicles + drtsc_nondrtvehicles), '.0f'),
+                    (bar.get_x() + bar.get_width() / 2,
+                        (drtsc_drtvehicles + drtsc_nondrtvehicles)), ha='center', va='center',
+                    size=12, xytext=(0, 8),
+                    textcoords='offset points')
+        if test2 == False and test1==True:
+            ax.annotate(format((referencesc_drtvehicles + referencesc_nondrtvehicles), '.0f'),
+                (bar.get_x() + bar.get_width() / 2,
+                    (referencesc_drtvehicles + referencesc_nondrtvehicles)), ha='center', va='center',
+                size=12, xytext=(0, 8),
+                textcoords='offset points')
+            test2 = True
+        test1 = True
+
+    # x_offset = -0.03
+    # y_offset = 0.02
+    # for p in ax.patches:
+    #     b = p.get_bbox()
+    #     val = "{:+.2f}".format(b.y1 + b.y0)        
+    #     ax.annotate(val, ((b.x0 + b.x1)/2 + x_offset, b.y1 + y_offset))
 
     plt.title("vehicle amount")
     plt.legend(loc="upper right", bbox_to_anchor=(1, 1.15))
     plt.ylabel("number of vehicles")
-    plt.yticks([drtsc_drtvehicles + drtsc_nondrtvehicles, referencesc_drtvehicles + referencesc_nondrtvehicles])
+    # plt.yticks([drtsc_drtvehicles + drtsc_nondrtvehicles, referencesc_drtvehicles + referencesc_nondrtvehicles])
     fig1 = plt.gcf()
 
-    fig1.savefig(os.path.join(imagefolder, 'vehicleamount_comparison.png'), dpi=300)
+    fig1.savefig(os.path.join(imagefolder, str(getfromconfig('vehicle_parameters','energymix')) + "_" + str(getfromconfig('vehicle_parameters','charging')) + 'charging_vehicleamount_comparison.png'), dpi=300)
     # plt.show()
 
     # ------------------- km comparison -------------------- #
@@ -352,13 +384,20 @@ def compare_scnearios(path_drt, path_reference):
     data={"km":[drtsc_km * millionfactor, referencesc_km * millionfactor], "pkm":(drtsc_pkm * millionfactor, referencesc_pkm * millionfactor)}
     #gestacktes Balkendiagramm aus DF
     km=pd.DataFrame(data,index=names)
-    km.plot(kind="bar",stacked=False,figsize=(10,8), ylabel="vehicle km and pkm in millions", rot=0)
+    ax4 = km.plot(kind="bar",stacked=False,figsize=(10,8), ylabel="vehicle km and pkm in millions [km]", rot=0)
 
-    plt.title("km compariosn")
+    x_offset = -0.04
+    y_offset = 0.02
+    for p in ax4.patches:
+        b = p.get_bbox()
+        val = "{:.2f}".format(b.y1 + b.y0)        
+        ax4.annotate(val, ((b.x0 + b.x1)/2 + x_offset, b.y1 + y_offset))
+
+    plt.title("km comparison")
     plt.legend(loc="upper right",bbox_to_anchor=(1, 1.15))
-    plt.yticks([drtsc_km * millionfactor, drtsc_pkm * millionfactor, referencesc_km * millionfactor, referencesc_pkm * millionfactor])
+    plt.yticks(np.arange(0, drtsc_pkm * millionfactor, 10000))
     fig2 = plt.gcf()
-    fig2.savefig(os.path.join(imagefolder, 'km and pkm_comparison.png'), dpi=300)
+    fig2.savefig(os.path.join(imagefolder, str(getfromconfig('vehicle_parameters','energymix')) + "_" + str(getfromconfig('vehicle_parameters','charging')) + 'charging_km and pkm_comparison.png'), dpi=300)
     # plt.show()
 
     # ------------------- total GHG comparison -------------------- #
@@ -377,14 +416,45 @@ def compare_scnearios(path_drt, path_reference):
     data={"production vehicles":[drtsc_production * millionfactor, referencesc_production * millionfactor], "additional batteries":(drtsc_batteries * millionfactor, referencesc_batteries * millionfactor), "use phase":(drtsc_use * millionfactor, referencesc_use * millionfactor)}
     #gestacktes Balkendiagramm aus DF
     df=pd.DataFrame(data,index=names)
-    df.plot(kind="bar",stacked=True,figsize=(10,8), ylabel="in million tonnes $C0_{2}$ eq", rot=0)
+    ax2 = df.plot(kind="bar",stacked=True,figsize=(10,8), ylabel="in million tonnes $CO_2$ eq [t]", rot=0)
 
-    plt.title("GHG comparison")
+    # x_offset = -0.03
+    # y_offset = 0.02
+    # for p in ax2.patches:
+    #     b = p.get_bbox()
+    #     val = "{:.2f}".format(b.y1 + b.y0)        
+    #     ax2.annotate(val, ((b.x0 + b.x1)/2 + x_offset, b.y1 + y_offset))
+
+    plt.title("GHG comparison with " + str(getfromconfig('vehicle_parameters','energymix')) + " and " + str(getfromconfig('vehicle_parameters','charging')) + " charging")
     plt.legend(loc="upper right",bbox_to_anchor=(1, 1.15))
     # plt.yticks(np.arange(0, referencesc_totalco2, 1000000000))
     plt.yticks([drtsc_totalco2 * millionfactor, referencesc_totalco2 * millionfactor])
     fig3 = plt.gcf()
-    fig3.savefig(os.path.join(imagefolder, 'totalco2_comparison.png'), dpi=300)
+    fig3.savefig(os.path.join(imagefolder, str(getfromconfig('vehicle_parameters','energymix')) + "_" + str(getfromconfig('vehicle_parameters','charging')) + 'charging_totalco2_comparison.png'), dpi=300)
+    # plt.show()
+
+    # ------------------- GHG per pkm comparison -------------------- #
+
+    drtsc_ghgpkm = drtsc_lcatotal._values[17][1]
+
+    referencesc_ghgpkm = referencesc_lcatotal._values[17][1]
+
+    data={"$CO_2$ eq per pkm":[drtsc_ghgpkm, referencesc_ghgpkm]}
+    #gestacktes Balkendiagramm aus DF
+    ghgpkm=pd.DataFrame(data,index=names)
+    ax3 = ghgpkm.plot(kind="bar",stacked=False,figsize=(10,8), ylabel="$CO_2$ eq per pkm [g]", rot=0)
+
+    x_offset = -0.03
+    y_offset = 0.02
+    for p in ax3.patches:
+        b = p.get_bbox()
+        val = "{:.2f}".format(b.y1 + b.y0)        
+        ax3.annotate(val, ((b.x0 + b.x1)/2 + x_offset, b.y1 + y_offset))
+
+    plt.title("$CO_2$ eq per pkm comparison with " + str(getfromconfig('vehicle_parameters','energymix')) + " and " + str(getfromconfig('vehicle_parameters','charging')) + " charging")
+    plt.yticks([drtsc_ghgpkm, referencesc_ghgpkm])
+    fig5 = plt.gcf()
+    fig5.savefig(os.path.join(imagefolder, str(getfromconfig('vehicle_parameters','energymix')) + "_" + str(getfromconfig('vehicle_parameters','charging')) + 'charging_ghg_per_pkm.png'), dpi=300)
     # plt.show()
 
     # ------------------- CO2 per year comparison ----#------------ #
@@ -415,16 +485,18 @@ def compare_scnearios(path_drt, path_reference):
     drt_pkm = []
 
     reference_co2values = []
+    reference_co2values_wo_production = []
     reference_km = []
     reference_pkm = []
 
     billion_factor = 1 / 1000000000
 
-    for x in range(0,int(getfromconfig('vehicle_parameters', 'timespan_in_years')),1):
+    for x in range(0,int(getfromconfig('vehicle_parameters', 'timespan_in_years'))+1,1):
         drt_co2values.append((drtsc_production + (drtsc_co2year * x)) * millionfactor)
         years.append(x)
 
         reference_co2values.append((referencesc_production + (referencesc_co2year * x)) * millionfactor)
+        reference_co2values_wo_production.append(referencesc_co2year * x * millionfactor)
 
         drt_km.append(drtsc_kmperyear * x * billion_factor)
         reference_km.append(referencesc_kmperyear * x * billion_factor)
@@ -434,23 +506,27 @@ def compare_scnearios(path_drt, path_reference):
 
 
     ax1.grid(visible=True)
-    ax1.set_title("GHG [$C0_{2}$ eq]", style)
-    ax1.plot(years, drt_co2values, label="DRT", color="green")
-    ax1.plot(years, reference_co2values, label="reference", color="black")
-    ax1.set_ylabel("GHG in million tonnes $C0_{2}$ eq", fontsize=17)
+    ax1.set_title("GHG [$CO_2$ eq] with " + str(getfromconfig('vehicle_parameters','energymix')) + " and " + str(getfromconfig('vehicle_parameters','charging')) + " charging", style)
+    ax1.plot(years, drt_co2values, label=drt_scenario, color="green")
+    ax1.plot(years, reference_co2values, label=reference_scenario, color="black")
+    
+    #plot reference case with production emissions, because they are already in the past
+    ax1.plot(years, reference_co2values_wo_production, label=reference_scenario + "_wo_production_emissions", color="blue")
+
+    ax1.set_ylabel("GHG in million tonnes $CO_2$ eq [t]", fontsize=17)
     ax1.tick_params(axis='both', labelsize = 17)
-    ax1.legend(loc="lower left",bbox_to_anchor=(0.8, 0), fontsize=17)
+    ax1.legend(loc="lower left",bbox_to_anchor=(0, 0.86), fontsize=12)
     ax1.set_xticks(np.arange(0, max(years)+1, 1))
     ax1.set_yticks(np.arange(0, max(reference_co2values)+2, 2))
     ax1.set_xlim(left=0, right=max(years))
     ax1.set_ylim(bottom=0)
 
     # secondy = plt.twinx()a
-    ax2.set_title("total km [km]", style)
+    ax2.set_title("total pkm [km]", style)
     ax2.grid(visible=True)
-    ax2.plot(years, drt_pkm, label="DRT", color="purple")
-    ax2.plot(years, reference_pkm, label="reference", color="blue")
-    ax2.legend(loc="lower left",bbox_to_anchor=(0.8, 0), fontsize=17)
+    ax2.plot(years, drt_pkm, label=drt_scenario, color="purple")
+    ax2.plot(years, reference_pkm, label=reference_scenario, color="blue")
+    ax2.legend(loc="lower left",bbox_to_anchor=(0, 0.86), fontsize=12)
     ax2.set_ylabel("total km in billion pkm for scenario [km]", fontsize=17)
     ax2.set_xlim(left=0, right=max(years))
     ax2.set_ylim(bottom=0)
@@ -462,6 +538,6 @@ def compare_scnearios(path_drt, path_reference):
 
     plt.xlabel("time in years", style)
     # plt.ylim(bottom=0, top=max(reference_co2values))
-    fig4.savefig(os.path.join(imagefolder, 'co2_peryear_comparison.png'), dpi=300)
+    fig4.savefig(os.path.join(imagefolder, str(getfromconfig('vehicle_parameters','energymix')) + "_" + str(getfromconfig('vehicle_parameters','charging')) + 'charging_co2_peryear_comparison.png'), dpi=300)
 
     plt.show()

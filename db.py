@@ -25,7 +25,14 @@ class Db:
             # connects to sqlite database file - if path is faulty, creates a new and empty database
             self._sqliteConnection = sqlite3.connect("file:memdb1?mode=memory", isolation_level=None)
             self._sqliteConnection.execute('PRAGMA synchronous = OFF')
-            self._sqliteConnection.execute('PRAGMA CACHE_SIZE = 250000')
+            # if the computer crashes for some reason, try changing the parameter PRAGMA CACHE_SIZE to a lower amount
+            ramsize = getfromconfig('settings','ram')
+            if ramsize == '32':
+                self._sqliteConnection.execute('PRAGMA CACHE_SIZE = 140000')
+            elif ramsize == '64':
+                self._sqliteConnection.execute('PRAGMA CACHE_SIZE = 250000')
+            else:
+                self._sqliteConnection.execute('PRAGMA CACHE_SIZE = 75000')
             self._cursor = self._sqliteConnection.cursor()
             # print('Connection to SQLite-File',dbpath,'>> SUCCESS!')
         except sqlite3.Error as error:

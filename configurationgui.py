@@ -24,6 +24,7 @@ class configgui(tk.Tk, object):
         self.publictransport = getfromconfig('settings', 'publictransport_ignore')
         self.timespan = getfromconfig('vehicle_parameters', 'timespan_in_years')
         self.batterylifetime = getfromconfig('vehicle_parameters', 'battery_exchange_after_km')
+        self.ram = getfromconfig('settings','ram')
 
         # get the screen dimension
         screen_width = self.winfo_screenwidth()
@@ -87,11 +88,11 @@ class configgui(tk.Tk, object):
         self.energymix_label = ttk.Label(self, text="grid mix: ")
         self.energymix_label.grid(column=0, row=6, sticky=tk.E)
 
-        self.energymix_combo = ttk.Combobox(self, textvariable=tk.IntVar(), values=["Greenmix", "today", "2030"], width = 10, justify=tk.CENTER)
+        self.energymix_combo = ttk.Combobox(self, textvariable=tk.IntVar(), values=["energy_100_green", "energy_2021", "energy_2030"], width = 10, justify=tk.CENTER)
         self.energymix_combo.grid(column=1, row=6, sticky=tk.W, pady=10)
-        if self.energymix == "Greenmix":
+        if self.energymix == "energy_100_green":
             self.energymix_combo.current(0)
-        elif self.energymix == "today":
+        elif self.energymix == "energy_2021":
             self.energymix_combo.current(1)
         else:
             self.energymix_combo.current(2)
@@ -153,27 +154,31 @@ class configgui(tk.Tk, object):
         self.batterylifetime_box.grid(column=1, row=14, sticky=tk.W, pady=10)
         self.batterylifetime_box.insert(0, self.batterylifetime)
 
-        # # use of existing csv files
-        # self.publictransport_note = ttk.Label(self, text="choose whether to ignore public transport during DB creation or not (saves a bit of space if True)")
-        # self.publictransport_note.grid(column=0, row=11, columnspan=3, pady=5)
-        # self.publictransport_note.configure(font=description)
+        # selection of how powerful the computer is
+        self.ram_note = ttk.Label(self, text="choose how much RAM your computer has (if chosen wrong your computer may crash)")
+        self.ram_note.grid(column=0, row=15, columnspan=3, pady=5)
+        self.ram_note.configure(font=description)
 
-        # self.publictransport_label = ttk.Label(self, text="use csv")
-        # self.publictransport_label.grid(column=0, row=12, sticky=tk.E)
+        self.ram_label = ttk.Label(self, text="RAM size: ")
+        self.ram_label.grid(column=0, row=16, sticky=tk.E)
 
-        # self.publictransport_combo = ttk.Combobox(self, textvariable=tk.StringVar(), values=['True', 'False'], width = 10, justify=tk.CENTER)
-        # self.publictransport_combo.grid(column=1, row=12, sticky=tk.W, pady=10)
-        # if self.publictransport == 'True':
-        #     self.publictransport_combo.current(0)
-        # else:
-        #     self.publictransport_combo.current(1)
+        self.ram_combo = ttk.Combobox(self, textvariable=tk.StringVar(), values=[16, 32, 64], width = 10, justify=tk.CENTER)
+        self.ram_combo.grid(column=1, row=16, sticky=tk.W, pady=10)
+        if self.ram == '16':
+            self.ram_combo.current(0)
+        elif self.ram == '32':
+            self.ram_combo.current(1)
+        else:
+            self.ram_combo.current(2)
+
+
 
         # button that triggers the storing of the chosen specs and closes this GUI
         self.startbutton = ttk.Button(self, text="Start Script", command=lambda:[f() for f in [self.startscript, self.destroy]])
-        self.startbutton.grid(column=1, row=16, sticky=tk.E, pady=10)
+        self.startbutton.grid(column=1, row=17, sticky=tk.E, pady=10)
 
         self.vehicleparams_button = ttk.Button(self, text="Edit Vehicle Parameters", command=self.changevehicles)
-        self.vehicleparams_button.grid(column=1, row=16, sticky=tk.W, pady=10)
+        self.vehicleparams_button.grid(column=1, row=17, sticky=tk.W, pady=10)
 
         self.mainloop()
 
@@ -196,6 +201,7 @@ class configgui(tk.Tk, object):
         vehicleparameters['timespan_in_years'] = self.timespan_box.get()
         
         settings['publictransport_ignore'] = self.publictransport_combo.get()
+        settings['ram'] = self.ram_combo.get()
 
         with open("config.ini", 'w') as file:
             edit.write(file)
@@ -263,7 +269,7 @@ class vehicleparams(tk.Tk, object):
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
 
-        window_width = int(screen_width/2)
+        window_width = int(screen_width/1.8)
         window_height = int(screen_height/2)
 
         # find the center point
