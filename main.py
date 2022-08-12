@@ -39,15 +39,18 @@ if __name__ == "__main__":
     drt_vehicles_drt, drt_vehicles_nondrt = scale_scenario(drt_info)
     vehicles_drt, vehicles_nondrt = scale_scenario(reference_info)
 
+    vehicles_drt_electr, vehicles_nondrt_electr = scale_scenario_electric_conversion(reference_info)
+
     # starts lifecycleassessment and in results creates one excel for each scenario containing the GHG emissions as well as the necessary vehicle and fleet information
     openlca = olcaclient()
     openlca.lifecycleassessment(drt_vehicles_drt, drt_vehicles_nondrt, getsimulationname(path_drt))
     print("lifecycleassessment for drt scenario done!")
     openlca.lifecycleassessment(vehicles_drt, vehicles_nondrt, getsimulationname(path_reference))
     print("lifecycleassessment for reference scenario done")
+    openlca.lifecycleassement_reference_electro(vehicles_nondrt_electr, getsimulationname(path_reference))
 
     # comparing both scenarios and creating graphics
-    compare_scnearios(path_drt, path_reference)
+    compare_scenarios(path_drt, path_reference)
 
     # stopping timer
     toc = time.perf_counter()

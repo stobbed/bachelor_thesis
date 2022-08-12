@@ -716,3 +716,167 @@ class olcaclient():
         worksheet_infos.set_column(0,0, width)
 
         workbook.close()
+
+    def lifecycleassement_reference_electro(self, vehicles_nondrt, simulationname):
+
+        electricity_use = getfromconfig('vehicle_parameters', 'energymix')
+        battery_production = "battery production, Li-ion, rechargeable, prismatic | battery, Li-ion, rechargeable, prismatic | Cutoff, U"
+        
+        if not os.path.exists(os.path.join(self._resultspath, battery_production + '.xlsx')):
+            self.calculate_and_save(battery_production)
+        electric_production_battery_kg = pd.read_excel(os.path.join(self._resultspath, battery_production + '.xlsx'), skiprows=3, nrows=1, sheet_name="Impacts", usecols="E", header=None, names=["Nutzung"]).iloc[0]["Nutzung"]
+        if not os.path.exists(os.path.join(self._resultspath, electricity_use + '.xlsx')):
+            self.calculate_and_save(electricity_use)
+        electricity_use_kWh = pd.read_excel(os.path.join(self._resultspath, electricity_use + '.xlsx'), skiprows=3, nrows=1, sheet_name="Impacts", usecols="E", header=None, names=["Nutzung"]).iloc[0]["Nutzung"]
+        
+
+        kWh_to_kg = 1000 / int(getfromvehicleconfig('battery_specs', 'energy_density', True))
+
+        totaldrivenkm = 0
+        totaldrivenpkm = 0
+        drt_totaldrivenkm = 0
+        drt_totaldrivenpkm = 0
+        nondrt_totaldrivenkm = 0
+        nondrt_totaldrivenpkm = 0
+        drt_batteries_kwh = 0
+        batteries_kwh = 0
+        drt_electric_production_vehicle = 0
+        drt_electric_production_batteries = 0
+        electric_production_vehicle = 0
+        drt_electric_transport = 0
+        electric_transport = 0
+        drt_electric_consumption = 0
+        electric_consumption = 0
+
+        combustion_production = 0
+        combustion_transport = 0
+        combustion_consumption = 0
+        combustion_emissions = 0
+
+        if vehicles_nondrt != {}:
+            totaldrivenkm += vehicles_nondrt['totalkm']
+            totaldrivenpkm += vehicles_nondrt['totalpkm']
+            nondrt_totaldrivenkm += vehicles_nondrt['totalkm']
+            nondrt_totaldrivenpkm += vehicles_nondrt['totalpkm']
+            # vehicle contains fuels as the first level
+            for fuel, vehiclesizes in vehicles_nondrt.items():
+                if fuel == 'electric':
+                    # the second level is again size 
+                    for size, vehiclesize in vehiclesizes.items():
+                        if size == 'small' or size == 'medium' or size == 'large':
+                            electric_production_name = "drt production, electric, " + self.charging + ", " + size +  " size passenger car | Cutoff, U"
+                            electric_transport_name = "transport only, drt, " + self.charging + ", " + size + " size, electric | Cutoff, U"
+
+                            if not os.path.exists(os.path.join(self._resultspath, electric_production_name + '.xlsx')):
+                                self.calculate_and_save(electric_production_name)
+                            if not os.path.exists(os.path.join(self._resultspath, electric_transport_name + '.xlsx')):
+                                self.calculate_and_save(electric_transport_name)
+
+                            electric_production_vehicle_kg = pd.read_excel(os.path.join(self._resultspath, electric_production_name + '.xlsx'), skiprows=3, nrows=1, sheet_name="Impacts", usecols="E", header=None, names=["Nutzung"]).iloc[0]["Nutzung"]
+                            electric_production_battery_kg = pd.read_excel(os.path.join(self._resultspath, battery_production + '.xlsx'), skiprows=3, nrows=1, sheet_name="Impacts", usecols="E", header=None, names=["Nutzung"]).iloc[0]["Nutzung"]
+                            electric_transport_km = pd.read_excel(os.path.join(self._resultspath, electric_transport_name + '.xlsx'), skiprows=3, nrows=1, sheet_name="Impacts", usecols="E", header=None, names=["Nutzung"]).iloc[0]["Nutzung"]
+
+                            if size == 'small':
+                                if self.charging == "opportunity":
+                                    batteries_kwh += vehiclesize['batteries'] * self.battery_small_opportunity
+                                    electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_small + (self.battery_small_opportunity * kWh_to_kg)) * vehiclesize['amount']
+                                else:
+                                    batteries_kwh += vehiclesize['batteries'] * self.battery_small
+                                    electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_small + (self.battery_small * kWh_to_kg)) * vehiclesize['amount']
+                            elif size == 'medium':
+                                if self.charging == "opportunity":
+                                    batteries_kwh += vehiclesize['batteries'] * self.battery_medium_opportunity
+                                    electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_medium + (self.battery_medium_opportunity * kWh_to_kg)) * vehiclesize['amount']
+                                else:
+                                    batteries_kwh += vehiclesize['batteries'] * self.battery_medium
+                                    electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_medium + (self.battery_medium * kWh_to_kg)) * vehiclesize['amount']
+                            elif size == 'large':
+                                if self.charging == "opportunity":
+                                    batteries_kwh += vehiclesize['batteries'] * self.battery_large_opportunity
+                                    electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_large + (self.battery_large_opportunity * kWh_to_kg)) * vehiclesize['amount']
+                                else:
+                                    batteries_kwh += vehiclesize['batteries'] * self.battery_large
+                                    electric_production_vehicle += electric_production_vehicle_kg * (self.mass_electric_large + (self.battery_large * kWh_to_kg)) * vehiclesize['amount']
+                            
+                            electric_transport += electric_transport_km * vehiclesize['km']
+                        
+            electric_production_batteries = (batteries_kwh * kWh_to_kg) * electric_production_battery_kg
+            electric_consumption = vehicles_nondrt['electric']['consumption'] * electricity_use_kWh
+            
+        totalemissions_production = drt_electric_production_vehicle + electric_production_vehicle + combustion_production
+        totalemissions_transport = drt_electric_transport + electric_transport + combustion_transport
+        totalemissions_batteries = drt_electric_production_batteries + electric_production_batteries
+        totalemissions_use = drt_electric_consumption + electric_consumption + combustion_emissions
+
+        totalemissions = totalemissions_production + totalemissions_transport + totalemissions_use + totalemissions_batteries
+
+        # -------------------------------------- results creation ------------------------------------------ #
+
+        # create excel results file
+        if not os.path.exists(os.path.join(self._resultspath, str(simulationname))):
+            os.mkdir(os.path.join(self._resultspath, str(simulationname)))
+        workbook = xlsxwriter.Workbook(os.path.join(self._resultspath, str(simulationname), "results_" + str(simulationname) + "_" + str(getfromconfig('vehicle_parameters', 'energymix')) + "_" + str(getfromconfig('vehicle_parameters', 'charging')) + "_electricconversion" + ".xlsx"))
+
+        kgtotonnes = 1/1000
+        years = int(getfromconfig("vehicle_parameters", "timespan_in_years"))
+
+        worksheet_tot = workbook.add_worksheet(name = "LCA_results_total")
+
+        worksheet_tot.write(1, 0, "total CO2 emissions [t CO2-Eq]")
+        worksheet_tot.write(1, 1, totalemissions * kgtotonnes)
+
+        worksheet_tot.write(3, 0, "total emissions, production [t CO2-Eq]")
+        worksheet_tot.write(3, 1, totalemissions_production * kgtotonnes)
+
+        worksheet_tot.write(4, 0, "total emissions, batteries [t CO2-Eq]")
+        worksheet_tot.write(4, 1, totalemissions_batteries * kgtotonnes)
+
+        worksheet_tot.write(5, 0, "total emissions, transport [t CO2-Eq]")
+        worksheet_tot.write(5, 1, totalemissions_transport * kgtotonnes)
+
+        worksheet_tot.write(6, 0, "total emissions, use phase [t CO2-Eq]")
+        worksheet_tot.write(6, 1, totalemissions_use * kgtotonnes)
+
+
+        worksheet_tot.write(8, 0, "emissions per year, total wo production [t CO2-Eq]")
+        worksheet_tot.write(8, 1, ((totalemissions - totalemissions_production) * kgtotonnes) / years)
+
+        worksheet_tot.write(9, 0, "emissions per year, batteries [t CO2-Eq]")
+        worksheet_tot.write(9, 1, (totalemissions_batteries * kgtotonnes) / years)
+
+        worksheet_tot.write(10, 0, "emissions per year, transport [t CO2-Eq]")
+        worksheet_tot.write(10, 1, (totalemissions_transport * kgtotonnes) / years)
+
+        worksheet_tot.write(11, 0, "emissions per year, use phase [t CO2-Eq]")
+        worksheet_tot.write(11, 1, (totalemissions_use * kgtotonnes) / years)
+
+
+        worksheet_tot.write(13, 0, "emissions per averaged km, total wo production [g CO2-Eq]")
+        worksheet_tot.write(13, 1, ((totalemissions - totalemissions_production) / kgtotonnes) / (totaldrivenkm))
+
+        worksheet_tot.write(14, 0, "emissions per averaged km, batteries [g CO2-Eq]")
+        worksheet_tot.write(14, 1, (totalemissions_batteries / kgtotonnes) / (totaldrivenkm))
+
+        worksheet_tot.write(15, 0, "emissions per averaged km, transport [g CO2-Eq]")
+        worksheet_tot.write(15, 1, (totalemissions_transport / kgtotonnes) / (totaldrivenkm))
+
+        worksheet_tot.write(16, 0, "emissions per averaged km, use phase [g CO2-Eq]")
+        worksheet_tot.write(16, 1, (totalemissions_use / kgtotonnes) / (totaldrivenkm))
+
+
+        worksheet_tot.write(18, 0, "emissions per averaged pkm, total wo production [g CO2-Eq]")
+        worksheet_tot.write(18, 1, ((totalemissions - totalemissions_production) / kgtotonnes) / (totaldrivenpkm))
+
+        worksheet_tot.write(19, 0, "emissions per averaged pkm, batteries [g CO2-Eq]")
+        worksheet_tot.write(19, 1, (totalemissions_batteries / kgtotonnes) / (totaldrivenpkm))
+
+        worksheet_tot.write(20, 0, "emissions per averaged pkm, transport [g CO2-Eq]")
+        worksheet_tot.write(20, 1, (totalemissions_transport / kgtotonnes) / (totaldrivenpkm))
+
+        worksheet_tot.write(21, 0, "emissions per averaged pkm, use phase [g CO2-Eq]")
+        worksheet_tot.write(21, 1, (totalemissions_use / kgtotonnes) / (totaldrivenpkm))
+
+        width= len("emissions per averaged pkm, batteries [t CO2-Eq]")
+        worksheet_tot.set_column(0,0, width)
+
+        workbook.close()
