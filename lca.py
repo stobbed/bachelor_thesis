@@ -1,3 +1,5 @@
+# (CC) Dustin Stobbe, 2022
+
 import pandas as pd
 import os.path
 import xlsxwriter
