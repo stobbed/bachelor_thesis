@@ -1,3 +1,5 @@
+# (CC) Dustin Stobbe, 2022
+
 # configuration file, used to help with the configuration (ini) files and set paths
 
 import os.path
