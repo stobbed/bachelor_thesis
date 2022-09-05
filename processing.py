@@ -1,3 +1,5 @@
+# (CC) Dustin Stobbe, 2022
+
 # this python file contains all sort of functions needed to analyze the MATSIM outputs
 # in order to return the vehicleinfo.csv
 
