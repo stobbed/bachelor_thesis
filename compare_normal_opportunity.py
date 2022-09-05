@@ -1,3 +1,5 @@
+# (CC) Dustin Stobbe, 2022
+
 from sympy import rotations
 from configuration import *
 from database_operations import *
