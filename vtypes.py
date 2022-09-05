@@ -1,3 +1,5 @@
+# (CC) Dustin Stobbe, 2022
+
 from dataclasses import dataclass
 from xmlrpc.client import Boolean, boolean
 @dataclass
