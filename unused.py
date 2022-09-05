@@ -1,3 +1,4 @@
+# (CC) Dustin Stobbe, 2022
 
 # database_operations.py
 def close_db_connection(sqliteConnection, cursor):
