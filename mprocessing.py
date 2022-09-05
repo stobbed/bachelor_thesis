@@ -1,3 +1,5 @@
+# (CC) Dustin Stobbe, 2022
+
 import multiprocessing
 from tqdm import tqdm
 
