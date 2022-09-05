@@ -1,3 +1,5 @@
+# (CC) Dustin Stobbe, 2022
+
 # intializing the configgui starts a tkinter window and asks the user to set the paths
 # for the drt scenario and the reference scenario, via clicking the open browser button
 # additionally there is space for further configuration options
