@@ -1,9 +1,9 @@
-# introduction
+## introduction
 This is the GIT repository to my corresponding bachelor thesis written at TU Berlin in 2022.
+The program enables a user to compare two different MATSIM (https://www.matsim.org) simulation files, which simulate the transport within a region on a multi agent basis, with the main goal to automatically create a comparing life cycle assessment, in order to decide on ecological advantages.
+At the end excel files are created which contain all calculated informations, additionally diagrams are created for e.g. total greenhouse gas emissions, necessary vehicle amount or total km comparison. As well as a detailed graphic which picture the emissions per year for each scenario in comparison, with an additional graphic showing different grid mixes.
 
-# programs function
-this program creates an automated lifecycle assessment of the scenarios which are declared as input.
-afterwards the program automatically compares the 2 scenarios which one another regarding vehicle amount, total co2 emissions as well as yearly co2 emissions.
+The main goal of this bachelor thesis was to analyze whether a conversion to a fully electric mobility on demand system instead of privately owned cars would be beneficial in terms of greenhouse gas emissions, which could be succesfully shown with the help of this program.
 
 # how to use
 ## before using the program
