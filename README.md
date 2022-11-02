@@ -1,3 +1,6 @@
+# introduction
+This is the GIT repository to my corresponding bachelor thesis written at TU Berlin in 2022.
+
 # programs function
 this program creates an automated lifecycle assessment of the scenarios which are declared as input.
 afterwards the program automatically compares the 2 scenarios which one another regarding vehicle amount, total co2 emissions as well as yearly co2 emissions.
