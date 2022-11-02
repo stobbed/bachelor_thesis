@@ -9,6 +9,7 @@ The main goal of this bachelor thesis was to analyze whether a conversion to a f
 ## before using the program
 first you need to install all required packages, which you can do by executing the command:
 "pip install -r requirements.txt"
+Additionally you are going to need openLCA with the corresponding database for this bachelor thesis, or you can adjust the names for the systems in the code accordingly.
 
 ![openLCA setup](openlca.png)
 
