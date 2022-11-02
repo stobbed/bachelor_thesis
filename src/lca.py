@@ -1,5 +1,7 @@
 # (CC) Dustin Stobbe, 2022
 
+# contains anything needed to create the lifecycle assessment via openLCA
+
 import pandas as pd
 import os.path
 import xlsxwriter
